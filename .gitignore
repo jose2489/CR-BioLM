@@ -1,0 +1,20 @@
+# Entornos virtuales
+venv/
+env/
+__pycache__/
+
+# Llaves y secretos
+.env
+
+# Datos pesados de GIS y Machine Learning (¡MUY IMPORTANTE!)
+data_raw/
+data_cache/
+outputs/
+*.tif
+*.shp
+*.shx
+*.dbf
+*.prj
+
+# Archivos de sistema
+.DS_Store
