@@ -16,13 +16,13 @@ Para garantizar la ejecucion correcta de este pipeline, el sistema debe contar c
 3. Descarga los mapas base (`data_raw`) desde [https://drive.google.com/drive/folders/10jiTbZTVk_1yVn-YLimAWxNzfDQEOb0H?usp=sharing] y colócalos en el folder de data_raw.
 4. Crea un archivo `.env` y coloca tu API Key: `GROQ_API_KEY=tu_llave`
 
-## 🚀 Uso
+## Uso
 Para correr el pipeline para una especie, ejecuta:
 `python main.py -s "Quercus costaricensis"`
 ## Instrucciones de Uso
 
 El pipeline esta diseñado para ser ejecutado desde la terminal a traves del archivo main.py. Soporta dos modos de ejecucion:
-Modo Individual
+Modo Individualgit init
 
 Para modelar y analizar una sola especie, utilice el argumento -s (species) seguido del nombre cientifico entre comillas:
 Bash
