@@ -20,23 +20,18 @@ class GroqAnalyst(BaseLLM):
             self.client = Groq(api_key=self.api_key)
             self.default_model = default_model
 
-    def generate_profile(self, species_name, rf_metrics, cnn_metrics, shap_dict, output_dir, area_km2=None, model_override=None):
-        """
-        Ejecuta la peticion a la API utilizando el modelo especificado 
-        y guarda el texto resultante.
-        """
-        # Utiliza el modelo indicado en la funcion, o el modelo por defecto de la clase
+    def generate_profile(self, species_name, rf_metrics, shap_dict, output_dir, area_km2=None, user_question=None, model_override=None, contexto_conservacion=None):
         modelo_a_usar = model_override if model_override else self.default_model
+        print(f"[INFO] Preparando síntesis para Groq ({modelo_a_usar})...")
         
-        print(f"[INFO] Solicitando sintesis ecologica a {modelo_a_usar}...")
-        
-        # 1. Construimos el prompt inyectando ambas métricas y el área
+        # 1. Construimos el prompt inyectando métricas, área y el contexto de conservación
         prompt = build_ecological_prompt(
             species_name=species_name, 
             rf_metrics=rf_metrics, 
-            cnn_metrics=cnn_metrics, 
             shap_dict=shap_dict, 
-            area_km2=area_km2
+            area_km2=area_km2,
+            user_question=user_question,
+            contexto_conservacion=contexto_conservacion 
         )
         
         try:
@@ -45,7 +40,7 @@ class GroqAnalyst(BaseLLM):
                 messages=[
                     {
                         "role": "system", 
-                        "content": "Eres un científico de datos y ecólogo encargado de redactar la discusión de resultados para el proyecto CR-BioLM. Tu lenguaje es académico, formal y directo."
+                        "content": "Eres un científico botanico encargado de redactar la discusión de resultados para el proyecto CR-BioLM. Tu lenguaje es académico, formal y directo."
                     },
                     {
                         "role": "user", 
@@ -58,15 +53,39 @@ class GroqAnalyst(BaseLLM):
             
             perfil_texto = chat_completion.choices[0].message.content.strip()
             
-            # 2. Guardado de resultados
+            # =====================================================================
+            # 2. CONSTRUCCIÓN DEL ENCABEZADO DE METADATOS (TRAZABILIDAD)
+            # =====================================================================
+            pregunta_texto = user_question if user_question else "Análisis general de la especie (Sin pregunta específica)"
+            
+            encabezado_metadatos = f"""================================================================================
+METADATOS DEL EXPERIMENTO (Arquitectura CR-BioLM)
+================================================================================
+Modelo LLM       : {modelo_a_usar}
+Especie          : {species_name}
+Pregunta Usuario : {pregunta_texto}
+
+FUENTES DE DATOS Y VARIABLES ESPACIALES INTEGRADAS:
+- Presencias     : Registros limpios de GBIF (Global Biodiversity Information Facility).
+- Mapa Experto   : Polígonos base de BIEN / Map of Life.
+- Clima          : WorldClim V2.1 (Variables bioclimáticas continuas bio_1 a bio_19).
+- Topografía     : WorldClim V2.1 (Modelo de Elevación Digital continuo - DEM).
+- Conservación   : Geoportal SNIT / SINAC Costa Rica (Shapefile vectorial de Áreas Protegidas EPSG:4326).
+================================================================================
+
+[ANÁLISIS GENERADO POR IA]
+"""
+            
+            # =====================================================================
+            # 3. GUARDADO DE RESULTADOS
+            # =====================================================================
             modelo_limpio = modelo_a_usar.replace('-', '_').replace('/', '_')
             nombre_archivo = f"llm_profile_{modelo_limpio}.txt"
             file_path = os.path.join(output_dir, nombre_archivo)
             
             with open(file_path, "w", encoding="utf-8") as file:
-                file.write(f"Modelo LLM: {modelo_a_usar}\n")
-                file.write(f"Especie: {species_name}\n")
-                file.write("-" * 40 + "\n\n")
+                # Escribimos el nuevo encabezado gigante seguido de la respuesta del LLM
+                file.write(encabezado_metadatos)
                 file.write(perfil_texto)
                 
             return perfil_texto

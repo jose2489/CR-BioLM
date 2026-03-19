@@ -3,6 +3,7 @@ import argparse
 import config
 import torch # Aseguramos tener torch a mano
 import numpy as np
+import argparse
 
 from sklearn.model_selection import train_test_split
 from utils.visualizer import Visualizer
@@ -18,9 +19,10 @@ from llm.groq_client import GroqAnalyst
 from models.cnn_model import CNNSDM
 from sklearn.model_selection import train_test_split
 from xai.grad_cam import MultimodalGradCAM
+from utils.geoprocesamiento import extraer_altitud, generar_contexto_conservacion
 
 
-def procesar_especie(especie_nombre):
+def procesar_especie(especie_nombre, user_question=None):
     """
     Ejecuta el pipeline completo de CR-BioLM para una especie especifica.
     Retorna True si fue exitoso, False si fue omitida por falta de datos.
@@ -65,6 +67,9 @@ def procesar_especie(especie_nombre):
         presencias_gdf=presencias_limpias, 
         output_dir=out_dir
     )
+    #  Enriquecer dataframe con topografía
+    ruta_altitud = os.path.join("data_raw", "topography", "altitud_cr.tif")
+    presencias_limpias = extraer_altitud(presencias_limpias, ruta_altitud)
 
     # 5. Descarga y recorte de matrices climaticas (WorldClim)
     climate_loader = ClimateLoader()
@@ -173,11 +178,23 @@ def procesar_especie(especie_nombre):
             # Creamos métricas vacías para que el LLM no se estrelle al pedirlas
             cnn_metrics = {'roc_auc': 0.0, 'accuracy': 0.0}
 
+    # 9.6 Generar el contexto espacial
+    rutas_vectores = {
+        "Áreas Silvestres Protegidas": os.path.join("data_raw", "vectors", "areas_protegidas_cr.shp"),
+        "Humedales": os.path.join("data_raw", "vectors", "humedales_cr.shp"),
+        "Corredores Biológicos": os.path.join("data_raw", "vectors", "corredores_biologicos_cr.shp"),
+        "Áreas de Conservación (Macro-regiones)": os.path.join("data_raw", "vectors", "areas_conservacion_cr.shp")
+    }
+    
+    # Pasamos el diccionario completo a la función
+    contexto_conservacion = generar_contexto_conservacion(presencias_limpias, rutas_vectores)
+
     # 10. IA Generativa (Comparativa de LLMs)
     llm_analyst = GroqAnalyst()
     modelos_a_evaluar = [
         "llama-3.3-70b-versatile",
-        "openai/gpt-oss-120b"        
+        "qwen/qwen3-32b",
+        "moonshotai/kimi-k2-instruct-0905"     
     ]
     print("[INFO] Iniciando bloque de generacion de perfiles (IA Generativa)...")
 
@@ -185,16 +202,42 @@ def procesar_especie(especie_nombre):
     for modelo in modelos_a_evaluar:
         llm_analyst.generate_profile(
             species_name=especie_nombre,
-            rf_metrics=rf_metrics,        # <--- Nueva variable 1
-            cnn_metrics=cnn_metrics,      # <--- Nueva variable 2
+            rf_metrics=rf_metrics,
             shap_dict=shap_data,
             output_dir=out_dir,
-            area_km2=area_km2,            # Area, de estar, de momento la pasamos en 0
-            model_override=modelo
+            area_km2=area_km2,
+            user_question=user_question, # Pasamos la pregunta de la terminal
+            model_override=modelo,
+            contexto_conservacion=contexto_conservacion
         )
 
-    print(f"[EXITO] Pipeline completado para {especie_nombre}.")
+
+    # =================================================================
+    # 11. Ejecución del Baseline Dual (Comparativa Visual)
+    # =================================================================
+    from llm.dual_baseline_client import DualBaselineAnalyst
+    
+    print("[INFO] Iniciando ejecución del Modelo Dual (Baseline Visión + Texto)...")
+    
+    # Buscamos la imagen que se generó en el paso de visualización
+    # (Asegúrate de que la extensión sea .png o .jpg según lo que genere tu código)
+    ruta_mapa = os.path.join(out_dir, "mapa_solapamiento_espacial.png") 
+    
+    try:
+        baseline_analyst = DualBaselineAnalyst()
+        baseline_analyst.generate_profile(
+            species_name=especie_nombre,
+            image_path=ruta_mapa,
+            output_dir=out_dir,
+            user_question=user_question  # Le pasamos la misma pregunta de la terminal
+        )
+    except Exception as e:
+        print(f"[ERROR] No se pudo ejecutar el Baseline Dual: {e}")
+
+    # =================================================================
+    print(f"\n[EXITO] Pipeline completado para {especie_nombre}.")
     return True
+
 
 def leer_lista_especies(ruta_archivo):
     """Lee un archivo TXT y retorna una lista de nombres limpios."""
@@ -216,19 +259,28 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--species", type=str, help="Ejecutar para una sola especie. Ej: 'Quercus costaricensis'")
     parser.add_argument("-f", "--file", type=str, help="Ruta a un archivo .txt con una lista de especies (una por linea).")
     
+    # NUEVO: Argumento opcional para la pregunta del usuario
+    parser.add_argument("-q", "--question", type=str, help="Pregunta especifica para que el LLM responda basandose en el modelo.", default=None)
+    
     args = parser.parse_args()
     
     if args.species:
-        procesar_especie(args.species)
+        # Pasamos la especie y la pregunta
+        procesar_especie(args.species, args.question)
         
     elif args.file:
         lista_especies = leer_lista_especies(args.file)
         print(f"[INFO] Modo Batch iniciado. Se detectaron {len(lista_especies)} especies en el archivo.")
         
+        if args.question:
+            print(f"[INFO] Pregunta global detectada para el lote: '{args.question}'")
+        
         for i, especie in enumerate(lista_especies, 1):
             print(f"\n[LOTE {i}/{len(lista_especies)}]")
-            procesar_especie(especie)
+            # Pasamos la especie y la pregunta a cada iteración
+            procesar_especie(especie, args.question)
             
     else:
         print("[ERROR] Debes proporcionar un argumento. Usa -s para una especie o -f para una lista txt.")
-        print("Ejemplo: python main.py -s \"Quercus costaricensis\"")
+        print("Ejemplo 1: python main.py -s \"Quercus costaricensis\"")
+        print("Ejemplo 2: python main.py -s \"Quercus costaricensis\" -q \"¿Cómo le afecta el cambio climático?\"")
