@@ -3,6 +3,9 @@ import argparse
 import config
 import torch # Aseguramos tener torch a mano
 import numpy as np
+import torch.nn as nn
+import torch.optim as optim
+import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from utils.visualizer import Visualizer
@@ -16,8 +19,10 @@ from models.random_forest import RandomForestSDM
 from xai.shap_explainer import SHAPExplainer
 from llm.groq_client import GroqAnalyst
 from models.cnn_model import CNNSDM
-from sklearn.model_selection import train_test_split
 from xai.grad_cam import MultimodalGradCAM
+from models.mlp_baseline import MLPTrainer
+from models.mlp_multimodal_baseline import CNNMultimodalTrainer
+from sklearn.preprocessing import StandardScaler
 
 
 def procesar_especie(especie_nombre):
@@ -86,50 +91,104 @@ def procesar_especie(especie_nombre):
         X, y, test_size=0.2, random_state=config.SEED, stratify=y
     )
 
-# ==========================================
-    # 8. MODELADO PREDICTIVO ( RF vs CNN)
+        
+    # --- BASELINE: Deep Learning (Tabular MLP) ---
+    print("\n" + "="*40)
+    print("[FASE] Baseline Deep Learning: MLP")
+
+    scaler = StandardScaler()
+
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled  = scaler.transform(X_test)
+
+    mlp_model = MLPTrainer(input_dim=X_train.shape[1])
+    mlp_model.train(X_train_scaled, y_train)
+    mlp_metrics = mlp_model.evaluate(X_test_scaled, y_test)
+
+    print("="*40 + "\n")
+
+
     # ==========================================
-    EJECUTAR_CNN = False
-    # --- 8.1 CAMINO A: Random Forest (Machine Learning Tradicional) ---
+    # 8. MODELADO PREDICTIVO
+    # ==========================================
+    EJECUTAR_CNN = True
+
+
+    # --- 8.1 Random Forest ---
     print("\n" + "="*40)
     print("[FASE] Iniciando Modelado: Random Forest")
+
     rf_model = RandomForestSDM()
-    rf_model.train(X_train, y_train) # Asume que tus datos 1D ya están divididos
+    rf_model.train(X_train, y_train)
     rf_metrics = rf_model.evaluate(X_test, y_test)
-    
+
     if 'confusion_matrix' in rf_metrics:
-        vis.plot_confusion_matrix(rf_metrics['confusion_matrix'], out_dir) # Opcional: renombrar a conf_matrix_rf.png en visualizer
-        
-    # --- 8.2 CAMINO B: Red Neuronal Multimodal (Deep Learning) ---
+        vis.plot_confusion_matrix(rf_metrics['confusion_matrix'], out_dir)
+
+
+    # --- 8.2 MODELOS MULTIMODALES (Baseline + CNN) ---
     if EJECUTAR_CNN:
+
         print("\n" + "="*40)
-        print("[FASE] Iniciando Modelado: Red Neuronal Convolucional (CNN)")
-    
-        # 8.2.1. Extraer datos multimodales (Imágenes 15x15 + Vectores SINAC)
-        # Asegúrate de pasar la matriz_final original sin dividir y la lista de raster_paths
+        print("[FASE] Preparando datos multimodales")
+
+        # 1. EXTRAER
         X_img, X_tab, y_tensor = geo.extract_multimodal_data(
-            matriz_final, 
-            raster_paths, 
-            col_prefix='nombre_', # Este es el prefijo que tu One-Hot Encoding le puso a los ecosistemas
+            matriz_final,
+            raster_paths,
+            col_prefix='nombre_',
             window_size=15
         )
-        
-        # 8.2.2. Dividir los tensores en Entrenamiento (80%) y Prueba (20%)
-        # Nota: train_test_split puede dividir múltiples arreglos en paralelo perfectamente
-        X_img_train, X_img_test, X_tab_train, X_tab_test, y_cnn_train, y_cnn_test = train_test_split(
-            X_img, X_tab, y_tensor, test_size=0.2, random_state=42, stratify=y_tensor
-        )
-        
-        # 8.3. Inicializar, entrenar y evaluar la CNN
+
+        import pandas as pd
+
+        # 2. ASEGURAR ÍNDICES
+        if not hasattr(X_tab, "index"):
+            X_tab = pd.DataFrame(X_tab, index=matriz_final.index)
+
+        if not hasattr(y_tensor, "index"):
+            y_tensor = pd.Series(y_tensor, index=matriz_final.index)
+
+        # 3. SINCRONIZAR SPLIT
+        train_pos = matriz_final.index.get_indexer(X_train.index)
+        test_pos  = matriz_final.index.get_indexer(X_test.index)
+
+        X_img_train = X_img[train_pos]
+        X_img_test  = X_img[test_pos]
+
+        X_tab_train = X_tab.iloc[train_pos].values
+        X_tab_test  = X_tab.iloc[test_pos].values
+
+        y_cnn_train = y_tensor.iloc[train_pos].values
+        y_cnn_test  = y_tensor.iloc[test_pos].values
+
+
+        # ==========================================
+        # BASELINE MULTIMODAL 
+        # ==========================================
+        print("\n" + "="*40)
+        print("[FASE] Baseline Deep Learning Multimodal")
+
+        cnn_mm = CNNMultimodalTrainer(epochs=20)
+        cnn_mm.train(X_img_train, X_tab_train, y_cnn_train)
+        cnn_mm.evaluate(X_img_test, X_tab_test, y_cnn_test)
+
+
+        # ==========================================
+        # CNN
+        # ==========================================
+        print("\n" + "="*40)
+        print("[FASE] Iniciando CNN")
+
         cnn_model = CNNSDM(epochs=30, batch_size=32, learning_rate=0.001)
         cnn_model.train(X_img_train, X_tab_train, y_cnn_train)
         cnn_metrics = cnn_model.evaluate(X_img_test, X_tab_test, y_cnn_test)
+
         print("="*40 + "\n")
 
     else:
-            print("[INFO] Fase de Red Neuronal (CNN) omitida por el usuario.")
-            # Creamos métricas vacías para que el LLM no se estrelle al pedirlas
-            cnn_metrics = {'roc_auc': 0.0, 'accuracy': 0.0}
+        print("[INFO] Fase de Red Neuronal (CNN) omitida por el usuario.")
+        cnn_metrics = {'roc_auc': 0.0, 'accuracy': 0.0}
 
     # 9. Explicabilidad Espacial
     # 9.1 SHAP (Global) - La brújula para el LLM
