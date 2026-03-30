@@ -93,3 +93,24 @@ FUENTES DE DATOS Y VARIABLES ESPACIALES INTEGRADAS:
         except Exception as e:
             print(f"[ERROR] Fallo la inferencia con {modelo_a_usar}: {e}")
             return None
+    
+    def generate_simple(self, prompt, model_override=None):
+        """
+        Generación simple para baseline (sin prompt complejo)
+        """
+        modelo_a_usar = model_override if model_override else self.default_model
+
+        try:
+            chat_completion = self.client.chat.completions.create(
+                messages=[
+                    {"role": "user", "content": prompt}
+                ],
+                model=modelo_a_usar,
+                temperature=0.0  #Baseline determinístico
+            )
+
+            return chat_completion.choices[0].message.content.strip()
+
+        except Exception as e:
+            print(f"[ERROR] LLM simple fallo: {e}")
+            return "ERROR"

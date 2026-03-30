@@ -36,6 +36,15 @@ Bash
 
     python main.py -f lista_especies.txt
 
+
+## Modo Randomizado (Batch)
+
+Para procesar multiples especies aleatorias, utilice el argumento -n (numero):
+Bash
+
+    python main.py -n [NUMERO]
+
+
 ## Resultados Esperados
 
 Por cada especie procesada, el sistema creara dinamicamente una carpeta en el directorio outputs/ etiquetada con la fecha y hora de ejecucion. Dentro de esta carpeta encontrara:

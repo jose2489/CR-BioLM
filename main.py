@@ -277,7 +277,6 @@ if __name__ == "__main__":
         
         for i, especie in enumerate(lista_especies, 1):
             print(f"\n[LOTE {i}/{len(lista_especies)}]")
-            # Pasamos la especie y la pregunta a cada iteración
             procesar_especie(especie, args.question)
             
     else:
