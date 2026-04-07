@@ -19,6 +19,7 @@ from llm.groq_client import GroqAnalyst
 from models.cnn_model import CNNSDM
 from sklearn.model_selection import train_test_split
 from xai.grad_cam import MultimodalGradCAM
+from models.cnn_multimodal_baseline import CNNMultimodalTrainer
 from utils.geoprocesamiento import extraer_altitud, generar_contexto_conservacion
 
 
@@ -67,9 +68,14 @@ def procesar_especie(especie_nombre, user_question=None):
         presencias_gdf=presencias_limpias, 
         output_dir=out_dir
     )
-    #  Enriquecer dataframe con topografía
     ruta_altitud = os.path.join("data_raw", "topography", "altitud_cr.tif")
-    presencias_limpias = extraer_altitud(presencias_limpias, ruta_altitud)
+
+    if os.path.exists(ruta_altitud):
+        print("[INFO] Extrayendo variables de Altitud...")
+        presencias_limpias = extraer_altitud(presencias_limpias, ruta_altitud)
+    else:
+        print("[WARN] Raster de altitud no encontrado. Se omitira esta variable.")
+        presencias_limpias["altitud"] = np.nan 
 
     # 5. Descarga y recorte de matrices climaticas (WorldClim)
     climate_loader = ClimateLoader()
@@ -94,7 +100,7 @@ def procesar_especie(especie_nombre, user_question=None):
 # ==========================================
     # 8. MODELADO PREDICTIVO ( RF vs CNN)
     # ==========================================
-    EJECUTAR_CNN = False
+    EJECUTAR_CNN = True
     # --- 8.1 CAMINO A: Random Forest (Machine Learning Tradicional) ---
     print("\n" + "="*40)
     print("[FASE] Iniciando Modelado: Random Forest")
@@ -130,6 +136,9 @@ def procesar_especie(especie_nombre, user_question=None):
         cnn_model.train(X_img_train, X_tab_train, y_cnn_train)
         cnn_metrics = cnn_model.evaluate(X_img_test, X_tab_test, y_cnn_test)
         print("="*40 + "\n")
+
+        print("\n" + "="*40)
+        print("[FASE] Baseline Multimodal LLM (Evaluable)")
 
     else:
             print("[INFO] Fase de Red Neuronal (CNN) omitida por el usuario.")
@@ -235,6 +244,7 @@ def procesar_especie(especie_nombre, user_question=None):
         print(f"[ERROR] No se pudo ejecutar el Baseline Dual: {e}")
 
     # =================================================================
+
     print(f"\n[EXITO] Pipeline completado para {especie_nombre}.")
     return True
 
