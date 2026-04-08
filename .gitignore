@@ -1,10 +1,17 @@
 # Entornos virtuales
 venv/
 env/
+
+# Python cache (todos los subdirectorios)
 __pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # Llaves y secretos
 .env
+*.env
 
 # Datos pesados de GIS y Machine Learning (¡MUY IMPORTANTE!)
 data_raw/
@@ -15,6 +22,12 @@ outputs/
 *.shx
 *.dbf
 *.prj
+*.cpg
+*.qmd
+
+# Claude Code (configuración local de la máquina, no del proyecto)
+.claude/
 
 # Archivos de sistema
 .DS_Store
+Thumbs.db

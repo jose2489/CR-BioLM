@@ -90,6 +90,58 @@ class Visualizer:
         print(f"[INFO] Mapa guardado exitosamente en: {file_path}")
         return file_path
     
+    def plot_mesoamerica_overview(self, species_name, meso_boundary, expert_map, presencias_meso, presencias_cr, output_dir):
+        """
+        Genera un mapa de Mesoamérica mostrando todas las presencias de entrenamiento,
+        con los puntos de CR resaltados para distinguir el subconjunto nacional.
+        """
+        print("[INFO] Generando mapa de distribución Mesoamericana...")
+
+        fig, ax = plt.subplots(figsize=(14, 8))
+
+        # 1. Capa base: límites de Mesoamérica
+        if meso_boundary is not None and not meso_boundary.empty:
+            meso_boundary.plot(ax=ax, color='#e5e7eb', edgecolor='#374151', linewidth=0.8, alpha=0.9)
+
+        # 2. Rango experto (polígono BIEN sin recortar)
+        if expert_map is not None and not expert_map.empty:
+            expert_map.plot(ax=ax, color='#10b981', alpha=0.35, edgecolor='#047857', linewidth=0.7)
+
+        # 3. Presencias fuera de CR (gris oscuro)
+        if presencias_meso is not None and not presencias_meso.empty:
+            presencias_meso.plot(ax=ax, color='#6b7280', markersize=18, alpha=0.6,
+                                 edgecolor='white', linewidth=0.3)
+
+        # 4. Presencias dentro de CR (rojo, encima para que resalten)
+        if presencias_cr is not None and not presencias_cr.empty:
+            presencias_cr.plot(ax=ax, color='#ef4444', markersize=28, alpha=0.9,
+                               edgecolor='black', linewidth=0.5)
+
+        plt.title(f"Distribución Mesoamericana — {species_name}\n"
+                  f"(puntos rojos = registros en CR usados para outputs)",
+                  fontsize=13, fontweight='bold', fontstyle='italic')
+        plt.xlabel("Longitud", fontsize=10)
+        plt.ylabel("Latitud", fontsize=10)
+        ax.grid(True, linestyle=':', alpha=0.5)
+
+        expert_patch = mpatches.Patch(facecolor='#73C6A3', edgecolor='green',
+                                      alpha=0.6, label='Rango Experto (BIEN)')
+        meso_marker = mlines.Line2D([], [], color='white', marker='o',
+                                    markerfacecolor='#6b7280', markeredgecolor='white',
+                                    markersize=7, label='Presencias Mesoamérica (GBIF)')
+        cr_marker = mlines.Line2D([], [], color='white', marker='o',
+                                  markerfacecolor='#ef4444', markeredgecolor='black',
+                                  markersize=8, label='Presencias Costa Rica (GBIF)')
+        plt.legend(handles=[expert_patch, meso_marker, cr_marker],
+                   loc='lower left', shadow=True, framealpha=0.9)
+
+        file_path = os.path.join(output_dir, "mapa_distribucion_mesoamerica.png")
+        plt.savefig(file_path, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        print(f"[INFO] Mapa Mesoamericano guardado en: {file_path}")
+        return file_path
+
     def plot_confusion_matrix(self, conf_matrix, output_dir):
         """
         Genera y guarda un mapa de calor visual para la Matriz de Confusión.

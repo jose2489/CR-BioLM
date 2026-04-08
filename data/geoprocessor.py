@@ -18,45 +18,60 @@ class Geoprocessor:
         # Fijar la semilla para garantizar pseudo-ausencias reproducibles
         np.random.seed(self.random_seed)
 
-    def generate_pseudo_absences(self, presencias_gdf, country_boundary, buffer_min=0.1, buffer_max=0.5, num_puntos=500):
+    def generate_pseudo_absences(self, presencias_gdf, country_boundary, buffer_min=0.1, buffer_max=0.5, num_puntos=500, use_extent_background=False):
         """
-        Genera pseudo-ausencias en un 'anillo' alrededor de las presencias,
-        limitadas estrictamente a las fronteras del pais.
+        Genera pseudo-ausencias limitadas al polígono de la región de estudio.
+
+        Parámetros:
+        - use_extent_background: Si True, muestrea aleatoriamente de toda la extensión
+          del polígono (recomendado para regiones amplias como Mesoamérica).
+          Si False, usa el anillo buffer clásico alrededor de las presencias (CR).
         """
         print("[INFO] Generando pseudo-ausencias (Background sampling)...")
-        
-        # Uso de union_all() para compatibilidad con GeoPandas 1.0+
-        union_presencias = presencias_gdf.geometry.union_all()
-        
-        # Crear el anillo (zona de estudio menos zona de exclusion)
-        zona_estudio = union_presencias.buffer(buffer_max)
-        zona_exclusion = union_presencias.buffer(buffer_min)
-        anillo = zona_estudio.difference(zona_exclusion)
-        
-        # Limitar el anillo al poligono del pais
-        anillo_cr = anillo.intersection(country_boundary.union_all())
-        
+
+        region_polygon = country_boundary.union_all()
+
+        if use_extent_background:
+            # Estrategia de fondo amplio: muestrea de toda la región accesible
+            print(f"[INFO] Estrategia: fondo completo de la región ({num_puntos} puntos).")
+            zona_muestreo = region_polygon
+        else:
+            # Estrategia clásica de anillo buffer alrededor de las presencias
+            union_presencias = presencias_gdf.geometry.union_all()
+            zona_estudio = union_presencias.buffer(buffer_max)
+            zona_exclusion = union_presencias.buffer(buffer_min)
+            anillo = zona_estudio.difference(zona_exclusion)
+            zona_muestreo = anillo.intersection(region_polygon)
+
         ausencias = []
-        minx, miny, maxx, maxy = anillo_cr.bounds
-        
+        minx, miny, maxx, maxy = zona_muestreo.bounds
+
         while len(ausencias) < num_puntos:
             pnt = Point(np.random.uniform(minx, maxx), np.random.uniform(miny, maxy))
-            if anillo_cr.contains(pnt):
+            if zona_muestreo.contains(pnt):
                 ausencias.append(pnt)
-                
+
         ausencias_gdf = gpd.GeoDataFrame(geometry=ausencias, crs="EPSG:4326")
-        print(f"[INFO] Se generaron {len(ausencias_gdf)} pseudo-ausencias balanceadas.")
+        print(f"[INFO] Se generaron {len(ausencias_gdf)} pseudo-ausencias.")
         return ausencias_gdf
 
-    def build_environmental_matrix(self, presencias_gdf, country_bounds, raster_paths, ecoregions_gdf=None):
+    def build_environmental_matrix(self, presencias_gdf, country_bounds, raster_paths, ecoregions_gdf=None, use_extent_background=False, num_pseudoausencias=500):
         """
         Construye la matriz final combinando presencias, pseudo-ausencias,
         clima (WorldClim) y datos categoricos (Zonas de Vida).
+
+        Parámetros:
+        - use_extent_background: True para Mesoamérica (fondo amplio), False para CR (anillo).
+        - num_pseudoausencias: Número de pseudo-ausencias a generar.
         """
         print("[INFO] Construyendo la matriz ambiental combinada...")
-        
+
         # 1. Generar Pseudo-ausencias
-        ausencias_gdf = self.generate_pseudo_absences(presencias_gdf, country_bounds)
+        ausencias_gdf = self.generate_pseudo_absences(
+            presencias_gdf, country_bounds,
+            num_puntos=num_pseudoausencias,
+            use_extent_background=use_extent_background
+        )
         
         # 2. Combinar puntos (Presencias = 1, Ausencias = 0)
         presencias_gdf['clase'] = 1

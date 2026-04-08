@@ -21,6 +21,7 @@ os.makedirs(OUTPUT_BASE_DIR, exist_ok=True)
 #Ponerla en un archivo .env
 load_dotenv()
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # 4. GESTOR DE DIRECTORIOS DE EJECUCION
 def crear_directorio_ejecucion(especie_nombre):
