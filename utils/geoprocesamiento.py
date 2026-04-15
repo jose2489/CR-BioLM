@@ -31,12 +31,19 @@ def extraer_altitud(df, ruta_altitud):
     # =======================================
     
     with rasterio.open(ruta_altitud) as src_alt:
+        nodata = src_alt.nodata  # typically -32768 for Int16 DEMs
         for idx, row in df.iterrows():
-            # Usamos las columnas dinámicas que encontramos arriba
             lon, lat = row[lon_col], row[lat_col]
             try:
                 for val in src_alt.sample([(lon, lat)]):
-                    valores_altitud.append(val[0])
+                    pixel = val[0]
+                    # Reject nodata values (e.g. -32768) and implausible negatives
+                    if nodata is not None and pixel == nodata:
+                        valores_altitud.append(None)
+                    elif pixel < -500:  # safety net for any nodata variant
+                        valores_altitud.append(None)
+                    else:
+                        valores_altitud.append(pixel)
             except Exception:
                 valores_altitud.append(None)
                 

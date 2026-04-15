@@ -39,20 +39,3 @@ def traducir_variable(var_tecnica):
 def traducir_lista_variables(lista_tecnica):
     """Traduce una lista completa de variables (ideal para Pandas y LIME)."""
     return [traducir_variable(var) for var in lista_tecnica]
-
-def traducir_variable(var_tecnica):
-    """Convierte un código técnico a un nombre legible."""
-    if not var_tecnica:
-        return "variables ambientales"
-        
-    if var_tecnica in NOMBRES_VARIABLES:
-        return NOMBRES_VARIABLES[var_tecnica]
-    
-    if var_tecnica.startswith("Eco_"):
-        return var_tecnica.replace("Eco_", "Zona: ").replace("_", " ").title()
-    
-    return var_tecnica
-
-def traducir_lista_variables(lista_tecnica):
-    """Traduce una lista completa de variables (ideal para Pandas y LIME)."""
-    return [traducir_variable(var) for var in lista_tecnica]

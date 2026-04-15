@@ -1,26 +1,22 @@
 import os
 import argparse
 import config
-import torch # Aseguramos tener torch a mano
 import numpy as np
-import argparse
 
 from sklearn.model_selection import train_test_split
 from utils.visualizer import Visualizer
 from xai.lime_explainer import LIMEExplainer
-from data.ecoregions_loader import EcoregionsLoader
 from data.gbif_extractor import GBIFExtractor
 from data.expert_maps import ExpertMapLoader
 from data.climate_loader import ClimateLoader
 from data.geoprocessor import Geoprocessor
 from models.random_forest import RandomForestSDM
-from xai.shap_explainer import SHAPExplainer
-from llm.groq_client import GroqAnalyst
 from models.cnn_model import CNNSDM
-from sklearn.model_selection import train_test_split
+from xai.shap_explainer import SHAPExplainer
 from xai.grad_cam import MultimodalGradCAM
 from utils.geoprocesamiento import extraer_altitud, generar_contexto_conservacion
 from llm.openrouter_client import OpenRouterClient
+from utils.map_gen.habitat_map import generate_habitat_map
 
 
 def procesar_especie(especie_nombre, user_question=None):
@@ -45,15 +41,8 @@ def procesar_especie(especie_nombre, user_question=None):
         print("[ADVERTENCIA] No se pudo cargar el límite Mesoamericano. Se usará solo CR.")
         meso_bounds = cr_bounds
 
-    # 3. Cargar mapa experto recortado a CR (solo para visualización)
-    expert_map_cr = map_loader.load_expert_range(especie_nombre, cr_bounds)
-    if expert_map_cr is None:
-        print("[ADVERTENCIA] Mapa experto (BIEN) no encontrado de forma automatica.")
-        print("[ACCION REQUERIDA] Sugerencia para futuras ejecuciones:")
-        print("   1. Descargue el rango experto manualmente desde IUCN (iucnredlist.org) o Map of Life (mol.org).")
-        print(f"   2. Guarde el archivo Shapefile (.shp y dependencias) con el nombre: '{especie_nombre.replace(' ', '_')}.shp'")
-        print(f"   3. Ubiqulo en el directorio: {map_loader.expert_dir}")
-        print("[INFO] El pipeline continuara su ejecucion modelando unicamente sobre gradientes climaticos.")
+    # 3. Mapa experto BIEN reemplazado por mapa de hábitat del Manual de Plantas CR
+    expert_map_cr = None  # ya no se usa BIEN
 
     # 4. Ingesta de presencias GBIF — Mesoamérica para entrenamiento, CR para outputs
     extractor = GBIFExtractor()
@@ -74,23 +63,12 @@ def procesar_especie(especie_nombre, user_question=None):
 
     print(f"[INFO] Presencias Mesoamérica: {len(presencias_meso)} | Solo CR: {len(presencias_cr)}")
 
-    # Mapa multicapa con presencias y límite CR
+    # Mapa Mesoamericano de entrenamiento (overview de todos los puntos)
     vis = Visualizer()
-    vis.plot_spatial_overlap(
-        species_name=especie_nombre,
-        country_boundary=cr_bounds,
-        expert_map=expert_map_cr,
-        presencias_gdf=presencias_cr,
-        output_dir=out_dir
-    )
-
-    # Mapa de distribución Mesoamericana (todos los puntos de entrenamiento)
-    # Necesitamos el mapa experto sin recortar a CR para este mapa
-    expert_map_meso = map_loader.load_expert_range(especie_nombre, meso_bounds) if expert_map_cr is not None else None
     vis.plot_mesoamerica_overview(
         species_name=especie_nombre,
         meso_boundary=meso_bounds,
-        expert_map=expert_map_meso,
+        expert_map=None,
         presencias_meso=presencias_meso,
         presencias_cr=presencias_cr,
         output_dir=out_dir
@@ -99,6 +77,59 @@ def procesar_especie(especie_nombre, user_question=None):
     # Enriquecer presencias CR con topografía (raster solo cubre CR)
     ruta_altitud = os.path.join("data_raw", "topography", "altitud_cr.tif")
     presencias_cr = extraer_altitud(presencias_cr, ruta_altitud)
+
+    # --- Mapa de hábitat principal: Manual de Plantas CR + Unidades Fitogeográficas + GBIF ---
+    import pandas as pd
+    _catalog_path = os.path.join("outputs", "picked_species_enhanced_clean.csv")
+    ruta_mapa_manual = None
+    texto_manual = ""
+    try:
+        _catalog = pd.read_csv(_catalog_path)
+        _row = _catalog[_catalog['species'] == especie_nombre]
+        if not _row.empty:
+            r = _row.iloc[0]
+            ruta_mapa_manual = generate_habitat_map(
+                species_name=especie_nombre,
+                geographic_notes=r.get('geographic_notes'),
+                elevation_min=r.get('elevation_min_m'),
+                elevation_max=r.get('elevation_max_m'),
+                presencias_gdf=presencias_cr,
+                output_path=os.path.join(out_dir, "mapa_habitat_manual.png"),
+            )
+            # Build summary text for the LLM prompt
+            parts = []
+            geo = str(r.get('geographic_notes', '') or '').strip()
+            if geo and geo.lower() != 'nan':
+                parts.append(f"Distribución geográfica (Manual): {geo}")
+            emin, emax = r.get('elevation_min_m'), r.get('elevation_max_m')
+            if emin and emax:
+                parts.append(f"Rango altitudinal: {int(emin)}–{int(emax)} m s.n.m.")
+            hab = str(r.get('habitat_type', '') or '').strip()
+            if hab and hab.lower() != 'nan':
+                parts.append(f"Tipo de hábitat: {hab}")
+            texto_manual = "── Manual de Plantas de Costa Rica ──\n" + "\n".join(parts) if parts else ""
+
+            # Guardar ficha de referencia del Manual (para evaluación posterior)
+            nombre_limpio = especie_nombre.replace(" ", "_")
+            ruta_ficha = os.path.join(out_dir, f"{nombre_limpio}_ficha_MdP.txt")
+            with open(ruta_ficha, "w", encoding="utf-8") as f:
+                f.write(f"FICHA DE REFERENCIA — Manual de Plantas de Costa Rica\n")
+                f.write(f"{'='*60}\n")
+                f.write(f"Especie          : {especie_nombre}\n")
+                f.write(f"Familia          : {r.get('family', 'N/D')}\n")
+                f.write(f"Volumen          : {r.get('volume_title', 'N/D')}\n")
+                f.write(f"{'='*60}\n\n")
+                f.write(f"Distribución geográfica:\n  {r.get('geographic_notes', 'N/D')}\n\n")
+                f.write(f"Rango altitudinal:\n  {r.get('elevation_min_m', '?')}–{r.get('elevation_max_m', '?')} m s.n.m.\n\n")
+                f.write(f"Tipo de hábitat:\n  {r.get('habitat_type', 'N/D')}\n\n")
+                f.write(f"Descripción original (habitat_raw):\n  {r.get('habitat_raw', 'N/D')}\n\n")
+                f.write(f"Ocurrencias GBIF en catálogo:\n  {r.get('occurrences', 'N/D')}\n")
+            print(f"[INFO] Ficha Manual guardada: {ruta_ficha}")
+            print(f"[INFO] Mapa hábitat Manual generado: {ruta_mapa_manual}")
+        else:
+            print(f"[INFO] '{especie_nombre}' no encontrada en el catálogo del Manual — mapa de hábitat omitido.")
+    except Exception as e:
+        print(f"[WARN] No se pudo generar el mapa del Manual: {e}")
 
     # 5. Rasters climáticos recortados a Mesoamérica (para entrenamiento del RF)
     climate_loader = ClimateLoader()
@@ -231,36 +262,16 @@ def procesar_especie(especie_nombre, user_question=None):
     # Contexto de conservación usando presencias CR-only (los vectores son capas de CR)
     contexto_conservacion = generar_contexto_conservacion(presencias_cr, rutas_vectores)
 
-    # 10. IA Generativa (Comparativa de LLMs) Solo Texto y modelos matematicos 
-    #Deprecated por modelos multimodales.
-    """    llm_analyst = GroqAnalyst()
-        modelos_a_evaluar = [
-            "llama-3.3-70b-versatile",
-            "qwen/qwen3-32b",
-            "moonshotai/kimi-k2-instruct-0905"     
-        ]
-        print("[INFO] Iniciando bloque de generacion de perfiles (IA Generativa)...")
-
-        area_km2 = None
-        for modelo in modelos_a_evaluar:
-            llm_analyst.generate_profile(
-                species_name=especie_nombre,
-                rf_metrics=rf_metrics,
-                shap_dict=shap_data,
-                output_dir=out_dir,
-                area_km2=area_km2,
-                user_question=user_question, # Pasamos la pregunta de la terminal
-                model_override=modelo,
-                contexto_conservacion=contexto_conservacion
-            )
-    """
     # ==========================================================
-    # 10. IA Generativa (Agente Híbrido Multimodal - DEMO)
+    # 10. IA Generativa (Agente Híbrido Multimodal)
     # ==========================================================
     print("\n" + "="*40)
     print("[FASE] Iniciando Modelado Híbrido (Visión + Matemáticas)")
     
-    ruta_del_mapa = os.path.join(out_dir, "mapa_solapamiento_espacial.png")
+    # Imagen 1 → mapa hábitat Manual (con GBIF points) — fuente botánica
+    # Imagen 2 → mapa solapamiento espacial RF (si existe) — fuente predictiva
+    ruta_del_mapa = ruta_mapa_manual or os.path.join(out_dir, "mapa_solapamiento_espacial.png")
+    ruta_mapa_rf  = os.path.join(out_dir, "mapa_solapamiento_espacial.png")
 
     # --- EXTRACCIÓN DE ALTITUD desde presencias CR (raster CR-only) ---
     info_altitud = "No disponible"
@@ -268,10 +279,12 @@ def procesar_especie(especie_nombre, user_question=None):
         col_altitud = [c for c in presencias_cr.columns if 'alt' in c.lower()]
         if col_altitud:
             nombre_col = col_altitud[0]
-            alt_min = presencias_cr[nombre_col].min()
-            alt_max = presencias_cr[nombre_col].max()
-            alt_med = presencias_cr[nombre_col].mean()
-            info_altitud = f"{alt_min:.0f} - {alt_max:.0f} msnm (Promedio: {alt_med:.0f} m)"
+            alt_series = presencias_cr[nombre_col].dropna()
+            if not alt_series.empty:
+                alt_min = alt_series.min()
+                alt_max = alt_series.max()
+                alt_med = alt_series.mean()
+                info_altitud = f"{alt_min:.0f} - {alt_max:.0f} msnm (Promedio: {alt_med:.0f} m)"
             print(f"[INFO] Altitud detectada (CR): {info_altitud}")
     except Exception as e:
         print(f"[WARN] Error al procesar estadística de altitud: {e}")
@@ -281,7 +294,7 @@ def procesar_especie(especie_nombre, user_question=None):
     modelos_multimodales = [
         "openai/gpt-4o",                # El líder general
         #"google/gemini-1.5-pro",        # Excelente comprensión de contexto largo e imágenes
-        "anthropic/claude-3.5-sonnet"  # El mejor razonamiento lógico actual
+        "anthropic/claude-opus-4-5"    # El mejor razonamiento lógico actual
         # "qwen/qwen2-vl-72b-instruct"  # (Opcional) Si quieres mantener a Qwen en la comparativa
     ]
 
@@ -296,39 +309,18 @@ def procesar_especie(especie_nombre, user_question=None):
                 rf_metrics=rf_metrics,
                 shap_dict=shap_data,
                 output_dir=out_dir,
-                image_path=ruta_del_mapa,
+                image_path=ruta_del_mapa,          # imagen 1: hábitat Manual + GBIF
                 user_question=user_question,
-                model_override=modelo_vlm,  # <- Aquí inyectamos el modelo en cada vuelta
-                info_altitud=info_altitud
+                model_override=modelo_vlm,
+                info_altitud=info_altitud,
+                manual_image_path=ruta_mapa_rf,    # imagen 2: mapa predictivo RF
+                texto_manual=texto_manual
             )
             
     except Exception as e:
         print(f"[ERROR] Fallo en la inicialización del Agente Híbrido: {e}")
     # ==========================================================
 
-    # =================================================================
-    # 11. Ejecución del Baseline Dual (Comparativa Visual)
-    # =================================================================
-    #from llm.dual_baseline_client import DualBaselineAnalyst
-    
-    #print("[INFO] Iniciando ejecución del Modelo Dual (Baseline Visión + Texto)...")
-    
-    # Buscamos la imagen que se generó en el paso de visualización
-    # (Asegúrate de que la extensión sea .png o .jpg según lo que genere tu código)
-    #ruta_mapa = os.path.join(out_dir, "mapa_solapamiento_espacial.png") 
-    
-    #try:
-    #    baseline_analyst = DualBaselineAnalyst()
-    #    baseline_analyst.generate_profile(
-    #        species_name=especie_nombre,
-    #        image_path=ruta_mapa,
-    #        output_dir=out_dir,
-    #        user_question=user_question  # Le pasamos la misma pregunta de la terminal
-    #    )
-   # except Exception as e:
-    #    print(f"[ERROR] No se pudo ejecutar el Baseline Dual: {e}")
-
-    # =================================================================
     print(f"\n[EXITO] Pipeline completado para {especie_nombre}.")
     return True
 

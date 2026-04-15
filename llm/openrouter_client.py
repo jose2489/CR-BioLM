@@ -18,8 +18,9 @@ class OpenRouterClient:
         with open(ruta_imagen, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
 
-    def generate_profile(self, species_name, rf_metrics, shap_dict, output_dir, image_path, 
-                         user_question=None, model_override=None, info_altitud="No disponible"):
+    def generate_profile(self, species_name, rf_metrics, shap_dict, output_dir, image_path,
+                         user_question=None, model_override=None, info_altitud="No disponible",
+                         manual_image_path=None, texto_manual=""):
         """Orquesta la extracción de datos, inyección de prompt, inferencia y guardado."""
         
         modelo_a_usar = model_override if model_override else self.model
@@ -70,6 +71,15 @@ class OpenRouterClient:
         pregunta_texto = user_question if user_question else "Analiza el hábitat ideal de esta especie."
 
         # Asegúrate de que las llaves de .format() coincidan exactamente con tu BIMODAL_PROMPT
+        fuente_manual = ""
+        if texto_manual:
+            fuente_manual = (
+                "\nFUENTE 3: REFERENCIA BOTÁNICA (Manual de Plantas de Costa Rica)\n"
+                + texto_manual
+                + "\nLa imagen 2 adjunta muestra el hábitat potencial según el Manual, "
+                "cruzado con las Unidades Fitogeográficas de CR. Úsala para validar o "
+                "contrastar los hallazgos matemáticos del modelo predictivo.\n"
+            )
         try:
             prompt_listo = BIMODAL_PROMPT.format(
                 species_name=species_name,
@@ -81,6 +91,7 @@ class OpenRouterClient:
                 secundaria_1=secundaria_1,
                 secundaria_2=secundaria_2,
                 area_texto="No calculada", # Por si aún tienes esta llave en el template
+                fuente_manual=fuente_manual,
                 instruccion_pregunta=f"PREGUNTA DEL USUARIO: {pregunta_texto}"
             )
         except KeyError as e:
@@ -88,24 +99,34 @@ class OpenRouterClient:
             return False
 
         # ==========================================================
-        # 3. CODIFICAR IMAGEN Y ARMAR PAYLOAD PARA LA API
+        # 3. CODIFICAR IMAGEN(ES) Y ARMAR PAYLOAD PARA LA API
         # ==========================================================
         imagen_base64 = self._codificar_imagen(image_path)
-        
+
+        content_parts = [
+            {"type": "text", "text": prompt_listo},
+            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{imagen_base64}"}}
+        ]
+
+        if manual_image_path and os.path.isfile(str(manual_image_path)):
+            manual_b64 = self._codificar_imagen(str(manual_image_path))
+            content_parts.append({
+                "type": "image_url",
+                "image_url": {"url": f"data:image/png;base64,{manual_b64}"}
+            })
+            print(f"[INFO] Segunda imagen (Manual) adjunta: {manual_image_path}")
+
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
-        
+
         payload = {
             "model": modelo_a_usar,
             "messages": [
                 {
                     "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt_listo},
-                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{imagen_base64}"}}
-                    ]
+                    "content": content_parts
                 }
             ]
         }
@@ -129,9 +150,10 @@ Especie          : {species_name}
 Pregunta Usuario : {pregunta_texto}
 
 FUENTES DE DATOS Y VARIABLES ESPACIALES INTEGRADAS:
-- Presencias     : Registros limpios de GBIF.
-- Mapa Visual    : {image_path.split(os.sep)[-1]}
-- Modelo Clínico : Random Forest (AUC: {rf_auc:.4f})
+- Imagen 1       : {os.path.basename(str(image_path))} — Hábitat botánico (Manual + Ufito + GBIF)
+- Imagen 2       : {os.path.basename(str(manual_image_path)) if manual_image_path else 'N/A'} — Modelo predictivo RF
+- Modelo RF      : Random Forest (AUC: {rf_auc:.4f})
+- Presencias     : Registros GBIF limpios (Mesoamérica para RF, CR para mapa)
 ================================================================================
 
 [ANÁLISIS HÍBRIDO GENERADO POR IA]
