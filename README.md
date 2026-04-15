@@ -44,7 +44,7 @@ OPENROUTER_API_KEY=tu_llave_aqui
 
 ### Datos geoespaciales requeridos (`data_raw/`)
 
-Descarga desde: https://drive.google.com/drive/folders/10jiTbZTVk_1yVn-YLimAWxNzfDQEOb0H?usp=sharing
+Los archivos geoespaciales no se distribuyen públicamente en este repositorio debido a su tamaño y licencias. Para obtenerlos, contacta al autor en jose2489@gmail.com.
 
 | Archivo | Descripción |
 |---|---|
