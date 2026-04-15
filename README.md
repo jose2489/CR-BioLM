@@ -1,47 +1,157 @@
-# CR-BioLM: Pipeline Automatizado de ingesta y generación de respuesta de especies de plantas en Costa Rica con contexto geoespacial
+# CR-BioLM: Pipeline Multimodal de Modelado de Distribución de Especies para Costa Rica
 
-CR-BioLM es una arquitectura modular diseñada para automatizar el generar respuestas biologicas de especies de plantas de Costa Rica con contexto geoespacial. Integra la descarga de datos espaciales (GBIF, BIEN, WorldClim), el entrenamiento de modelos de Machine Learning (Random Forest), explicabilidad espacial (SHAP) y la sintesis de resultados utilizando Inteligencia Artificial Generativa (Llama 3.3, Mixtral, Gemma, etc).
+CR-BioLM es una arquitectura modular de investigación que integra **registros de presencia GBIF**, **variables bioclimáticas WorldClim**, **mapas de hábitat botánico** basados en el *Manual de Plantas de Costa Rica* (Hammel et al.) y **modelos de lenguaje multimodal (LLM)** para generar análisis ecológicos automáticos de plantas de Costa Rica.
 
-## Prerequisitos del Sistema
+El sistema entrena un modelo Random Forest por especie, lo explica con SHAP y LIME, genera dos mapas complementarios, y consulta a uno o más LLMs (GPT-4o, Claude) con ambas imágenes y métricas para producir una respuesta ecológica estructurada.
 
-Para garantizar la ejecucion correcta de este pipeline, el sistema debe contar con:
-1. Python 3.8 o superior.
-2. R y Rscript instalados y agregados a las Variables de Entorno (PATH) del sistema operativo.
-3. Una clave de API de Groq configurada como variable de entorno (`GROQ_API_KEY`).
+---
 
-## Instalacion y Configuracion
+## Arquitectura General
 
-1. Clona el repositorio: `git clone https://github.com/jose2489/CR-BioLM`
-2. Instala las dependencias: `pip install -r requirements.txt`
-3. Descarga los mapas base (`data_raw`) desde [https://drive.google.com/drive/folders/10jiTbZTVk_1yVn-YLimAWxNzfDQEOb0H?usp=sharing] y colócalos en el folder de data_raw.
-4. Crea un archivo `.env` y coloca tu API Key: `GROQ_API_KEY=tu_llave`
+```
+GBIF (Mesoamérica) ──► Random Forest ──► SHAP / LIME ──────────────────────────┐
+WorldClim (19 bio) ──►                                                          │
+                                                                                ▼
+Manual de Plantas CR ──► Mapa de Hábitat Botánico ──►  LLM Multimodal (OpenRouter)
+Unidades Fitogeográficas    (3 capas: gris/muted/cyan)   GPT-4o + Claude Opus
+DEM (altitud) ──────────►  + puntos GBIF en CR                                  │
+                                                                                ▼
+                                                              Perfil Ecológico (.txt)
+```
+
+---
+
+## Prerequisitos
+
+- Python 3.10 o superior
+- Una clave de API de **OpenRouter** (`OPENROUTER_API_KEY`)
+- Archivos de datos geoespaciales en `data_raw/` (ver abajo)
+
+No se requiere R ni ninguna otra dependencia externa.
+
+## Instalación
+
+```bash
+git clone https://github.com/jose2489/CR-BioLM
+cd CR-BioLM
+pip install -r requirements.txt
+```
+
+Crea un archivo `.env` con tu clave de OpenRouter:
+```
+OPENROUTER_API_KEY=tu_llave_aqui
+```
+
+### Datos geoespaciales requeridos (`data_raw/`)
+
+Descarga desde: https://drive.google.com/drive/folders/10jiTbZTVk_1yVn-YLimAWxNzfDQEOb0H?usp=sharing
+
+| Archivo | Descripción |
+|---|---|
+| `altitud_cr.tif` | DEM de Costa Rica (Int16, EPSG:4326) |
+| `unidades_fitogeograficas_cr/` | Shapefile Unidades Fitogeográficas (Hammel 2014) |
+| `wc2.1_30s_bio_*.tif` | Variables bioclimáticas WorldClim (19 capas) |
+| `ASP_2023/` | Shapefile de Áreas Silvestres Protegidas de CR |
+
+---
 
 ## Uso
-Para correr el pipeline para una especie, ejecuta:
-`python main.py -s "Quercus costaricensis"`
-## Instrucciones de Uso
 
-El pipeline esta diseñado para ser ejecutado desde la terminal a traves del archivo main.py. Soporta dos modos de ejecucion:
-Modo Individualgit init
+### Especie individual
 
-Para modelar y analizar una sola especie, utilice el argumento -s (species) seguido del nombre cientifico entre comillas:
-Bash
+```bash
+python main.py -s "Quercus costaricensis"
+```
 
-    python main.py -s "Quercus costaricensis"
+### Con pregunta libre para el LLM
 
-## Modo por Lotes (Batch)
+```bash
+python main.py -s "Quercus costaricensis" -q "¿Cómo le afecta el cambio climático?"
+```
 
-Para procesar multiples especies de forma desatendida, cree un archivo de texto (ej. lista_especies.txt) con un nombre cientifico por linea y utilice el argumento -f (file):
-Bash
+### Con pregunta del banco por perfil de usuario
 
-    python main.py -f lista_especies.txt
+```bash
+# Perfil turista (preguntas de experiencia y lugar)
+python main.py -s "Guzmania nicaraguensis" --persona turista
 
-## Resultados Esperados
+# Perfil botánico (variables climáticas, nicho, coherencia con el Manual)
+python main.py -s "Guzmania nicaraguensis" --persona botanico
 
-Por cada especie procesada, el sistema creara dinamicamente una carpeta en el directorio outputs/ etiquetada con la fecha y hora de ejecucion. Dentro de esta carpeta encontrara:
+# Perfil municipalidad (impacto territorial, cantón y proyecto específicos)
+python main.py -s "Cecropia obtusifolia" --persona municipalidad --canton "Sarapiquí" --proyecto "proyecto hidroeléctrico"
 
-    Mapas de solapamiento espacial en alta resolucion (.png).
+# Municipalidad con cantón/proyecto aleatorio
+python main.py -s "Cecropia obtusifolia" --persona municipalidad
+```
 
-    Graficos de impacto global y explicabilidad SHAP (.png).
+### Modo batch (múltiples especies)
 
-    Perfiles de nicho ecologico redactados por los diferentes modelos LLM (.txt).
+```bash
+# Pregunta fija para todas
+python main.py -f lista_especies.txt -q "¿Cuál es el rango altitudinal óptimo?"
+
+# Pregunta aleatoria del banco por especie (ideal para evaluación)
+python main.py -f lista_especies.txt --persona botanico
+```
+
+El archivo de lista es un `.txt` con un nombre científico por línea.
+
+---
+
+## Salidas por Especie
+
+Por cada ejecución se crea `outputs/{Especie}/run_{timestamp}/` con:
+
+| Archivo | Descripción |
+|---|---|
+| `mapa_habitat_manual.png` | Mapa de hábitat botánico (gris / muted / cyan + GBIF) |
+| `mapa_distribucion_mesoamerica.png` | Distribución regional Mesoamericana (entrenamiento RF) |
+| `shap_summary.png` | Importancia global de variables (SHAP) |
+| `lime_local_explanation.png` | Explicabilidad local para un punto de alta idoneidad |
+| `matriz_confusion.png` | Evaluación del modelo Random Forest |
+| `{Especie}_ficha_MdP.txt` | Ficha de referencia del Manual de Plantas (para evaluación) |
+| `llm_profile_BIMODAL_openai_gpt_4o.txt` | Análisis ecológico GPT-4o (Razonamiento + Respuesta) |
+| `llm_profile_BIMODAL_anthropic_claude_opus_4_5.txt` | Análisis ecológico Claude Opus |
+
+### Formato de respuesta LLM
+
+Cada perfil sigue la estructura:
+```
+## Razonamiento
+• Máximo 5 viñetas cruzando las tres fuentes (mapa botánico, modelo climático, GBIF)
+
+## Respuesta
+3-4 oraciones directas respondiendo la pregunta con zonas geográficas concretas.
+```
+
+---
+
+## Banco de Preguntas (`utils/question_bank.py`)
+
+28 preguntas organizadas en 3 perfiles:
+
+| Perfil | Foco | Ejemplos |
+|---|---|---|
+| `turista` | Lugar, experiencia, floración | "¿Puedo verla en Braulio Carrillo?" |
+| `botanico` | Nicho climático, variables, coherencia Manual vs modelo | "¿Cuál es la variable más limitante?" |
+| `municipalidad` | Impacto territorial, EIA, corredores biológicos | "¿Hay impacto si se aprueba un {proyecto} en {canton}?" |
+
+Las preguntas de municipalidad aceptan `--canton` y `--proyecto` como parámetros; si se omiten, se eligen aleatoriamente de las listas incluidas (82 cantones, 10 tipos de proyecto).
+
+---
+
+## Catálogo de Especies (`outputs/picked_species_enhanced_clean.csv`)
+
+Contiene ~100 especies seleccionadas del *Manual de Plantas de Costa Rica* con:
+- Nombre científico, familia, volumen
+- Hábitat, tipo de ecosistema
+- Rango altitudinal (min/max)
+- Notas geográficas (para traducción al shapefile de Unidades Fitogeográficas)
+- Número de ocurrencias GBIF disponibles
+
+---
+
+## Cita / Referencia
+
+> Araya, J. (2026). *CR-BioLM: Pipeline multimodal de modelado de distribución de especies de plantas de Costa Rica usando Machine Learning e Inteligencia Artificial Generativa*. Tesis de Maestría.

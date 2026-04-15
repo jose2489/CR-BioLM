@@ -341,32 +341,47 @@ def leer_lista_especies(ruta_archivo):
 
 if __name__ == "__main__":
     # Configuracion de argumentos de terminal
+    from utils.question_bank import get_random_question
+
     parser = argparse.ArgumentParser(description="Ejecutor del Pipeline CR-BioLM.")
     parser.add_argument("-s", "--species", type=str, help="Ejecutar para una sola especie. Ej: 'Quercus costaricensis'")
     parser.add_argument("-f", "--file", type=str, help="Ruta a un archivo .txt con una lista de especies (una por linea).")
-    
-    # NUEVO: Argumento opcional para la pregunta del usuario
-    parser.add_argument("-q", "--question", type=str, help="Pregunta especifica para que el LLM responda basandose en el modelo.", default=None)
-    
+    parser.add_argument("-q", "--question", type=str, default=None,
+                        help="Pregunta libre para el LLM.")
+    parser.add_argument("--persona", type=str, default=None, choices=["turista", "botanico", "municipalidad"],
+                        help="Selecciona una pregunta aleatoria del banco según el perfil de usuario.")
+    parser.add_argument("--canton", type=str, default=None,
+                        help="Cantón para preguntas de municipalidad (ej: 'Nicoya'). Si se omite, se elige aleatoriamente.")
+    parser.add_argument("--proyecto", type=str, default=None,
+                        help="Tipo de proyecto para preguntas de municipalidad (ej: 'proyecto hidroeléctrico').")
+
     args = parser.parse_args()
-    
+
+    # Resolver la pregunta: explícita > banco por persona > None
+    def resolver_pregunta():
+        if args.question:
+            return args.question
+        if args.persona:
+            q = get_random_question(args.persona, canton=args.canton, proyecto=args.proyecto)
+            print(f"[INFO] Pregunta seleccionada [{args.persona}]: {q}")
+            return q
+        return None
+
     if args.species:
-        # Pasamos la especie y la pregunta
-        procesar_especie(args.species, args.question)
-        
+        procesar_especie(args.species, resolver_pregunta())
+
     elif args.file:
         lista_especies = leer_lista_especies(args.file)
         print(f"[INFO] Modo Batch iniciado. Se detectaron {len(lista_especies)} especies en el archivo.")
-        
-        if args.question:
-            print(f"[INFO] Pregunta global detectada para el lote: '{args.question}'")
-        
         for i, especie in enumerate(lista_especies, 1):
             print(f"\n[LOTE {i}/{len(lista_especies)}]")
-            # Pasamos la especie y la pregunta a cada iteración
-            procesar_especie(especie, args.question)
-            
+            # En batch: si hay persona, cada especie obtiene una pregunta aleatoria independiente
+            procesar_especie(especie, resolver_pregunta())
+
     else:
         print("[ERROR] Debes proporcionar un argumento. Usa -s para una especie o -f para una lista txt.")
         print("Ejemplo 1: python main.py -s \"Quercus costaricensis\"")
         print("Ejemplo 2: python main.py -s \"Quercus costaricensis\" -q \"¿Cómo le afecta el cambio climático?\"")
+        print("Ejemplo 3: python main.py -s \"Quercus costaricensis\" --persona botanico")
+        print("Ejemplo 4: python main.py -s \"Quercus costaricensis\" --persona municipalidad --canton Nicoya")
+        print("Ejemplo 5: python main.py -f especies.txt --persona turista  (pregunta aleatoria por especie)")
