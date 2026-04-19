@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}CR-BioLM{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .tier-T1 { background:#64748b; }
+    .tier-T2 { background:#6366f1; }
+    .tier-T3 { background:#10b981; }
+    .badge-T1 { @apply bg-slate-500 text-white text-xs font-bold px-2 py-0.5 rounded; }
+    .badge-T2 { @apply bg-indigo-500 text-white text-xs font-bold px-2 py-0.5 rounded; }
+    .badge-T3 { @apply bg-emerald-500 text-white text-xs font-bold px-2 py-0.5 rounded; }
+    .gt-panel  { border-left: 4px solid #f59e0b; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    .score-dot-filled   { color: #10b981; }
+    .score-dot-empty    { color: #d1d5db; }
+    .score-dot-medium   { color: #f59e0b; }
+    .score-dot-low      { color: #f97316; }
+    .score-dot-zero     { color: #ef4444; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-full">
+
+  <!-- Nav -->
+  <nav class="bg-gray-900 text-white px-6 py-3 flex items-center gap-6 sticky top-0 z-50 shadow-lg">
+    <a href="/" class="font-bold text-lg tracking-tight text-emerald-400">CR-BioLM</a>
+    <span class="text-gray-500 text-sm">Experiment Viewer</span>
+    <div class="flex-1"></div>
+    {% block nav_extra %}{% endblock %}
+  </nav>
+
+  <!-- Content -->
+  <main class="max-w-7xl mx-auto px-4 py-8">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="text-center text-xs text-gray-400 py-6 mt-8 border-t border-gray-200">
+    CR-BioLM · Tesis de Maestría · {{ now if now else "2026" }}
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

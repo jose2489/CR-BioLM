@@ -1,8 +1,14 @@
+import io
 import os
 import base64
 import requests
+from PIL import Image
 # IMPORTANTE: Asegúrate de importar la función traducir_variable desde tu archivo de templates
-from .prompt_templates import BIMODAL_PROMPT, traducir_variable
+from .prompt_templates import PROMPT_T0, PROMPT_T1, PROMPT_T2, PROMPT_T3, _REGLA_STRICTA, traducir_variable
+
+TIER_PROMPTS = {"T0": PROMPT_T0, "T1": PROMPT_T1, "T2": PROMPT_T2, "T3": PROMPT_T3}
+
+MAX_IMG_PX = 1024  # max pixels on the longest edge before base64 encoding
 
 class OpenRouterClient:
     def __init__(self, api_key, model="openai/gpt-4o"):
@@ -13,14 +19,20 @@ class OpenRouterClient:
         self.model = model
         self.url = "https://openrouter.ai/api/v1/chat/completions"
 
-    def _codificar_imagen(self, ruta_imagen):
-        """Convierte la imagen a Base64."""
-        with open(ruta_imagen, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
+    def _codificar_imagen(self, ruta_imagen, max_px=MAX_IMG_PX):
+        """Redimensiona la imagen a max_px en el lado más largo, luego convierte a Base64."""
+        img = Image.open(ruta_imagen)
+        img.thumbnail((max_px, max_px), Image.LANCZOS)
+        buf = io.BytesIO()
+        fmt = img.format or "PNG"
+        if fmt not in ("PNG", "JPEG", "WEBP"):
+            fmt = "PNG"
+        img.save(buf, format=fmt)
+        return base64.b64encode(buf.getvalue()).decode("utf-8")
 
     def generate_profile(self, species_name, rf_metrics, shap_dict, output_dir, image_path,
                          user_question=None, model_override=None, info_altitud="No disponible",
-                         manual_image_path=None, texto_manual=""):
+                         manual_image_path=None, texto_manual="", tier="T3"):
         """Orquesta la extracción de datos, inyección de prompt, inferencia y guardado."""
         
         modelo_a_usar = model_override if model_override else self.model
@@ -80,41 +92,51 @@ class OpenRouterClient:
                 "cruzado con las Unidades Fitogeográficas de CR. Úsala para validar o "
                 "contrastar los hallazgos matemáticos del modelo predictivo.\n"
             )
+        # Seleccionar prompt según tier — cada uno describe honestamente lo que el LLM recibe
+        template = TIER_PROMPTS.get(tier, PROMPT_T3)
+        print(f"[INFO] Usando prompt {tier}")
+
+        # T1 solo necesita instruccion_pregunta; T2 agrega fuente_manual; T3 agrega métricas RF
+        format_kwargs = dict(
+            species_name=species_name,
+            instruccion_pregunta=f"PREGUNTA DEL USUARIO: {pregunta_texto}",
+            fuente_manual=fuente_manual,
+            _regla=_REGLA_STRICTA,
+            rf_auc=rf_auc,
+            info_altitud=info_altitud,
+            var_humana=var_humana,
+            direccion=direccion,
+            zona_humana=zona_humana,
+            secundaria_1=secundaria_1,
+            secundaria_2=secundaria_2,
+        )
         try:
-            prompt_listo = BIMODAL_PROMPT.format(
-                species_name=species_name,
-                rf_auc=rf_auc,
-                info_altitud=info_altitud,
-                var_humana=var_humana,
-                direccion=direccion,
-                zona_humana=zona_humana,
-                secundaria_1=secundaria_1,
-                secundaria_2=secundaria_2,
-                area_texto="No calculada", # Por si aún tienes esta llave en el template
-                fuente_manual=fuente_manual,
-                instruccion_pregunta=f"PREGUNTA DEL USUARIO: {pregunta_texto}"
-            )
+            prompt_listo = template.format(**format_kwargs)
         except KeyError as e:
-            print(f"[ERROR] Falta una llave en el BIMODAL_PROMPT: {e}. Revisa llm/prompt_templates.py")
+            print(f"[ERROR] Falta una llave en el prompt {tier}: {e}. Revisa llm/prompt_templates.py")
             return False
 
         # ==========================================================
         # 3. CODIFICAR IMAGEN(ES) Y ARMAR PAYLOAD PARA LA API
+        # T0 es texto únicamente — no se envían imágenes
         # ==========================================================
-        imagen_base64 = self._codificar_imagen(image_path)
+        if tier == "T0":
+            content_parts = [{"type": "text", "text": prompt_listo}]
+            print("[INFO] T0: llamada texto-únicamente (sin imágenes)")
+        else:
+            imagen_base64 = self._codificar_imagen(image_path)
+            content_parts = [
+                {"type": "text", "text": prompt_listo},
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{imagen_base64}"}}
+            ]
 
-        content_parts = [
-            {"type": "text", "text": prompt_listo},
-            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{imagen_base64}"}}
-        ]
-
-        if manual_image_path and os.path.isfile(str(manual_image_path)):
-            manual_b64 = self._codificar_imagen(str(manual_image_path))
-            content_parts.append({
-                "type": "image_url",
-                "image_url": {"url": f"data:image/png;base64,{manual_b64}"}
-            })
-            print(f"[INFO] Segunda imagen (Manual) adjunta: {manual_image_path}")
+            if manual_image_path and os.path.isfile(str(manual_image_path)):
+                manual_b64 = self._codificar_imagen(str(manual_image_path))
+                content_parts.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{manual_b64}"}
+                })
+                print(f"[INFO] Segunda imagen (Manual) adjunta: {manual_image_path}")
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -141,19 +163,36 @@ class OpenRouterClient:
             if respuesta.status_code == 200:
                 perfil_texto = respuesta.json()['choices'][0]['message']['content']
                 
-                # Creado de metadatos (Notar que ahora usa {modelo_a_usar} en lugar de {self.model})
+                # Metadata header: tier-aware labels
+                if tier == "T0":
+                    _fuentes_line = "- Fuentes        : NINGUNA — conocimiento previo del LLM únicamente"
+                else:
+                    _img1_label = {
+                        "T1": "Distribución GBIF Mesoamérica (puntos de presencia)",
+                        "T2": "Hábitat botánico (Manual + Unidades Fitogeográficas + GBIF)",
+                        "T3": "Hábitat botánico (Manual + Unidades Fitogeográficas + GBIF)",
+                    }.get(tier, "Imagen 1")
+                    _img2_line = ""
+                    if tier == "T3" and manual_image_path:
+                        _img2_line = f"\n- Imagen 2       : {os.path.basename(str(manual_image_path))} — Modelo predictivo RF"
+                    _rf_line = ""
+                    if tier == "T3":
+                        _rf_line = f"\n- Modelo RF      : Random Forest (AUC: {rf_auc:.4f})"
+                    _fuentes_line = (
+                        f"- Imagen 1       : {os.path.basename(str(image_path))} — {_img1_label}"
+                        f"{_img2_line}{_rf_line}"
+                        f"\n- Presencias     : Registros GBIF limpios (Mesoamérica para RF, CR para mapa)"
+                    )
+                _modalidad = "Texto únicamente" if tier == "T0" else "Visión + Texto"
                 encabezado_metadatos = f"""================================================================================
-METADATOS DEL EXPERIMENTO (Arquitectura CR-BioLM Multimodal)
+METADATOS DEL EXPERIMENTO (Arquitectura CR-BioLM — Tier {tier})
 ================================================================================
-Modelo LLM       : {modelo_a_usar} (Visión + Texto)
+Modelo LLM       : {modelo_a_usar} ({_modalidad})
 Especie          : {species_name}
 Pregunta Usuario : {pregunta_texto}
 
-FUENTES DE DATOS Y VARIABLES ESPACIALES INTEGRADAS:
-- Imagen 1       : {os.path.basename(str(image_path))} — Hábitat botánico (Manual + Ufito + GBIF)
-- Imagen 2       : {os.path.basename(str(manual_image_path)) if manual_image_path else 'N/A'} — Modelo predictivo RF
-- Modelo RF      : Random Forest (AUC: {rf_auc:.4f})
-- Presencias     : Registros GBIF limpios (Mesoamérica para RF, CR para mapa)
+FUENTES DE DATOS PROPORCIONADAS:
+{_fuentes_line}
 ================================================================================
 
 [ANÁLISIS HÍBRIDO GENERADO POR IA]

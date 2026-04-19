@@ -19,7 +19,7 @@ from llm.openrouter_client import OpenRouterClient
 from utils.map_gen.habitat_map import generate_habitat_map
 
 
-def procesar_especie(especie_nombre, user_question=None):
+def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_override=None):
     """
     Ejecuta el pipeline completo de CR-BioLM para una especie especifica.
     Retorna True si fue exitoso, False si fue omitida por falta de datos.
@@ -29,7 +29,8 @@ def procesar_especie(especie_nombre, user_question=None):
     print("=" * 60)
     
     # 1. Preparar directorio de salida
-    out_dir = config.crear_directorio_ejecucion(especie_nombre)
+    out_dir = output_dir_override if output_dir_override else config.crear_directorio_ejecucion(especie_nombre)
+    os.makedirs(out_dir, exist_ok=True)
     print(f"[INFO] Resultados se guardaran en: {out_dir}")
 
     # 2. Cargar geometrías base: CR (para outputs) y Mesoamérica (para entrenamiento)
@@ -83,6 +84,7 @@ def procesar_especie(especie_nombre, user_question=None):
     _catalog_path = os.path.join("outputs", "picked_species_enhanced_clean.csv")
     ruta_mapa_manual = None
     texto_manual = ""
+    alt_manual = None   # (emin, emax) from Manual catalog, used in T3 prompt
     try:
         _catalog = pd.read_csv(_catalog_path)
         _row = _catalog[_catalog['species'] == especie_nombre]
@@ -103,7 +105,11 @@ def procesar_especie(especie_nombre, user_question=None):
                 parts.append(f"Distribución geográfica (Manual): {geo}")
             emin, emax = r.get('elevation_min_m'), r.get('elevation_max_m')
             if emin and emax:
-                parts.append(f"Rango altitudinal: {int(emin)}–{int(emax)} m s.n.m.")
+                try:
+                    alt_manual = (int(float(emin)), int(float(emax)))
+                except Exception:
+                    pass
+                parts.append(f"Rango altitudinal: {int(float(emin))}–{int(float(emax))} m s.n.m.")
             hab = str(r.get('habitat_type', '') or '').strip()
             if hab and hab.lower() != 'nan':
                 parts.append(f"Tipo de hábitat: {hab}")
@@ -214,7 +220,7 @@ def procesar_especie(especie_nombre, user_question=None):
     shap_exp = SHAPExplainer()
     shap_data = shap_exp.explain_and_plot(rf_model, X_test, out_dir)
 
-    # 9.2 LIME (Local) - El microscopio 
+    # 9.2 LIME (Local) - El microscopio
     lime_exp = LIMEExplainer()
     lime_exp.explain_and_plot(rf_model, X_train, X_test, out_dir)
 
@@ -288,33 +294,85 @@ def procesar_especie(especie_nombre, user_question=None):
             print(f"[INFO] Altitud detectada (CR): {info_altitud}")
     except Exception as e:
         print(f"[WARN] Error al procesar estadística de altitud: {e}")
-    # -------------------------------------
+
+    # 9.3 Guardar métricas RF como JSON (para el viewer)
+    import json as _json
+    _factor_limitante = shap_data.get("variable_principal_calculada") if shap_data else None
+    _rf_meta = {
+        "auc":              rf_metrics.get("roc_auc"),
+        "factor_limitante": _factor_limitante,
+        "altitud_rango":    info_altitud,
+        "altitud_manual":   f"{alt_manual[0]}–{alt_manual[1]} msnm" if alt_manual else None,
+    }
+    with open(os.path.join(out_dir, "rf_metrics.json"), "w", encoding="utf-8") as _f:
+        _json.dump(_rf_meta, _f, ensure_ascii=False, indent=2)
+
+    # Configurar contexto según el tier del experimento:
+    #   T0 — sin contexto (conocimiento previo del LLM únicamente, sin imágenes ni datos)
+    #   T1 — solo mapa Mesoamérica (baseline GBIF puro), sin métricas
+    #   T2 — mapa hábitat botánico (Manual + cyan/muted/gris), sin métricas RF
+    #   T3 — mapa hábitat + mapa RF + métricas SHAP/AUC (sistema completo)
+    if tier == "T0":
+        imagen_1      = os.path.join(out_dir, "mapa_distribucion_mesoamerica.png")  # path ignored by client
+        imagen_2      = None
+        rf_envio      = {}
+        shap_envio    = {}
+        alt_envio     = "No disponible"
+    elif tier == "T1":
+        imagen_1      = os.path.join(out_dir, "mapa_distribucion_mesoamerica.png")
+        imagen_2      = None
+        rf_envio      = {}
+        shap_envio    = {}
+        alt_envio     = "No disponible"
+    elif tier == "T2":
+        imagen_1      = ruta_del_mapa
+        imagen_2      = None
+        rf_envio      = {}
+        shap_envio    = {}
+        alt_envio     = "No disponible"
+    else:  # T3 — sistema completo
+        imagen_1   = ruta_del_mapa
+        imagen_2   = ruta_mapa_rf
+        rf_envio   = rf_metrics
+        shap_envio = shap_data
+        # Combine GBIF-detected altitude with Manual reference so the LLM
+        # can reconcile noise instead of blindly reporting GBIF outliers.
+        if alt_manual and info_altitud != "No disponible":
+            alt_envio = (
+                f"GBIF detectado (CR): {info_altitud}  |  "
+                f"Manual de Plantas: {alt_manual[0]}–{alt_manual[1]} msnm\n"
+                f"Nota: el rango GBIF puede incluir registros erróneos. "
+                f"Si hay discrepancia grande, el Manual es más confiable."
+            )
+        else:
+            alt_envio = info_altitud
+
+    print(f"[INFO] Tier {tier}: imagen1={os.path.basename(str(imagen_1))} | imagen2={os.path.basename(str(imagen_2)) if imagen_2 else 'N/A'} | métricas={'sí' if rf_envio else 'no'}")
 
     # Lista de los mejores modelos Multimodales (VLM) en OpenRouter
     modelos_multimodales = [
-        "openai/gpt-4o",                # El líder general
-        #"google/gemini-1.5-pro",        # Excelente comprensión de contexto largo e imágenes
-        "anthropic/claude-opus-4-5"    # El mejor razonamiento lógico actual
-        # "qwen/qwen2-vl-72b-instruct"  # (Opcional) Si quieres mantener a Qwen en la comparativa
+        "openai/gpt-4o",                  # Generador principal
+        "anthropic/claude-sonnet-4-5",    # Generador secundario (costo/rendimiento óptimo para evaluación)
     ]
 
     try:
         # Instanciamos el cliente una sola vez
         or_client = OpenRouterClient(api_key=config.OPENROUTER_API_KEY)
-        
+
         # Iteramos sobre cada modelo
         for modelo_vlm in modelos_multimodales:
             or_client.generate_profile(
                 species_name=especie_nombre,
-                rf_metrics=rf_metrics,
-                shap_dict=shap_data,
+                rf_metrics=rf_envio,
+                shap_dict=shap_envio,
                 output_dir=out_dir,
-                image_path=ruta_del_mapa,          # imagen 1: hábitat Manual + GBIF
+                image_path=imagen_1,
                 user_question=user_question,
                 model_override=modelo_vlm,
-                info_altitud=info_altitud,
-                manual_image_path=ruta_mapa_rf,    # imagen 2: mapa predictivo RF
-                texto_manual=texto_manual
+                info_altitud=alt_envio,
+                manual_image_path=imagen_2,
+                texto_manual=texto_manual,
+                tier=tier,
             )
             
     except Exception as e:
