@@ -15,42 +15,4 @@ Para garantizar la ejecucion correcta de este pipeline, el sistema debe contar c
 2. Instala las dependencias: `pip install -r requirements.txt`
 3. Descarga los mapas base (`data_raw`) desde [https://drive.google.com/drive/folders/10jiTbZTVk_1yVn-YLimAWxNzfDQEOb0H?usp=sharing] y colócalos en el folder de data_raw.
 4. Crea un archivo `.env` y coloca tu API Key: `GROQ_API_KEY=tu_llave`
-
-## Uso
-Para correr el pipeline para una especie, ejecuta:
-`python main.py -s "Quercus costaricensis"`
-## Instrucciones de Uso
-
-El pipeline esta diseñado para ser ejecutado desde la terminal a traves del archivo main.py. Soporta dos modos de ejecucion:
-Modo Individualgit init
-
-Para modelar y analizar una sola especie, utilice el argumento -s (species) seguido del nombre cientifico entre comillas:
-Bash
-
-    python main.py -s "Quercus costaricensis"
-
-## Modo por Lotes (Batch)
-
-Para procesar multiples especies de forma desatendida, cree un archivo de texto (ej. lista_especies.txt) con un nombre cientifico por linea y utilice el argumento -f (file):
-Bash
-
-    python main.py -f lista_especies.txt
-
-
-## Modo Randomizado (Batch)
-
-Para procesar multiples especies aleatorias, utilice el argumento -n (numero):
-Bash
-
-    python main.py -n [NUMERO]
-
-
-## Resultados Esperados
-
-Por cada especie procesada, el sistema creara dinamicamente una carpeta en el directorio outputs/ etiquetada con la fecha y hora de ejecucion. Dentro de esta carpeta encontrara:
-
-    Mapas de solapamiento espacial en alta resolucion (.png).
-
-    Graficos de impacto global y explicabilidad SHAP (.png).
-
-    Perfiles de nicho ecologico redactados por los diferentes modelos LLM (.txt).
+5. Continuar a `cr-biolm-frontend/README.md`

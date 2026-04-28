@@ -58,7 +58,10 @@ def procesar_especie(especie_nombre, user_question=None):
     if presencias_limpias is None or presencias_limpias.empty:
         print(f"[ERROR FATAL] No se obtuvieron registros de presencia limpios para {especie_nombre}.")
         print("[INFO] Terminando ejecucion para esta especie. Pasando a la siguiente...")
-        return False
+        return {
+        "success": False,
+        "error": f"No se encontraron registros de presencia limpios para '{especie_nombre}' en GBIF."
+                }
     # Generar y guardar el mapa multicapa
     vis = Visualizer()
     vis.plot_spatial_overlap(
@@ -82,7 +85,10 @@ def procesar_especie(especie_nombre, user_question=None):
     raster_paths = climate_loader.get_climate_layers(country_bounds)
     if not raster_paths:
         print("[ERROR FATAL] Fallo la carga de matrices climaticas.")
-        return False
+        return {
+        "success": False,
+        "error": "Fallo la carga de matrices climaticas WorldClim."
+                }
     eco_loader = EcoregionsLoader()
     ecoregions_gdf = eco_loader.load_ecoregions("cobertura_forestal_2023.shp")
 
@@ -97,9 +103,9 @@ def procesar_especie(especie_nombre, user_question=None):
         X, y, test_size=0.2, random_state=config.SEED, stratify=y
     )
 
-# ==========================================
+    # ========================================
     # 8. MODELADO PREDICTIVO ( RF vs CNN)
-    # ==========================================
+    # ========================================
     EJECUTAR_CNN = True
     # --- 8.1 CAMINO A: Random Forest (Machine Learning Tradicional) ---
     print("\n" + "="*40)
@@ -109,7 +115,7 @@ def procesar_especie(especie_nombre, user_question=None):
     rf_metrics = rf_model.evaluate(X_test, y_test)
     
     if 'confusion_matrix' in rf_metrics:
-        vis.plot_confusion_matrix(rf_metrics['confusion_matrix'], out_dir) # Opcional: renombrar a conf_matrix_rf.png en visualizer
+        vis.plot_confusion_matrix(rf_metrics['confusion_matrix'], out_dir) 
         
     # --- 8.2 CAMINO B: Red Neuronal Multimodal (Deep Learning) ---
     if EJECUTAR_CNN:
@@ -246,7 +252,31 @@ def procesar_especie(especie_nombre, user_question=None):
     # =================================================================
 
     print(f"\n[EXITO] Pipeline completado para {especie_nombre}.")
-    return True
+    return {
+    "success": True,
+    "species": especie_nombre,
+    "output_dir": out_dir,
+    
+    # Modelos
+    "rf_metrics": rf_metrics,
+    "cnn_metrics": cnn_metrics,
+    
+    # Rutas de imágenes
+    "images": {
+        "map": os.path.join(out_dir, "mapa_solapamiento_espacial.png"),
+        "confusion_matrix": os.path.join(out_dir, "matriz_confusion.png"),
+        "shap": os.path.join(out_dir, "shap_summary.png"),
+        "lime": os.path.join(out_dir, "lime_local_explanation.png"),
+        "gradcam": os.path.join(out_dir, "cnn_grad_cam.png")
+    },
+    
+    # Perfiles LLM
+    "llm_profiles": {
+    "llama": os.path.join(out_dir, "llm_profile_llama_3.3_70b_versatile.txt"),
+    "qwen": os.path.join(out_dir, "llm_profile_qwen_qwen3_32b.txt"),
+    "baseline_dual": os.path.join(out_dir, "llm_profile_BASELINE_DUAL.txt"),
+    }
+}
 
 
 def leer_lista_especies(ruta_archivo):
