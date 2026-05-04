@@ -4,9 +4,11 @@ import base64
 import requests
 from PIL import Image
 # IMPORTANTE: Asegúrate de importar la función traducir_variable desde tu archivo de templates
-from .prompt_templates import PROMPT_T0, PROMPT_T1, PROMPT_T2, PROMPT_T3, _REGLA_STRICTA, traducir_variable
+from .prompt_templates import PROMPT_T0, PROMPT_T1, PROMPT_T3, _REGLA_STRICTA, traducir_variable, get_effective_prompts
 
-TIER_PROMPTS = {"T0": PROMPT_T0, "T1": PROMPT_T1, "T2": PROMPT_T2, "T3": PROMPT_T3}
+# T2 removed — ficha leakage fix (texto_manual reached ground truth used in evaluation)
+# Base fallback — actual prompts loaded at call time via get_effective_prompts()
+TIER_PROMPTS = {"T0": PROMPT_T0, "T1": PROMPT_T1, "T3": PROMPT_T3}
 
 MAX_IMG_PX = 1024  # max pixels on the longest edge before base64 encoding
 
@@ -82,26 +84,17 @@ class OpenRouterClient:
         rf_auc = rf_metrics.get('roc_auc', 0.0) if rf_metrics else 0.0
         pregunta_texto = user_question if user_question else "Analiza el hábitat ideal de esta especie."
 
-        # Asegúrate de que las llaves de .format() coincidan exactamente con tu BIMODAL_PROMPT
-        fuente_manual = ""
-        if texto_manual:
-            fuente_manual = (
-                "\nFUENTE 3: REFERENCIA BOTÁNICA (Manual de Plantas de Costa Rica)\n"
-                + texto_manual
-                + "\nLa imagen 2 adjunta muestra el hábitat potencial según el Manual, "
-                "cruzado con las Unidades Fitogeográficas de CR. Úsala para validar o "
-                "contrastar los hallazgos matemáticos del modelo predictivo.\n"
-            )
-        # Seleccionar prompt según tier — cada uno describe honestamente lo que el LLM recibe
-        template = TIER_PROMPTS.get(tier, PROMPT_T3)
+        # Seleccionar prompt según tier — carga overrides en runtime si existen
+        _effective = get_effective_prompts()
+        _regla_efectiva = _effective.get("_REGLA_STRICTA", _REGLA_STRICTA)
+        template = _effective.get(tier) or TIER_PROMPTS.get(tier, PROMPT_T3)
         print(f"[INFO] Usando prompt {tier}")
 
-        # T1 solo necesita instruccion_pregunta; T2 agrega fuente_manual; T3 agrega métricas RF
+        # T1 — solo imagen GBIF; T3 — mapa hábitat predicho + mapa RF + métricas SHAP/AUC
         format_kwargs = dict(
             species_name=species_name,
             instruccion_pregunta=f"PREGUNTA DEL USUARIO: {pregunta_texto}",
-            fuente_manual=fuente_manual,
-            _regla=_REGLA_STRICTA,
+            _regla=_regla_efectiva,
             rf_auc=rf_auc,
             info_altitud=info_altitud,
             var_humana=var_humana,
@@ -124,6 +117,9 @@ class OpenRouterClient:
             content_parts = [{"type": "text", "text": prompt_listo}]
             print("[INFO] T0: llamada texto-únicamente (sin imágenes)")
         else:
+            if not image_path or not os.path.isfile(str(image_path)):
+                print(f"[ERROR] Imagen principal no encontrada para tier {tier}: {image_path!r}")
+                return False
             imagen_base64 = self._codificar_imagen(image_path)
             content_parts = [
                 {"type": "text", "text": prompt_listo},
@@ -165,12 +161,11 @@ class OpenRouterClient:
                 
                 # Metadata header: tier-aware labels
                 if tier == "T0":
-                    _fuentes_line = "- Fuentes        : NINGUNA — conocimiento previo del LLM únicamente"
+                    _fuentes_line = "- Fuentes        : Conocimiento de entrenamiento del LLM (sin mapas, sin datos instrumentales)"
                 else:
                     _img1_label = {
                         "T1": "Distribución GBIF Mesoamérica (puntos de presencia)",
-                        "T2": "Hábitat botánico (Manual + Unidades Fitogeográficas + GBIF)",
-                        "T3": "Hábitat botánico (Manual + Unidades Fitogeográficas + GBIF)",
+                        "T3": "Mapa de hábitat predicho (Manual + Hammel + DEM + GBIF)",
                     }.get(tier, "Imagen 1")
                     _img2_line = ""
                     if tier == "T3" and manual_image_path:

@@ -19,6 +19,7 @@ import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import random
 import config
 import pandas as pd
 from utils.question_bank import get_random_question, get_question_meta
@@ -26,7 +27,7 @@ from main import procesar_especie
 
 RUNS_DIR     = os.path.join("experiment", "runs")
 CATALOG_PATH = os.path.join("outputs", "picked_species_enhanced_clean.csv")
-TIERS        = ["T0", "T1", "T2", "T3"]
+TIERS        = ["T0", "T1", "T3"]  # T2 dropped — ficha leakage fix
 
 
 # ── Experiment ID ─────────────────────────────────────────────────────────────
@@ -96,9 +97,7 @@ def main():
     parser.add_argument("--species-file", type=str, default=None,
                         help="TXT con una especie por línea (default: catálogo completo)")
     parser.add_argument("--persona", type=str, default="botanico",
-                        choices=["turista", "botanico", "municipalidad"])
-    parser.add_argument("--canton",   type=str, default=None)
-    parser.add_argument("--proyecto", type=str, default=None)
+                        choices=["turista", "botanico"])
     parser.add_argument("--notes",    type=str, default="",
                         help="Notas opcionales para documentar el experimento")
     parser.add_argument("--resume",   action="store_true",
@@ -143,7 +142,7 @@ def main():
 
     print(f"\n{'='*60}")
     print(f"[EXPERIMENTO] {exp_id}")
-    print(f"[EXPERIMENTO] {total} especies × {len(TIERS)} tiers × 2 modelos")
+    print(f"[EXPERIMENTO] {total} especies × {len(TIERS)} tiers (T0/T1/T3) × 2 modelos")
     print(f"[EXPERIMENTO] Persona: {args.persona} | Resume: {args.resume}")
     print(f"[EXPERIMENTO] Directorio: {exp_dir}")
     if args.notes:
@@ -152,30 +151,41 @@ def main():
 
     done_count = fail_count = skip_count = 0
 
+    # ── Pre-assign questions without replacement across all species ───────────
+    # Ensures no two species in the same run get the same question.
+    # If n_species > pool size, the pool is cycled (shuffled again from full set).
+    especies_list = [str(r["species"]).strip() for _, r in catalogo.iterrows()]
+    _question_assignments = {}
+    _needs_assignment = [
+        sp for sp in especies_list
+        if f"{sp}|pregunta|{args.persona}" not in log
+    ]
+    if _needs_assignment:
+        entries = get_question_meta(args.persona)
+        rng = random.Random(42)
+        pool = []
+        while len(pool) < len(_needs_assignment):
+            chunk = entries[:]
+            rng.shuffle(chunk)
+            pool.extend(chunk)
+        for sp, entry in zip(_needs_assignment, pool):
+            _question_assignments[sp] = entry
+    # ─────────────────────────────────────────────────────────────────────────
+
     for idx, (_, row) in enumerate(catalogo.iterrows(), 1):
         especie = str(row["species"]).strip()
         print(f"\n[{idx}/{total}] {especie}")
 
         # ── Asignar pregunta fija (misma en T0/T1/T2/T3 para esta especie) ──
-        # La pregunta se elige compatible con T1 (tier_min=T1) para que todos
-        # los tiers puedan responderla. T0 la recibe sin contexto (baseline),
-        # T3 la responde con datos completos. Stratum queda registrado en el log.
-        min_tier = "T1"  # preguntas tier_min=T1 son fair para todos los tiers
         pregunta_key = f"{especie}|pregunta|{args.persona}"
         if pregunta_key in log and "pregunta" in log[pregunta_key]:
             pregunta = log[pregunta_key]["pregunta"]
             stratum  = log[pregunta_key].get("stratum", "A")
             print(f"  [Q] (recuperada) [{stratum}] {pregunta}")
         else:
-            # Seed per-species (deterministic but different per name) for reproducibility.
-            # Global seed=42 is recorded in meta; per-species seed = 42 XOR hash of name.
-            _species_seed = (42 ^ abs(hash(especie))) % (2**31)
-            pregunta, stratum = get_random_question(
-                args.persona, canton=args.canton,
-                proyecto=args.proyecto, tier=min_tier,
-                seed=_species_seed,
-                return_meta=True,
-            )
+            entry    = _question_assignments[especie]
+            pregunta = entry["q"]
+            stratum  = entry.get("stratum", "A")
             log[pregunta_key] = {"pregunta": pregunta, "stratum": stratum}
             if not args.dry_run:
                 save_log(log, exp_dir)

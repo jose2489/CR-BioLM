@@ -391,6 +391,8 @@ def generate_habitat_map(
     output_path: str | Path = "outputs/habitat_map.png",
     dem_path: Path = DEM_PATH,
     shp_path: Path = SHP_PATH,
+    elev_outlier_min: float | None = None,
+    elev_outlier_max: float | None = None,
 ) -> Path:
     """
     Main function. Generates the three-layer habitat map and saves to output_path.
@@ -485,6 +487,29 @@ def generate_habitat_map(
             elev_max=elev_max,
         )
 
+    # 3b. Outlier elevation band (hatched, semi-transparent)
+    has_outlier = (
+        has_elevation
+        and not matched_gdf.empty
+        and (elev_outlier_min is not None or elev_outlier_max is not None)
+        and not (
+            (elev_outlier_min is not None and np.isnan(float(elev_outlier_min))) or
+            (elev_outlier_max is not None and np.isnan(float(elev_outlier_max)))
+        )
+    )
+    if has_outlier:
+        out_lo = float(elev_outlier_min) if elev_outlier_min is not None else elev_min
+        out_hi = float(elev_outlier_max) if elev_outlier_max is not None else elev_max
+        _overlay_elevation_outlier(
+            ax=ax,
+            matched_gdf=matched_gdf,
+            dem_path=dem_path,
+            elev_min=out_lo,
+            elev_max=out_hi,
+            main_min=elev_min,
+            main_max=elev_max,
+        )
+
     # 4. GBIF presence points
     if presencias_gdf is not None and not presencias_gdf.empty:
         ax.scatter(
@@ -502,6 +527,15 @@ def generate_habitat_map(
     # ── Decorations ───────────────────────────────────────────────────────
     sp_display = species_name.replace("_", " ")
     elev_txt = f"{int(elev_min)}–{int(elev_max)} m" if has_elevation else "elevación no disponible"
+    if has_outlier:
+        out_lo = float(elev_outlier_min) if elev_outlier_min is not None else elev_min
+        out_hi = float(elev_outlier_max) if elev_outlier_max is not None else elev_max
+        outlier_parts = []
+        if elev_outlier_min is not None:
+            outlier_parts.append(f"inf: {int(out_lo)}–{int(elev_min)} m")
+        if elev_outlier_max is not None:
+            outlier_parts.append(f"sup: {int(elev_max)}–{int(out_hi)} m")
+        elev_txt += f"  (atípicos — {', '.join(outlier_parts)})"
 
     ax.set_title(
         f"{sp_display}",
@@ -528,7 +562,25 @@ def generate_habitat_map(
         legend_patches.append(mpatches.Patch(color="#4b5563", label="Fuera del rango geográfico"))
         legend_patches.append(mpatches.Patch(color="#6b7280", label="Zona geográfica — fuera del rango altitudinal"))
         if has_elevation:
-            legend_patches.append(mpatches.Patch(color="#22d3ee", label=f"Hábitat óptimo ({elev_txt})"))
+            main_elev_txt = f"{int(elev_min)}–{int(elev_max)} m"
+            legend_patches.append(mpatches.Patch(color="#22d3ee", label=f"Hábitat óptimo ({main_elev_txt})"))
+        if has_outlier:
+            out_lo = float(elev_outlier_min) if elev_outlier_min is not None else elev_min
+            out_hi = float(elev_outlier_max) if elev_outlier_max is not None else elev_max
+            if elev_outlier_min is not None:
+                legend_patches.append(mpatches.Patch(
+                    facecolor="#22d3ee", alpha=0.35,
+                    edgecolor="#22d3ee", linewidth=0.8,
+                    label=f"Reg. atípicos inf. ({int(out_lo)}–{int(elev_min)} m)",
+                    hatch="////",
+                ))
+            if elev_outlier_max is not None:
+                legend_patches.append(mpatches.Patch(
+                    facecolor="#22d3ee", alpha=0.35,
+                    edgecolor="#22d3ee", linewidth=0.8,
+                    label=f"Reg. atípicos sup. ({int(elev_max)}–{int(out_hi)} m)",
+                    hatch="////",
+                ))
     if presencias_gdf is not None and not presencias_gdf.empty:
         legend_patches.append(mpatches.Patch(color="#ff4444", label=f"Presencias GBIF (n={len(presencias_gdf)})"))
 
@@ -613,6 +665,90 @@ def _overlay_elevation(ax, matched_gdf, dem_path, elev_min, elev_max):
             zorder=5,
             interpolation="nearest",
         )
+
+
+def _overlay_elevation_outlier(ax, matched_gdf, dem_path, elev_min, elev_max,
+                                main_min, main_max):
+    """
+    Renders a hatched semi-transparent cyan layer for outlier elevation pixels
+    that fall outside the main range [main_min, main_max] but within [elev_min, elev_max].
+    Skips pixels already covered by the main highlight.
+    """
+    with rasterio.open(dem_path) as src:
+        dem_crs = src.crs
+        dem_nodata = src.nodata if src.nodata is not None else -9999
+
+        if matched_gdf.crs.to_epsg() != int(str(dem_crs).split(":")[-1]):
+            matched_proj = matched_gdf.to_crs(dem_crs)
+        else:
+            matched_proj = matched_gdf
+
+        geoms = [mapping(g) for g in matched_proj.geometry if g is not None and g.is_valid]
+        if not geoms:
+            return
+
+        try:
+            out_arr, out_transform = rio_mask(src, geoms, crop=True, nodata=dem_nodata)
+        except Exception as e:
+            print(f"  [WARN] Outlier elevation mask failed: {e}")
+            return
+
+        elev = out_arr[0].astype(float)
+        elev[elev == dem_nodata] = np.nan
+
+        h, w = elev.shape
+        rgba = np.zeros((h, w, 4), dtype=np.float32)
+
+        # Pixels in outlier range but NOT in the main range
+        in_outlier = (
+            (~np.isnan(elev)) &
+            (elev >= elev_min) & (elev <= elev_max) &
+            ~((elev >= main_min) & (elev <= main_max))
+        )
+        rgba[in_outlier] = [0.13, 0.85, 0.93, 0.38]  # cyan at 38% alpha
+
+        if not in_outlier.any():
+            return
+
+        left   = out_transform.c
+        top    = out_transform.f
+        right  = left + out_transform.a * w
+        bottom = top  + out_transform.e * h
+
+        # Base translucent fill
+        ax.imshow(
+            rgba,
+            extent=[left, right, bottom, top],
+            origin="upper",
+            aspect="auto",
+            zorder=4,
+            interpolation="nearest",
+        )
+
+        # Hatching: draw the outlier union polygon with hatch pattern on top
+        try:
+            from shapely.ops import unary_union
+            import geopandas as gpd_local
+
+            # Reproject back to WGS84 for plotting
+            if matched_gdf.crs.to_epsg() != 4326:
+                plot_gdf = matched_gdf.to_crs(epsg=4326)
+            else:
+                plot_gdf = matched_gdf
+
+            union_geom = unary_union(plot_gdf.geometry)
+            union_gdf = gpd.GeoDataFrame(geometry=[union_geom], crs="EPSG:4326")
+            union_gdf.plot(
+                ax=ax,
+                facecolor="none",
+                edgecolor="#22d3ee",
+                linewidth=0.0,
+                hatch="////",
+                alpha=0.30,
+                zorder=6,
+            )
+        except Exception as e:
+            print(f"  [WARN] Outlier hatch polygon failed: {e}")
 
 
 # ---------------------------------------------------------------------------

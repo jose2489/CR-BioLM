@@ -64,11 +64,10 @@ RULES: list[tuple[str, str]] = [
     (r'\bIlanuras\b',    'llanuras'),
     (r'\blanuras\b',     'llanuras'),   # missing first l
 
-    # ── "htmedo" / "htimedo" → "húmedo" ─────────────────────────────────
-    (r'\bht[i]?medo\b',  'húmedo'),
-    (r'\bht[i]?meda\b',  'húmeda'),
-    (r'\bhimedo\b',      'húmedo'),
-    (r'\bhiimedo\b',     'húmedo'),
+    # ── "htmedo" / "htimedo" / "htiimedo" → "húmedo" ────────────────────────
+    (r'\bht[i]*medo\b',  'húmedo'),
+    (r'\bht[i]*meda\b',  'húmeda'),
+    (r'\bhi+medo\b',     'húmedo'),
 
     # ── "humedo" → "húmedo" (missing accent, common OCR miss) ────────────
     (r'\bhumedo\b',      'húmedo'),
@@ -101,6 +100,17 @@ RULES: list[tuple[str, str]] = [
     # ── "SO—" at start → "0–" (S misread as leading char) ───────────────
     (r'\bSO—\)',          '0–)'),
     (r'\(SO—\)',          '(0–)'),
+
+    # ── Elevation uncertainty markers: "+?" and "+" after a number ────────
+    # "-1300+?" → "-1300"  and  "1000+" → "1000"  (before closing paren or space+m)
+    (r'(\d)\+\?',        r'\1'),   # 1300+? → 1300
+    (r'(\d)\+(?=[)\s])', r'\1'),   # 1000+) → 1000)  or  1000+ m → 1000 m
+
+    # ── Unbalanced closing paren in elevation: "0-750-1000) m" ───────────
+    # Pattern: digit-digit-digit) m  with no opening paren → add one
+    # "0-750-1000) m"      → "0-750(-1000) m"
+    # "600-1600-1800) m"   → "600-1600(-1800) m"  (handled after leading-paren fix)
+    (r'(\d+)-(\d+)-(\d+)\)\s*m', r'\1-\2(-\3) m'),
 
     # ── Trailing/leading whitespace cleanup ───────────────────────────────
     (r'[ \t]+',          ' '),      # collapse multiple spaces

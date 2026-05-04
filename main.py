@@ -90,6 +90,8 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
         _row = _catalog[_catalog['species'] == especie_nombre]
         if not _row.empty:
             r = _row.iloc[0]
+            _out_min  = r.get('elev_outlier_min_m')
+            _out_max  = r.get('elev_outlier_max_m')
             ruta_mapa_manual = generate_habitat_map(
                 species_name=especie_nombre,
                 geographic_notes=r.get('geographic_notes'),
@@ -97,6 +99,8 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
                 elevation_max=r.get('elevation_max_m'),
                 presencias_gdf=presencias_cr,
                 output_path=os.path.join(out_dir, "mapa_habitat_manual.png"),
+                elev_outlier_min=None if (not _out_min or str(_out_min) == 'nan') else float(_out_min),
+                elev_outlier_max=None if (not _out_max or str(_out_max) == 'nan') else float(_out_max),
             )
             # Build summary text for the LLM prompt
             parts = []
@@ -109,7 +113,12 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
                     alt_manual = (int(float(emin)), int(float(emax)))
                 except Exception:
                     pass
-                parts.append(f"Rango altitudinal: {int(float(emin))}–{int(float(emax))} m s.n.m.")
+                alt_txt = f"{int(float(emin))}–{int(float(emax))} m s.n.m."
+                if _out_min and str(_out_min) != 'nan':
+                    alt_txt += f" (mín. atípico: {int(float(_out_min))} m)"
+                if _out_max and str(_out_max) != 'nan':
+                    alt_txt += f" (máx. atípico: {int(float(_out_max))} m)"
+                parts.append(f"Rango altitudinal: {alt_txt}")
             hab = str(r.get('habitat_type', '') or '').strip()
             if hab and hab.lower() != 'nan':
                 parts.append(f"Tipo de hábitat: {hab}")
@@ -276,7 +285,9 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
     
     # Imagen 1 → mapa hábitat Manual (con GBIF points) — fuente botánica
     # Imagen 2 → mapa solapamiento espacial RF (si existe) — fuente predictiva
-    ruta_del_mapa = ruta_mapa_manual or os.path.join(out_dir, "mapa_solapamiento_espacial.png")
+    # Fallback: si no hay mapa Manual (geographic_notes ausentes), usar mapa GBIF Mesoamérica
+    _mapa_meso = os.path.join(out_dir, "mapa_distribucion_mesoamerica.png")
+    ruta_del_mapa = ruta_mapa_manual if ruta_mapa_manual and os.path.isfile(ruta_mapa_manual) else _mapa_meso
     ruta_mapa_rf  = os.path.join(out_dir, "mapa_solapamiento_espacial.png")
 
     # --- EXTRACCIÓN DE ALTITUD desde presencias CR (raster CR-only) ---
@@ -310,8 +321,7 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
     # Configurar contexto según el tier del experimento:
     #   T0 — sin contexto (conocimiento previo del LLM únicamente, sin imágenes ni datos)
     #   T1 — solo mapa Mesoamérica (baseline GBIF puro), sin métricas
-    #   T2 — mapa hábitat botánico (Manual + cyan/muted/gris), sin métricas RF
-    #   T3 — mapa hábitat + mapa RF + métricas SHAP/AUC (sistema completo)
+    #   T3 — mapa hábitat predicho + mapa RF + métricas SHAP/AUC (sistema completo)
     if tier == "T0":
         imagen_1      = os.path.join(out_dir, "mapa_distribucion_mesoamerica.png")  # path ignored by client
         imagen_2      = None
@@ -320,12 +330,6 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
         alt_envio     = "No disponible"
     elif tier == "T1":
         imagen_1      = os.path.join(out_dir, "mapa_distribucion_mesoamerica.png")
-        imagen_2      = None
-        rf_envio      = {}
-        shap_envio    = {}
-        alt_envio     = "No disponible"
-    elif tier == "T2":
-        imagen_1      = ruta_del_mapa
         imagen_2      = None
         rf_envio      = {}
         shap_envio    = {}
@@ -371,7 +375,6 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
                 model_override=modelo_vlm,
                 info_altitud=alt_envio,
                 manual_image_path=imagen_2,
-                texto_manual=texto_manual,
                 tier=tier,
             )
             
@@ -406,12 +409,8 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--file", type=str, help="Ruta a un archivo .txt con una lista de especies (una por linea).")
     parser.add_argument("-q", "--question", type=str, default=None,
                         help="Pregunta libre para el LLM.")
-    parser.add_argument("--persona", type=str, default=None, choices=["turista", "botanico", "municipalidad"],
+    parser.add_argument("--persona", type=str, default=None, choices=["turista", "botanico"],
                         help="Selecciona una pregunta aleatoria del banco según el perfil de usuario.")
-    parser.add_argument("--canton", type=str, default=None,
-                        help="Cantón para preguntas de municipalidad (ej: 'Nicoya'). Si se omite, se elige aleatoriamente.")
-    parser.add_argument("--proyecto", type=str, default=None,
-                        help="Tipo de proyecto para preguntas de municipalidad (ej: 'proyecto hidroeléctrico').")
 
     args = parser.parse_args()
 
@@ -420,7 +419,7 @@ if __name__ == "__main__":
         if args.question:
             return args.question
         if args.persona:
-            q = get_random_question(args.persona, canton=args.canton, proyecto=args.proyecto)
+            q = get_random_question(args.persona)
             print(f"[INFO] Pregunta seleccionada [{args.persona}]: {q}")
             return q
         return None
@@ -441,5 +440,4 @@ if __name__ == "__main__":
         print("Ejemplo 1: python main.py -s \"Quercus costaricensis\"")
         print("Ejemplo 2: python main.py -s \"Quercus costaricensis\" -q \"¿Cómo le afecta el cambio climático?\"")
         print("Ejemplo 3: python main.py -s \"Quercus costaricensis\" --persona botanico")
-        print("Ejemplo 4: python main.py -s \"Quercus costaricensis\" --persona municipalidad --canton Nicoya")
-        print("Ejemplo 5: python main.py -f especies.txt --persona turista  (pregunta aleatoria por especie)")
+        print("Ejemplo 4: python main.py -f especies.txt --persona turista  (pregunta aleatoria por especie)")
