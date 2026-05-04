@@ -25,6 +25,9 @@ outputs/
 *.cpg
 *.qmd
 
+# Planes de investigación (notas locales, no parte del código)
+PLAN_*.md
+
 # Claude Code (configuración local de la máquina, no del proyecto)
 .claude/
 
