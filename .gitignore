@@ -34,3 +34,27 @@ PLAN_*.md
 # Archivos de sistema
 .DS_Store
 Thumbs.db
+
+# Resultados de experimentos y datos derivados
+experiment/runs/
+experiment/results.csv
+experiment/experiment_log.json
+experiment/evaluation_log.json
+experiment/calibration/*.json
+master_resultados_anova.csv
+analisis_resultados/
+
+# Base de datos SQLite (derivada, se regenera con db_sync.py)
+experiment/crbiolm.db
+*.db
+
+# Catálogos de datos derivados
+utils/catalogo_mapas_bien.csv
+utils/catalogo_ocurrencias_gbif.csv
+
+# UI / Viewer app (no es parte del pipeline científico)
+app/
+experiment/report/
+
+# Archivos de especies para pruebas locales
+experiment/test_species*.txt
