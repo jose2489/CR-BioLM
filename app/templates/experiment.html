@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}{{ meta.exp_id }} — CR-BioLM{% endblock %}
+
+{% block nav_extra %}
+<a href="/" class="text-sm text-gray-400 hover:text-white">← Experimentos</a>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="mb-6">
+  <div class="flex items-center gap-3 mb-1">
+    <h1 class="text-2xl font-bold font-mono text-gray-900">{{ meta.exp_id }}</h1>
+    <span class="text-xs px-2 py-0.5 rounded-full font-medium
+      {% if meta.status == 'complete' %}bg-emerald-100 text-emerald-700
+      {% else %}bg-amber-100 text-amber-700{% endif %}">
+      {{ meta.status or "—" }}
+    </span>
+  </div>
+  <div class="text-sm text-gray-500 flex flex-wrap gap-4">
+    <span>📅 {{ meta.started_at[:10] if meta.started_at else "—" }}</span>
+    <span>🌿 {{ meta.n_species }} especies</span>
+    <span>👤 {{ meta.persona }}</span>
+    <span>🤖 {{ meta.models | join(", ") if meta.models else "—" }}</span>
+  </div>
+  {% if meta.notes %}
+    <p class="text-sm text-gray-600 mt-2 italic">{{ meta.notes }}</p>
+  {% endif %}
+</div>
+
+<!-- Score summary cards -->
+{% if summary %}
+<div class="grid grid-cols-4 gap-4 mb-8">
+  {% for tier, stats in summary.items() %}
+  <div class="bg-white rounded-xl border border-gray-200 p-5 text-center">
+    <span class="text-xs font-bold px-3 py-1 rounded text-white
+      {% if tier == 'T0' %}bg-gray-500
+      {% elif tier == 'T1' %}bg-slate-500
+      {% elif tier == 'T2' %}bg-indigo-500
+      {% else %}bg-emerald-500{% endif %}">
+      {{ tier }}
+    </span>
+    <div class="text-4xl font-bold mt-3
+      {% if stats.mean is not none and stats.mean >= 0.8 %}text-emerald-600
+      {% elif stats.mean is not none and stats.mean >= 0.6 %}text-amber-500
+      {% elif stats.mean is not none %}text-red-400
+      {% else %}text-gray-300{% endif %}">
+      {% if stats.mean is not none %}{{ "%.3f"|format(stats.mean) }}{% else %}—{% endif %}
+    </div>
+    <div class="text-xs text-gray-400 mt-1">
+      σ={{ "%.3f"|format(stats.std) if stats.std is not none else "—" }} · n={{ stats.n }}
+    </div>
+    <div class="text-xs text-gray-400 mt-0.5">score compuesto medio</div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Evaluation Framework -->
+<div class="mb-8">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="font-semibold text-gray-800">Rúbrica de Evaluación</h2>
+    <div class="flex items-center gap-2 text-xs text-gray-500">
+      <span class="font-medium text-gray-400 uppercase tracking-wide">Juez(ces):</span>
+      {% for j in judges %}
+      <span class="font-mono bg-purple-50 text-purple-700 border border-purple-100 px-2 py-0.5 rounded">{{ j }}</span>
+      {% endfor %}
+      {% if not judges %}<span class="text-gray-300">—</span>{% endif %}
+    </div>
+  </div>
+
+  <!-- Score formula -->
+  {% if score_formula %}
+  <div class="mb-4 bg-gray-50 rounded-lg border border-gray-100 px-4 py-2.5 text-xs font-mono text-gray-600">
+    <span class="font-semibold text-gray-400 uppercase tracking-wide not-italic mr-2">Score compuesto:</span>{{ score_formula }}
+  </div>
+  {% endif %}
+
+  <!-- Metric cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+    {% for m in metric_summary %}
+    <div class="bg-white rounded-xl border border-gray-200 p-4">
+      <div class="flex items-start justify-between gap-2 mb-2">
+        <div>
+          <span class="text-sm font-bold text-gray-800">{{ m.label }}</span>
+          <span class="ml-2 text-xs font-mono text-gray-400">0–{{ m.max }}</span>
+        </div>
+        <div class="flex flex-col items-end gap-1 shrink-0">
+          {% if m.mean is not none %}
+          <span class="text-sm font-bold font-mono
+            {% if m.mean / m.max >= 0.8 %}text-emerald-600
+            {% elif m.mean / m.max >= 0.6 %}text-amber-500
+            {% else %}text-orange-400{% endif %}">
+            {{ "%.2f"|format(m.mean) }}
+          </span>
+          <span class="text-[10px] text-gray-400">media (n={{ m.n }})</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="text-xs text-gray-500 leading-relaxed mb-2">{{ m.desc }}</div>
+      <div class="flex items-center gap-1.5">
+        <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Aplica a</span>
+        <span class="text-[10px] font-mono
+          {% if 'únicamente' in m.tiers %}text-emerald-600 bg-emerald-50 border border-emerald-100
+          {% else %}text-slate-600 bg-slate-50 border border-slate-100{% endif %}
+          px-1.5 py-0.5 rounded">{{ m.tiers }}</span>
+        <!-- Mini score bar -->
+        {% if m.mean is not none %}
+        <div class="flex-1 ml-2 bg-gray-100 rounded-full h-1.5">
+          <div class="h-1.5 rounded-full
+            {% if m.mean / m.max >= 0.8 %}bg-emerald-400
+            {% elif m.mean / m.max >= 0.6 %}bg-amber-400
+            {% else %}bg-orange-400{% endif %}"
+            style="width: {{ ((m.mean / m.max) * 100) | int }}%"></div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Species table -->
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+  <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+    <h2 class="font-semibold text-gray-800">Especies ({{ species | length }})</h2>
+    <input id="search" type="text" placeholder="Buscar especie..."
+      class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-64 focus:outline-none focus:ring-2 focus:ring-emerald-400"/>
+  </div>
+  <table class="w-full text-sm" id="species-table">
+    <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
+      <tr>
+        <th class="px-6 py-3 text-left">Especie</th>
+        <th class="px-6 py-3 text-left">Pregunta</th>
+        <th class="px-4 py-3 text-center">T0</th>
+        <th class="px-4 py-3 text-center">T1</th>
+        <th class="px-4 py-3 text-center">T2</th>
+        <th class="px-4 py-3 text-center">T3</th>
+        <th class="px-4 py-3 text-center">Winner</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-50">
+    {% for sp in species %}
+    <tr class="hover:bg-gray-50 cursor-pointer species-row"
+        onclick="window.location='/exp/{{ meta.exp_id }}/species/{{ sp.especie_id }}'">
+      <td class="px-6 py-3 font-medium italic text-gray-800">{{ sp.especie }}</td>
+      <td class="px-6 py-3 text-gray-500 max-w-xs truncate" title="{{ sp.pregunta }}">{{ sp.pregunta }}</td>
+      {% for tier in ["T0", "T1", "T2", "T3"] %}
+        {% set score = sp.tier_scores.get(tier) %}
+        <td class="px-4 py-3 text-center font-mono font-bold
+          {% if score is not none and score >= 0.8 %}text-emerald-600
+          {% elif score is not none and score >= 0.6 %}text-amber-500
+          {% elif score is not none %}text-red-400
+          {% else %}text-gray-300{% endif %}">
+          {% if score is not none %}{{ "%.2f"|format(score) }}{% else %}—{% endif %}
+        </td>
+      {% endfor %}
+      <td class="px-4 py-3 text-center">
+        {% if sp.winner %}
+          <span class="text-xs font-bold px-2 py-0.5 rounded text-white
+            {% if sp.winner == 'T0' %}bg-gray-500
+            {% elif sp.winner == 'T1' %}bg-slate-500
+            {% elif sp.winner == 'T2' %}bg-indigo-500
+            {% else %}bg-emerald-500{% endif %}">
+            {{ sp.winner }}
+          </span>
+        {% else %}—{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('search').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.species-row').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+</script>
+{% endblock %}

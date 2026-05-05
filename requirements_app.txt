@@ -1,0 +1,9 @@
+# Web app dependencies only — no ML stack (torch, shap, rasterio etc. stay local)
+fastapi==0.136.0
+uvicorn==0.44.0
+jinja2==3.1.6
+python-multipart==0.0.20
+python-dotenv==1.2.2
+pandas==3.0.1
+scikit-learn==1.8.0
+requests==2.32.5

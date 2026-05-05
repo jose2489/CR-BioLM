@@ -1,0 +1,656 @@
+{% extends "base.html" %}
+{% block title %}{{ especie }} — Evaluación{% endblock %}
+
+{% block nav_extra %}
+<a href="/eval" class="text-sm text-gray-400 hover:text-white">← Índice</a>
+<span class="text-gray-600 text-sm">|</span>
+<span class="text-sm text-gray-300">Especie {{ species_index }} de {{ species_total }}</span>
+{% endblock %}
+
+{% block content %}
+
+<!-- Progress bar -->
+<div class="h-1 bg-gray-200 rounded-full mb-6 -mt-4">
+  <div class="h-1 bg-emerald-500 rounded-full transition-all"
+       style="width: {{ ((species_index / species_total) * 100) | round | int }}%"></div>
+</div>
+
+<!-- Two-column layout: sticky ficha left + form right -->
+<div class="flex gap-6 items-start">
+
+  <!-- ── LEFT: Ficha técnica (sticky) ───────────────────────────────────── -->
+  <div class="w-80 shrink-0 sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto">
+    <div class="bg-white rounded-2xl border border-amber-200 overflow-hidden">
+      <div class="bg-amber-50 px-4 py-3 border-b border-amber-200">
+        <div class="text-xs text-amber-600 font-bold uppercase tracking-wide mb-0.5">Ficha de Referencia</div>
+        <div class="font-semibold text-gray-900 italic">{{ especie }}</div>
+        <div class="text-xs text-gray-500 mt-1">Manual de Plantas de Costa Rica</div>
+      </div>
+      <div class="p-4">
+        {% if ficha %}
+        <pre class="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap">{{ ficha }}</pre>
+        {% else %}
+        <p class="text-xs text-gray-400 italic">Ficha no disponible para esta especie.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT: Form ────────────────────────────────────────────────────── -->
+  <div class="flex-1 min-w-0">
+
+    <!-- Species header -->
+    <div class="mb-4">
+      <h1 class="text-2xl font-bold text-gray-900 italic">{{ especie }}</h1>
+      <div class="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+        <strong>Pregunta evaluada:</strong> {{ pregunta }}
+      </div>
+    </div>
+
+    <!-- ── Guía de Métricas (collapsible) ──────────────────────────────── -->
+    <details class="mb-6 group" id="metrics-guide">
+      <summary class="flex items-center justify-between cursor-pointer px-4 py-3
+                      bg-indigo-50 border border-indigo-200 rounded-xl text-sm font-semibold
+                      text-indigo-800 hover:bg-indigo-100 transition-colors list-none">
+        <span>📋 Guía de Métricas — clic para expandir</span>
+        <span class="text-indigo-400 text-xs group-open:hidden">▼ ver rubrica completa</span>
+        <span class="text-indigo-400 text-xs hidden group-open:inline">▲ ocultar</span>
+      </summary>
+
+      <div class="mt-3 space-y-4">
+
+        <!-- M5 -->
+        <div class="bg-white rounded-xl border border-purple-200 overflow-hidden">
+          <div class="flex items-center gap-2 px-4 py-2.5 bg-purple-50 border-b border-purple-100">
+            <span class="text-xs font-bold bg-purple-600 text-white px-2 py-0.5 rounded">M5</span>
+            <span class="font-semibold text-gray-800 text-sm">Profundidad Analítica</span>
+            <span class="ml-auto text-xs text-gray-400">Todos los tiers · escala 1–5</span>
+          </div>
+          <div class="px-4 py-3">
+            <p class="text-xs text-gray-600 mb-3">Mide la <strong>calidad del razonamiento</strong>, independientemente de la exactitud factual. Longitud ≠ profundidad. Evalúa <em>antes</em> de M1 para evitar sesgo por exactitud.</p>
+            <div class="grid grid-cols-5 gap-1.5 text-xs">
+              <div class="bg-red-50 border border-red-100 rounded-lg p-2">
+                <div class="font-bold text-red-700 mb-1">1</div>
+                <div class="text-gray-600">Recita o enumera datos sin ninguna interpretación.</div>
+              </div>
+              <div class="bg-orange-50 border border-orange-100 rounded-lg p-2">
+                <div class="font-bold text-orange-700 mb-1">2</div>
+                <div class="text-gray-600">Describe patrones pero no los interpreta ni reconoce limitaciones.</div>
+              </div>
+              <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-2">
+                <div class="font-bold text-yellow-700 mb-1">3</div>
+                <div class="text-gray-600">Integra al menos dos fuentes o distingue entre respaldado y especulativo.</div>
+              </div>
+              <div class="bg-lime-50 border border-lime-100 rounded-lg p-2">
+                <div class="font-bold text-lime-700 mb-1">4</div>
+                <div class="text-gray-600">Razona sobre mecanismos, señala limitaciones y calibra incertidumbre.</div>
+              </div>
+              <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-2">
+                <div class="font-bold text-emerald-700 mb-1">5</div>
+                <div class="text-gray-600">Síntesis crítica: cruza fuentes, explica mecanismos ecológicos, cobertura epistémica apropiada.</div>
+              </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-2 italic">Nota: En T0, una negativa bien calibrada ("no puedo afirmar X sin datos") puede obtener 4–5 si el razonamiento es sólido.</p>
+          </div>
+        </div>
+
+        <!-- M1 -->
+        <div class="bg-white rounded-xl border border-blue-200 overflow-hidden">
+          <div class="flex items-center gap-2 px-4 py-2.5 bg-blue-50 border-b border-blue-100">
+            <span class="text-xs font-bold bg-blue-600 text-white px-2 py-0.5 rounded">M1</span>
+            <span class="font-semibold text-gray-800 text-sm">Precisión Geográfica</span>
+            <span class="ml-auto text-xs text-gray-400">Todos los tiers · escala 1–5</span>
+          </div>
+          <div class="px-4 py-3">
+            <p class="text-xs text-gray-600 mb-3">¿Las zonas geográficas mencionadas (vertiente, cordillera, región, parque) son <strong>consistentes con la ficha</strong> del Manual de Plantas? Las alucinaciones geográficas puntúan 1.</p>
+            <div class="grid grid-cols-5 gap-1.5 text-xs">
+              <div class="bg-red-50 border border-red-100 rounded-lg p-2">
+                <div class="font-bold text-red-700 mb-1">1</div>
+                <div class="text-gray-600">Zonas incorrectas, contradicen el Manual, o afirmaciones geográficas fabricadas.</div>
+              </div>
+              <div class="bg-orange-50 border border-orange-100 rounded-lg p-2">
+                <div class="font-bold text-orange-700 mb-1">2</div>
+                <div class="text-gray-600">Mención parcial de zona correcta pero con imprecisiones o mezcla de zonas incorrectas.</div>
+              </div>
+              <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-2">
+                <div class="font-bold text-yellow-700 mb-1">3</div>
+                <div class="text-gray-600">Zona principal correcta pero sin especificidad (ej. "Costa Rica" en lugar de vertiente).</div>
+              </div>
+              <div class="bg-lime-50 border border-lime-100 rounded-lg p-2">
+                <div class="font-bold text-lime-700 mb-1">4</div>
+                <div class="text-gray-600">Zona principal correcta y específica; faltan zonas secundarias del Manual.</div>
+              </div>
+              <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-2">
+                <div class="font-bold text-emerald-700 mb-1">5</div>
+                <div class="text-gray-600">Completa y específica: menciona vertiente, cordillera o región exacta con alta precisión.</div>
+              </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-2 italic">En T0: evalúa si las afirmaciones son correctas vs. la ficha. En T1/T3: evalúa si el modelo interpretó bien el mapa/datos espaciales.</p>
+          </div>
+        </div>
+
+        <!-- M3 -->
+        <div class="bg-white rounded-xl border border-teal-200 overflow-hidden">
+          <div class="flex items-center gap-2 px-4 py-2.5 bg-teal-50 border-b border-teal-100">
+            <span class="text-xs font-bold bg-teal-600 text-white px-2 py-0.5 rounded">M3</span>
+            <span class="font-semibold text-gray-800 text-sm">Relevancia de Respuesta</span>
+            <span class="ml-auto text-xs text-gray-400">Todos los tiers · escala 1–5</span>
+          </div>
+          <div class="px-4 py-3">
+            <p class="text-xs text-gray-600 mb-3">¿La respuesta <strong>contesta directamente la pregunta</strong> con información específica de la especie? Evalúa pertinencia, no exactitud.</p>
+            <div class="grid grid-cols-5 gap-1.5 text-xs">
+              <div class="bg-red-50 border border-red-100 rounded-lg p-2">
+                <div class="font-bold text-red-700 mb-1">1</div>
+                <div class="text-gray-600">No responde la pregunta; respuesta vacía, evasiva o completamente fuera de tema.</div>
+              </div>
+              <div class="bg-orange-50 border border-orange-100 rounded-lg p-2">
+                <div class="font-bold text-orange-700 mb-1">2</div>
+                <div class="text-gray-600">Responde tangencialmente o menciona la especie pero no aborda el núcleo de la pregunta.</div>
+              </div>
+              <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-2">
+                <div class="font-bold text-yellow-700 mb-1">3</div>
+                <div class="text-gray-600">Responde la pregunta pero de forma genérica; poca especificidad sobre esta especie.</div>
+              </div>
+              <div class="bg-lime-50 border border-lime-100 rounded-lg p-2">
+                <div class="font-bold text-lime-700 mb-1">4</div>
+                <div class="text-gray-600">Responde directamente con información específica; puede omitir algún aspecto de la pregunta.</div>
+              </div>
+              <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-2">
+                <div class="font-bold text-emerald-700 mb-1">5</div>
+                <div class="text-gray-600">Directa y específica: aborda todos los aspectos de la pregunta con datos concretos de la especie.</div>
+              </div>
+            </div>
+            <p class="text-xs text-gray-400 mt-2 italic">En T0: una negativa informativa que explica qué datos resolverían la pregunta puede obtener 3–4.</p>
+          </div>
+        </div>
+
+        <!-- M2 + M4 — T3 only -->
+        <div class="grid grid-cols-2 gap-4">
+
+          <div class="bg-white rounded-xl border border-amber-200 overflow-hidden">
+            <div class="flex items-center gap-2 px-4 py-2.5 bg-amber-50 border-b border-amber-100">
+              <span class="text-xs font-bold bg-amber-500 text-white px-2 py-0.5 rounded">M2</span>
+              <span class="font-semibold text-gray-800 text-sm">Altitudinal</span>
+              <span class="ml-auto text-xs text-gray-400">Solo T3 · 1–3</span>
+            </div>
+            <div class="px-4 py-3">
+              <p class="text-xs text-gray-600 mb-3">¿El modelo usó responsablemente el <strong>rango altitudinal</strong> (GBIF + Manual) disponible en el prompt?</p>
+              <div class="grid grid-cols-3 gap-1.5 text-xs">
+                <div class="bg-red-50 border border-red-100 rounded-lg p-2">
+                  <div class="font-bold text-red-700 mb-1">1</div>
+                  <div class="text-gray-600">Ignora completamente el dato altitudinal o lo alucina.</div>
+                </div>
+                <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-2">
+                  <div class="font-bold text-yellow-700 mb-1">2</div>
+                  <div class="text-gray-600">Menciona altitud pero de forma imprecisa o sin relacionarla con la distribución.</div>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-2">
+                  <div class="font-bold text-emerald-700 mb-1">3</div>
+                  <div class="text-gray-600">Uso responsable: cita el rango y lo relaciona correctamente con zonas o hábitat.</div>
+                </div>
+              </div>
+              <p class="text-xs text-gray-400 mt-2 italic">Marcar N/A solo si la respuesta genuinamente no permite evaluar el uso del contexto altitudinal.</p>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-rose-200 overflow-hidden">
+            <div class="flex items-center gap-2 px-4 py-2.5 bg-rose-50 border-b border-rose-100">
+              <span class="text-xs font-bold bg-rose-600 text-white px-2 py-0.5 rounded">M4</span>
+              <span class="font-semibold text-gray-800 text-sm">Variable Climática</span>
+              <span class="ml-auto text-xs text-gray-400">Solo T3 · 1–3</span>
+            </div>
+            <div class="px-4 py-3">
+              <p class="text-xs text-gray-600 mb-3">¿Identificó correctamente la <strong>variable climática limitante</strong> (según SHAP del modelo RF) y explicó su mecanismo?</p>
+              <div class="grid grid-cols-3 gap-1.5 text-xs">
+                <div class="bg-red-50 border border-red-100 rounded-lg p-2">
+                  <div class="font-bold text-red-700 mb-1">1</div>
+                  <div class="text-gray-600">No identifica ninguna variable climática relevante.</div>
+                </div>
+                <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-2">
+                  <div class="font-bold text-yellow-700 mb-1">2</div>
+                  <div class="text-gray-600">Identifica la variable pero sin explicar el mecanismo ecológico.</div>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-2">
+                  <div class="font-bold text-emerald-700 mb-1">3</div>
+                  <div class="text-gray-600">Identifica la variable correcta y explica por qué limita la distribución.</div>
+                </div>
+              </div>
+              <p class="text-xs text-gray-400 mt-2 italic">El intento de usar el contexto climático (aunque con ruido) ya es meritorio. Solo puntúa 1 si hay ausencia total.</p>
+            </div>
+          </div>
+
+        </div><!-- end M2+M4 grid -->
+
+      </div><!-- end guide content -->
+    </details>
+    <!-- ── fin Guía de Métricas ────────────────────────────────────────── -->
+
+    <!-- Tier tabs -->
+    <div class="flex gap-2 mb-6">
+      {% for tier in ['T0', 'T1', 'T3'] %}
+      {% if tiers.get(tier) %}
+      <button onclick="showTier('{{ tier }}')" id="tab-{{ tier }}"
+        class="tier-tab px-4 py-2 rounded-lg text-sm font-semibold border transition-colors
+        {% if tier == 'T0' %}active-tab bg-gray-500 text-white border-gray-500
+        {% else %}bg-white text-gray-500 border-gray-200 hover:border-gray-400{% endif %}">
+        {{ tier }}
+        {% if tier in submitted_tiers %}
+        <span class="ml-1 text-xs">✓</span>
+        {% endif %}
+      </button>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <form method="POST" action="/eval/{{ exp_id }}/{{ especie_id }}" id="eval-form">
+
+      {% for tier in ['T0', 'T1', 'T3'] %}
+      {% set tier_data = tiers.get(tier) %}
+      {% if tier_data %}
+
+      <div id="tier-{{ tier }}" class="tier-panel {% if tier != 'T0' %}hidden{% endif %}">
+
+        <!-- Already submitted notice -->
+        {% if tier in submitted_tiers %}
+        <div class="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700 font-medium">
+          ✓ Ya evaluaste este tier. Puedes revisarlo pero no modificarlo.
+        </div>
+        {% endif %}
+
+        <!-- ── Inputs del modelo ─────────────────────────────────────────── -->
+        {% set maps = tier_data.maps %}
+        {% set rf   = tier_data.rf_metrics %}
+
+        {% if tier == 'T0' %}
+        <div class="mb-5 bg-gray-50 border border-gray-200 rounded-xl p-4">
+          <div class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Inputs recibidos por el modelo — T0</div>
+          <p class="text-sm text-gray-500 italic">Sin imágenes ni datos instrumentales. El modelo respondió exclusivamente desde su conocimiento de entrenamiento.</p>
+        </div>
+
+        {% elif tier == 'T1' %}
+        <div class="mb-5 bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+            <span class="text-xs font-bold bg-slate-500 text-white px-2 py-0.5 rounded">T1</span>
+            <span class="text-xs font-semibold text-gray-700">Inputs recibidos por el modelo</span>
+          </div>
+          <div class="p-4">
+            <div class="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Imagen 1 — Registros de presencia GBIF (Mesoamérica)</div>
+            <p class="text-xs text-gray-400 mb-3">Cada punto representa un espécimen con coordenadas validadas. Sin modelo predictivo ni datos climáticos.</p>
+            {% if maps.meso %}
+            <img src="data:image/png;base64,{{ maps.meso }}" alt="Mapa GBIF Mesoamérica"
+                 class="rounded-lg border border-gray-200 w-full cursor-zoom-in"
+                 onclick="openLightbox(this.src, 'Mapa GBIF Mesoamérica')">
+            {% else %}
+            <p class="text-xs text-gray-400 italic">Imagen no disponible.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        {% elif tier == 'T3' %}
+        <div class="mb-5 bg-white border border-emerald-200 rounded-xl overflow-hidden">
+          <div class="px-4 py-2.5 bg-emerald-50 border-b border-emerald-100 flex items-center gap-2">
+            <span class="text-xs font-bold bg-emerald-600 text-white px-2 py-0.5 rounded">T3</span>
+            <span class="text-xs font-semibold text-gray-700">Inputs recibidos por el modelo</span>
+          </div>
+          <div class="p-4 space-y-5">
+
+            <!-- Métricas cuantitativas del prompt -->
+            {% if rf %}
+            <div>
+              <div class="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">Datos cuantitativos (inyectados en el prompt)</div>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                {% if rf.roc_auc or rf.auc %}
+                <div class="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                  <div class="text-gray-400 mb-0.5">AUC del modelo RF</div>
+                  <div class="font-bold text-gray-800">{{ "%.4f" | format(rf.roc_auc or rf.auc) }}</div>
+                </div>
+                {% endif %}
+                {% if rf.altitud_rango or rf.info_altitud %}
+                <div class="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                  <div class="text-gray-400 mb-0.5">Rango altitudinal (GBIF)</div>
+                  <div class="font-bold text-gray-800 text-xs">{{ rf.altitud_rango or rf.info_altitud }}</div>
+                </div>
+                {% endif %}
+                {% if rf.top_variable or rf.factor_limitante %}
+                <div class="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                  <div class="text-gray-400 mb-0.5">Variable limitante (SHAP)</div>
+                  <div class="font-bold text-gray-800 text-xs">{{ rf.top_variable or rf.factor_limitante }}</div>
+                </div>
+                {% endif %}
+                {% if rf.zona_ideal or rf.ecosistema %}
+                <div class="bg-gray-50 rounded-lg p-2 border border-gray-200">
+                  <div class="text-gray-400 mb-0.5">Ecosistema óptimo</div>
+                  <div class="font-bold text-gray-800 text-xs">{{ rf.zona_ideal or rf.ecosistema }}</div>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Imagen 1: Mapa hábitat predicho -->
+            <div>
+              <div class="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Imagen 1 — Mapa de hábitat predicho (Manual + Hammel + DEM)</div>
+              <p class="text-xs text-gray-400 mb-2">
+                <span class="inline-block w-3 h-3 rounded-sm bg-cyan-400 mr-1"></span>Cyan brillante = hábitat óptimo &nbsp;
+                <span class="inline-block w-3 h-3 rounded-sm bg-gray-400 mr-1"></span>Apagado = fuera de rango altitudinal &nbsp;
+                <span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Rojo = presencias GBIF confirmadas
+              </p>
+              {% if maps.habitat %}
+              <img src="data:image/png;base64,{{ maps.habitat }}" alt="Mapa hábitat predicho"
+                   class="rounded-lg border border-gray-200 w-full cursor-zoom-in"
+                   onclick="openLightbox(this.src, 'Mapa de hábitat predicho (Manual + Hammel + DEM)')">
+              {% else %}
+              <p class="text-xs text-gray-400 italic">Imagen no disponible.</p>
+              {% endif %}
+            </div>
+
+            <!-- Imagen 2: Mapa RF predictivo -->
+            <div>
+              <div class="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">Imagen 2 — Mapa predictivo climático (Random Forest)</div>
+              <p class="text-xs text-gray-400 mb-2">Distribución modelada con variables bioclimáticas WorldClim. Zonas más oscuras = mayor idoneidad climática predicha.</p>
+              {% if maps.rf %}
+              <img src="data:image/png;base64,{{ maps.rf }}" alt="Mapa RF predictivo"
+                   class="rounded-lg border border-gray-200 w-full cursor-zoom-in"
+                   onclick="openLightbox(this.src, 'Mapa predictivo Random Forest')">
+              {% else %}
+              <p class="text-xs text-gray-400 italic">Imagen no disponible.</p>
+              {% endif %}
+            </div>
+
+            <!-- SHAP + LIME (contexto para el evaluador, no enviado al LLM) -->
+            {% if maps.shap or maps.lime %}
+            <details class="border border-gray-200 rounded-xl overflow-hidden">
+              <summary class="px-4 py-2.5 bg-gray-50 text-xs font-medium text-gray-600 cursor-pointer hover:bg-gray-100 list-none">
+                📊 Explicaciones adicionales del modelo RF (referencia para el evaluador)
+              </summary>
+              <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if maps.shap %}
+                <div>
+                  <div class="text-xs font-medium text-gray-500 mb-2">SHAP — Importancia de variables</div>
+                  <img src="data:image/png;base64,{{ maps.shap }}" alt="SHAP summary"
+                       class="rounded-lg border border-gray-200 w-full cursor-zoom-in"
+                       onclick="openLightbox(this.src, 'SHAP — Importancia de variables')">
+                </div>
+                {% endif %}
+                {% if maps.lime %}
+                <div>
+                  <div class="text-xs font-medium text-gray-500 mb-2">LIME — Explicación local</div>
+                  <img src="data:image/png;base64,{{ maps.lime }}" alt="LIME explanation"
+                       class="rounded-lg border border-gray-200 w-full cursor-zoom-in"
+                       onclick="openLightbox(this.src, 'LIME — Explicación local')">
+                </div>
+                {% endif %}
+              </div>
+            </details>
+            {% endif %}
+
+          </div>
+        </div>
+        {% endif %}
+        <!-- ── fin Inputs del modelo ──────────────────────────────────────── -->
+
+        <!-- M2/M4 note for non-T3 -->
+        {% if tier != 'T3' %}
+        <div class="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-500">
+          M2 y M4 no aplican para {{ tier }} — el modelo no recibió datos de altitud ni climáticos.
+        </div>
+        {% endif %}
+
+        <!-- Model A / Model B tabs within tier -->
+        {% for model_key, model_label in [('A', 'Modelo A'), ('B', 'Modelo B')] %}
+        {% set real_model = model_A if model_key == 'A' else model_B %}
+        {% set model_slug = real_model.replace('/', '_').replace('-', '_').replace('.', '_') %}
+        {% set respuesta = tier_data.modelos.get(model_slug, '') or tier_data.modelos.get(real_model, '') %}
+        {# Try all keys to find the response for this model #}
+        {% set respuesta = namespace(text='') %}
+        {% for k, v in tier_data.modelos.items() %}
+          {% if real_model | replace('/', '') | lower in k | lower or k | lower in real_model | replace('/', '') | lower %}
+            {% set respuesta.text = v %}
+          {% endif %}
+        {% endfor %}
+
+        <div class="bg-white rounded-2xl border border-gray-200 mb-4 overflow-hidden">
+
+          <!-- Model header -->
+          <div class="flex items-center gap-3 px-5 py-3 bg-gray-50 border-b border-gray-100">
+            <span class="text-sm font-bold text-gray-700">{{ model_label }}</span>
+            <span class="text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded font-mono">identidad oculta</span>
+          </div>
+
+          <!-- Response text -->
+          <div class="px-5 py-4 border-b border-gray-100">
+            {% if respuesta.text %}
+            <pre class="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap font-sans">{{ respuesta.text }}</pre>
+            {% else %}
+            <p class="text-sm text-gray-400 italic">Respuesta no disponible para este modelo y tier.</p>
+            {% endif %}
+          </div>
+
+          <!-- Likert scales -->
+          <div class="px-5 py-4 space-y-5">
+
+            <!-- M1 -->
+            <div>
+              <div class="flex items-baseline justify-between mb-1">
+                <label class="text-sm font-semibold text-gray-700">M1 — Precisión Geográfica</label>
+                <span class="text-xs text-gray-400">1–5</span>
+              </div>
+              <p class="text-xs text-gray-500 mb-2">¿Las zonas geográficas mencionadas son consistentes con la ficha de referencia?</p>
+              <div class="flex gap-2">
+                {% for v in [1, 2, 3, 4, 5] %}
+                <label class="flex flex-col items-center gap-1 cursor-pointer group">
+                  <input type="radio" name="{{ tier }}_{{ model_key }}_M1" value="{{ v }}"
+                    {% if tier in submitted_tiers %}disabled{% endif %}
+                    class="accent-emerald-600 w-4 h-4">
+                  <span class="text-xs text-gray-400 group-hover:text-gray-600">{{ v }}</span>
+                </label>
+                {% endfor %}
+              </div>
+              <div class="flex justify-between text-xs text-gray-300 mt-1">
+                <span>Incorrecta</span><span>Completa y específica</span>
+              </div>
+            </div>
+
+            <!-- M3 -->
+            <div>
+              <div class="flex items-baseline justify-between mb-1">
+                <label class="text-sm font-semibold text-gray-700">M3 — Relevancia de Respuesta</label>
+                <span class="text-xs text-gray-400">1–5</span>
+              </div>
+              <p class="text-xs text-gray-500 mb-2">¿La respuesta contesta directamente la pregunta con información específica de la especie?</p>
+              <div class="flex gap-2">
+                {% for v in [1, 2, 3, 4, 5] %}
+                <label class="flex flex-col items-center gap-1 cursor-pointer group">
+                  <input type="radio" name="{{ tier }}_{{ model_key }}_M3" value="{{ v }}"
+                    {% if tier in submitted_tiers %}disabled{% endif %}
+                    class="accent-emerald-600 w-4 h-4">
+                  <span class="text-xs text-gray-400 group-hover:text-gray-600">{{ v }}</span>
+                </label>
+                {% endfor %}
+              </div>
+              <div class="flex justify-between text-xs text-gray-300 mt-1">
+                <span>No responde</span><span>Directa y específica</span>
+              </div>
+            </div>
+
+            <!-- M5 -->
+            <div>
+              <div class="flex items-baseline justify-between mb-1">
+                <label class="text-sm font-semibold text-gray-700">M5 — Profundidad Analítica</label>
+                <span class="text-xs text-gray-400">1–5</span>
+              </div>
+              <p class="text-xs text-gray-500 mb-2">¿La respuesta razona e integra evidencia, o solo enumera datos?</p>
+              <div class="flex gap-2">
+                {% for v in [1, 2, 3, 4, 5] %}
+                <label class="flex flex-col items-center gap-1 cursor-pointer group">
+                  <input type="radio" name="{{ tier }}_{{ model_key }}_M5" value="{{ v }}"
+                    {% if tier in submitted_tiers %}disabled{% endif %}
+                    class="accent-emerald-600 w-4 h-4">
+                  <span class="text-xs text-gray-400 group-hover:text-gray-600">{{ v }}</span>
+                </label>
+                {% endfor %}
+              </div>
+              <div class="flex justify-between text-xs text-gray-300 mt-1">
+                <span>Solo enumera datos</span><span>Síntesis crítica</span>
+              </div>
+            </div>
+
+            <!-- M2 — T3 only -->
+            {% if tier == 'T3' %}
+            <div>
+              <div class="flex items-baseline justify-between mb-1">
+                <label class="text-sm font-semibold text-gray-700">M2 — Uso del Contexto Altitudinal <span class="text-xs text-emerald-600 font-normal ml-1">T3 bonus</span></label>
+                <span class="text-xs text-gray-400">1–3 / N/A</span>
+              </div>
+              <p class="text-xs text-gray-500 mb-2">¿El modelo usó responsablemente el rango altitudinal disponible?</p>
+              <div class="flex gap-3 items-center">
+                {% for v in [1, 2, 3] %}
+                <label class="flex flex-col items-center gap-1 cursor-pointer group">
+                  <input type="radio" name="{{ tier }}_{{ model_key }}_M2" value="{{ v }}"
+                    {% if tier in submitted_tiers %}disabled{% endif %}
+                    class="accent-emerald-600 w-4 h-4">
+                  <span class="text-xs text-gray-400 group-hover:text-gray-600">{{ v }}</span>
+                </label>
+                {% endfor %}
+                <label class="flex items-center gap-1.5 ml-3 cursor-pointer">
+                  <input type="radio" name="{{ tier }}_{{ model_key }}_M2" value="NA"
+                    {% if tier in submitted_tiers %}disabled{% endif %}
+                    class="accent-gray-400 w-4 h-4">
+                  <span class="text-xs text-gray-400">N/A</span>
+                </label>
+              </div>
+              <div class="flex justify-between text-xs text-gray-300 mt-1" style="max-width:6rem">
+                <span>Ignora altitud</span>
+              </div>
+            </div>
+
+            <!-- M4 — T3 only -->
+            <div>
+              <div class="flex items-baseline justify-between mb-1">
+                <label class="text-sm font-semibold text-gray-700">M4 — Variable Climática (SHAP) <span class="text-xs text-emerald-600 font-normal ml-1">T3 bonus</span></label>
+                <span class="text-xs text-gray-400">1–3 / N/A</span>
+              </div>
+              <p class="text-xs text-gray-500 mb-2">¿El sistema identificó correctamente la variable climática más limitante y la explicó?</p>
+              <div class="flex gap-3 items-center">
+                {% for v in [1, 2, 3] %}
+                <label class="flex flex-col items-center gap-1 cursor-pointer group">
+                  <input type="radio" name="{{ tier }}_{{ model_key }}_M4" value="{{ v }}"
+                    {% if tier in submitted_tiers %}disabled{% endif %}
+                    class="accent-emerald-600 w-4 h-4">
+                  <span class="text-xs text-gray-400 group-hover:text-gray-600">{{ v }}</span>
+                </label>
+                {% endfor %}
+                <label class="flex items-center gap-1.5 ml-3 cursor-pointer">
+                  <input type="radio" name="{{ tier }}_{{ model_key }}_M4" value="NA"
+                    {% if tier in submitted_tiers %}disabled{% endif %}
+                    class="accent-gray-400 w-4 h-4">
+                  <span class="text-xs text-gray-400">N/A</span>
+                </label>
+              </div>
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+        {% endfor %}{# end model A/B loop #}
+
+        <!-- Comment (once per tier) -->
+        <div class="mb-4">
+          <label class="text-sm font-medium text-gray-700 block mb-1">
+            Comentario opcional <span class="text-gray-400 font-normal">(para este tier)</span>
+          </label>
+          <textarea name="{{ tier }}_comment" rows="2" {% if tier in submitted_tiers %}disabled{% endif %}
+            placeholder="Observaciones, dudas, o casos especiales para este tier…"
+            class="w-full text-sm border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-none disabled:bg-gray-50 disabled:text-gray-400"
+          ></textarea>
+        </div>
+
+        <!-- Submit this tier -->
+        {% if tier not in submitted_tiers %}
+        <button type="submit" name="submit_tier" value="{{ tier }}"
+          onclick="return validateTier('{{ tier }}')"
+          class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-colors text-sm">
+          Guardar evaluación — {{ tier }}
+        </button>
+        {% endif %}
+
+        <!-- Navigation -->
+        <div class="flex justify-between mt-4 text-sm">
+          {% if prev_species %}
+          <a href="/eval/{{ exp_id }}/{{ prev_species.especie_id }}"
+             class="text-gray-400 hover:text-gray-700 transition-colors">← {{ prev_species.especie }}</a>
+          {% else %}<span></span>{% endif %}
+          {% if next_species %}
+          <a href="/eval/{{ exp_id }}/{{ next_species.especie_id }}"
+             class="text-emerald-600 hover:text-emerald-700 font-medium transition-colors">{{ next_species.especie }} →</a>
+          {% endif %}
+        </div>
+
+      </div>{# end tier panel #}
+      {% endif %}
+      {% endfor %}{# end tier loop #}
+
+    </form>
+
+  </div>{# end right column #}
+</div>
+
+{% endblock %}
+
+<!-- Lightbox overlay -->
+<div id="lightbox" onclick="closeLightbox()"
+     class="hidden fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 cursor-zoom-out">
+  <div class="max-w-5xl w-full">
+    <div id="lightbox-caption" class="text-white text-sm mb-2 text-center font-medium opacity-80"></div>
+    <img id="lightbox-img" src="" alt="" class="max-h-[85vh] w-auto mx-auto rounded-xl shadow-2xl">
+  </div>
+</div>
+
+{% block scripts %}
+<script>
+  function showTier(tier) {
+    document.querySelectorAll('.tier-panel').forEach(p => p.classList.add('hidden'));
+    document.querySelectorAll('.tier-tab').forEach(t => {
+      t.classList.remove('bg-gray-500','bg-slate-500','bg-emerald-600','text-white','border-gray-500','border-slate-500','border-emerald-600');
+      t.classList.add('bg-white','text-gray-500','border-gray-200');
+    });
+    document.getElementById('tier-' + tier)?.classList.remove('hidden');
+    const tab = document.getElementById('tab-' + tier);
+    if (tab) {
+      tab.classList.remove('bg-white','text-gray-500','border-gray-200');
+      const colors = {T0: ['bg-gray-500','border-gray-500'], T1: ['bg-slate-500','border-slate-500'], T3: ['bg-emerald-600','border-emerald-600']};
+      (colors[tier] || []).forEach(c => tab.classList.add(c));
+      tab.classList.add('text-white');
+    }
+  }
+
+  function validateTier(tier) {
+    const required = ['M1', 'M3', 'M5'];
+    const models   = ['A', 'B'];
+    for (const model of models) {
+      for (const metric of required) {
+        const name = `${tier}_${model}_${metric}`;
+        const selected = document.querySelector(`input[name="${name}"]:checked`);
+        if (!selected) {
+          alert(`Por favor selecciona un valor para ${metric} — Modelo ${model} (${tier})`);
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  // ── Lightbox ─────────────────────────────────────────────────────────────
+  function openLightbox(src, caption) {
+    document.getElementById("lightbox-img").src = src;
+    document.getElementById("lightbox-caption").textContent = caption || "";
+    document.getElementById("lightbox").classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+  function closeLightbox() {
+    document.getElementById("lightbox").classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeLightbox(); });
+</script>
+{% endblock %}

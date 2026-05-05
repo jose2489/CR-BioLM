@@ -52,8 +52,7 @@ experiment/crbiolm.db
 utils/catalogo_mapas_bien.csv
 utils/catalogo_ocurrencias_gbif.csv
 
-# UI / Viewer app (no es parte del pipeline científico)
-app/
+# Old report location (moved to app/)
 experiment/report/
 
 # Archivos de especies para pruebas locales

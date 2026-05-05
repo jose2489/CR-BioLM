@@ -2,7 +2,7 @@ import sqlite3
 import os
 from datetime import datetime, timezone
 
-DB_PATH = os.path.join("experiment", "crbiolm.db")
+DB_PATH = os.getenv("DB_PATH", os.path.join("experiment", "crbiolm.db"))
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS experiments (

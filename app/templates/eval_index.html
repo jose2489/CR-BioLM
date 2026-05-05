@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Evaluación Experta — CR-BioLM{% endblock %}
+
+{% block nav_extra %}
+<span class="text-sm text-gray-400">Sesión: <strong class="text-white">{{ user }}</strong></span>
+{% if is_admin %}
+<span class="text-xs bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold">Admin</span>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="mb-8">
+  <h1 class="text-3xl font-bold text-gray-900">Evaluación Experta</h1>
+  <p class="text-gray-500 mt-1 max-w-2xl">
+    Evalúa las respuestas generadas por los modelos para cada especie y tier.
+    Los modelos aparecen como <strong>Modelo A</strong> y <strong>Modelo B</strong> — la asignación real se revela al terminar.
+  </p>
+</div>
+
+<!-- Tier explanation -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+  <div class="bg-white rounded-xl border border-gray-200 p-4">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="bg-gray-500 text-white text-xs font-bold px-2 py-0.5 rounded">T0</span>
+      <span class="font-semibold text-gray-800">Baseline Paramétrico</span>
+    </div>
+    <p class="text-sm text-gray-500">El modelo responde solo con su conocimiento de entrenamiento. Sin mapas ni datos instrumentales adicionales.</p>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-200 p-4">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="bg-slate-500 text-white text-xs font-bold px-2 py-0.5 rounded">T1</span>
+      <span class="font-semibold text-gray-800">Baseline GBIF</span>
+    </div>
+    <p class="text-sm text-gray-500">El modelo recibe un mapa de presencias GBIF de Mesoamérica. Sin modelo predictivo ni métricas climáticas.</p>
+  </div>
+  <div class="bg-white rounded-xl border border-gray-200 p-4">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="bg-emerald-600 text-white text-xs font-bold px-2 py-0.5 rounded">T3</span>
+      <span class="font-semibold text-gray-800">Sistema Completo</span>
+    </div>
+    <p class="text-sm text-gray-500">El modelo recibe mapa de hábitat predicho + modelo RF + variables climáticas SHAP + rango altitudinal.</p>
+  </div>
+</div>
+
+<!-- Experiments -->
+{% for exp in experiments %}
+{% set exp_progress = progress.get(exp.exp_id, {}) %}
+{% set done_count = exp_progress | length %}
+{% set total = exp.n_species %}
+
+<div class="bg-white rounded-2xl border border-gray-200 mb-6 overflow-hidden">
+
+  <!-- Experiment header -->
+  <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
+    <div>
+      <h2 class="font-bold text-gray-900">{{ exp.exp_id }}</h2>
+      <p class="text-sm text-gray-500 mt-0.5">
+        Perfil: <strong>{{ exp.persona }}</strong> ·
+        {{ exp.n_species }} especies ·
+        {{ exp.started_at }}
+        {% if exp.notes %} · <em>{{ exp.notes }}</em>{% endif %}
+      </p>
+    </div>
+    <div class="text-right shrink-0">
+      <div class="text-2xl font-bold text-gray-900">{{ done_count }}<span class="text-gray-400 text-lg font-normal">/{{ total }}</span></div>
+      <div class="text-xs text-gray-400">completadas</div>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="h-1.5 bg-gray-100">
+    <div class="h-1.5 bg-emerald-500 transition-all duration-500"
+         style="width: {{ ((done_count / total) * 100) | round | int if total > 0 else 0 }}%"></div>
+  </div>
+
+  <!-- LLM score summary -->
+  {% if exp.tier_scores %}
+  <div class="flex gap-6 px-6 py-3 border-b border-gray-100 text-sm">
+    <span class="text-gray-400 text-xs uppercase tracking-wide font-medium self-center">Score LLM</span>
+    {% for tier, score in exp.tier_scores.items() %}
+    {% if score is not none %}
+    <span class="flex items-center gap-1.5">
+      <span class="{% if tier == 'T0' %}bg-gray-500{% elif tier == 'T1' %}bg-slate-500{% else %}bg-emerald-600{% endif %} text-white text-xs font-bold px-1.5 py-0.5 rounded">{{ tier }}</span>
+      <span class="font-semibold text-gray-700">{{ score }}</span>
+    </span>
+    {% endif %}
+    {% endfor %}
+    {% if is_admin %}
+    <a href="/eval/results/{{ exp.exp_id }}"
+       class="ml-auto text-xs text-amber-600 hover:text-amber-700 font-medium border border-amber-200 px-2 py-1 rounded-lg">
+      Ver resultados (admin)
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Species list -->
+  <div class="divide-y divide-gray-50">
+    {% for species in exp.get('species_list', []) %}
+    {% set sp_done = exp_progress.get(species.especie, []) %}
+    {% set all_tiers_done = ('T0' in sp_done and 'T1' in sp_done and 'T3' in sp_done) %}
+    <a href="/eval/{{ exp.exp_id }}/{{ species.especie_id }}"
+       class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors group">
+      <div class="flex items-center gap-3">
+        {% if all_tiers_done %}
+        <span class="text-emerald-500 text-lg">✓</span>
+        {% elif sp_done %}
+        <span class="text-amber-400 text-lg">◐</span>
+        {% else %}
+        <span class="text-gray-200 text-lg">○</span>
+        {% endif %}
+        <span class="font-medium text-gray-800 italic group-hover:text-emerald-700 transition-colors">{{ species.especie }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        {% for tier in ['T0', 'T1', 'T3'] %}
+        <span class="text-xs px-1.5 py-0.5 rounded font-bold
+          {% if tier in sp_done %}
+            {% if tier == 'T0' %}bg-gray-500 text-white{% elif tier == 'T1' %}bg-slate-500 text-white{% else %}bg-emerald-600 text-white{% endif %}
+          {% else %}
+            bg-gray-100 text-gray-400
+          {% endif %}">
+          {{ tier }}
+        </span>
+        {% endfor %}
+        <span class="text-gray-300 group-hover:text-gray-400 ml-1">→</span>
+      </div>
+    </a>
+    {% else %}
+    {# No species_list in exp dict — show placeholder #}
+    <div class="px-6 py-4 text-sm text-gray-400 italic">
+      Cargando lista de especies…
+      <a href="/eval/{{ exp.exp_id }}/_load" class="hidden"></a>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% else %}
+<div class="text-center text-gray-400 py-16">No hay experimentos disponibles aún.</div>
+{% endfor %}
+
+{% endblock %}

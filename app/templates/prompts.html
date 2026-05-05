@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% block title %}Prompts — CR-BioLM{% endblock %}
+
+{% block nav_extra %}
+<a href="/" class="text-sm text-gray-400 hover:text-white">← Experimentos</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="mb-8">
+  <h1 class="text-3xl font-bold text-gray-900">Prompts del Sistema</h1>
+  <p class="text-gray-500 mt-1 max-w-2xl">
+    Templates enviados al LLM generador en cada tier. Las ediciones se guardan en
+    <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">llm/prompts_override.json</code>
+    y se aplican en el próximo run sin necesidad de reiniciar el servidor.
+    Los placeholders <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">{variable}</code>
+    son reemplazados dinámicamente por el pipeline.
+  </p>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="hidden fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium transition-all duration-300">
+</div>
+
+<!-- Prompt cards -->
+<div class="flex flex-col gap-8">
+{% for tier in tiers %}
+{% set key = tier.key %}
+{% set meta = tier.meta %}
+{% set color = meta.color %}
+
+<div id="card-{{ key }}" class="bg-white rounded-2xl border-2 transition-colors duration-200
+  {% if tier.is_overridden %}border-amber-300{% else %}border-gray-200{% endif %}">
+
+  <!-- Card header -->
+  <div class="flex items-start justify-between gap-4 p-5 border-b border-gray-100">
+    <div class="flex items-start gap-3">
+      <!-- Tier badge -->
+      <span class="mt-0.5 text-xs font-bold px-2.5 py-1 rounded-lg text-white shrink-0
+        {% if color == 'gray' %}bg-gray-500
+        {% elif color == 'slate' %}bg-slate-500
+        {% elif color == 'emerald' %}bg-emerald-600
+        {% elif color == 'amber' %}bg-amber-500
+        {% endif %}">
+        {{ key if key != '_REGLA_STRICTA' else 'REGLA' }}
+      </span>
+      <div>
+        <h2 class="font-semibold text-gray-900">{{ meta.label }}</h2>
+        <p class="text-sm text-gray-500 mt-0.5">{{ meta.desc }}</p>
+      </div>
+    </div>
+
+    <!-- Status + buttons -->
+    <div class="flex items-center gap-2 shrink-0">
+      {% if tier.is_overridden %}
+      <span class="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
+        Modificado
+      </span>
+      {% else %}
+      <span class="text-xs bg-gray-50 text-gray-400 border border-gray-200 px-2 py-0.5 rounded-full">
+        Default
+      </span>
+      {% endif %}
+      <button onclick="enableEdit('{{ key }}')"
+        id="btn-edit-{{ key }}"
+        class="text-xs px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors">
+        ✏️ Editar
+      </button>
+      <button onclick="savePrompt('{{ key }}')"
+        id="btn-save-{{ key }}"
+        class="hidden text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors">
+        💾 Guardar
+      </button>
+      <button onclick="cancelEdit('{{ key }}')"
+        id="btn-cancel-{{ key }}"
+        class="hidden text-xs px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 font-medium transition-colors">
+        Cancelar
+      </button>
+      {% if tier.is_overridden %}
+      <button onclick="resetPrompt('{{ key }}')"
+        id="btn-reset-{{ key }}"
+        class="text-xs px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-medium transition-colors">
+        ↺ Restaurar default
+      </button>
+      {% else %}
+      <button onclick="resetPrompt('{{ key }}')"
+        id="btn-reset-{{ key }}"
+        class="hidden text-xs px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-medium transition-colors">
+        ↺ Restaurar default
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Placeholders & images info -->
+  {% if meta.placeholders or meta.images %}
+  <div class="px-5 py-3 bg-gray-50 border-b border-gray-100 flex flex-wrap gap-4 text-xs">
+    {% if meta.placeholders %}
+    <div class="flex flex-wrap items-center gap-1.5">
+      <span class="text-gray-400 font-medium uppercase tracking-wide">Placeholders:</span>
+      {% for p in meta.placeholders %}
+      <code class="bg-blue-50 text-blue-700 border border-blue-100 px-1.5 py-0.5 rounded font-mono">{{ p }}</code>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if meta.images %}
+    <div class="flex flex-wrap items-center gap-1.5">
+      <span class="text-gray-400 font-medium uppercase tracking-wide">Imágenes:</span>
+      {% for img in meta.images %}
+      <span class="bg-purple-50 text-purple-700 border border-purple-100 px-1.5 py-0.5 rounded">{{ img }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Prompt textarea -->
+  <div class="p-5">
+    <textarea
+      id="textarea-{{ key }}"
+      data-original="{{ tier.text | e }}"
+      data-default="{{ tier.default | e }}"
+      readonly
+      class="w-full font-mono text-sm text-gray-800 bg-gray-50 border border-gray-200 rounded-xl p-4 resize-none
+             focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent
+             transition-all duration-150 leading-relaxed"
+      style="min-height: 280px; field-sizing: content;"
+      oninput="autoResize(this)"
+    >{{ tier.text }}</textarea>
+
+    <!-- Character count -->
+    <div class="flex justify-between items-center mt-2">
+      <span id="charcount-{{ key }}" class="text-xs text-gray-400">
+        {{ tier.text | length }} caracteres
+      </span>
+      <span id="edit-hint-{{ key }}" class="hidden text-xs text-amber-600 font-medium">
+        ⚠️ Editando — los cambios se aplicarán al próximo run
+      </span>
+    </div>
+  </div>
+
+</div>
+{% endfor %}
+</div>
+
+<!-- Usage note -->
+<div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+  <strong>Cómo funciona:</strong>
+  Los prompts editados se guardan en <code class="font-mono bg-blue-100 px-1 rounded">llm/prompts_override.json</code>.
+  El pipeline los carga en cada llamada — no requiere reiniciar el servidor ni el proceso de experimento.
+  "Restaurar default" elimina el override y vuelve al prompt original del código fuente.
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  function showToast(msg, type = "success") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = `fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium transition-all duration-300 ${
+      type === "success"
+        ? "bg-emerald-600 text-white"
+        : type === "warn"
+        ? "bg-amber-500 text-white"
+        : "bg-red-600 text-white"
+    }`;
+    t.classList.remove("hidden");
+    setTimeout(() => t.classList.add("hidden"), 3000);
+  }
+
+  function autoResize(el) {
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+    const key = el.id.replace("textarea-", "");
+    document.getElementById("charcount-" + key).textContent =
+      el.value.length + " caracteres";
+  }
+
+  function setCardBorder(key, state) {
+    const card = document.getElementById("card-" + key);
+    card.classList.remove("border-gray-200", "border-amber-300", "border-emerald-400", "border-blue-400");
+    card.classList.add({
+      default: "border-gray-200",
+      overridden: "border-amber-300",
+      editing: "border-blue-400",
+    }[state] || "border-gray-200");
+  }
+
+  // ── Edit / Cancel ─────────────────────────────────────────────────────────
+
+  function enableEdit(key) {
+    const ta = document.getElementById("textarea-" + key);
+    ta.readOnly = false;
+    ta.classList.remove("bg-gray-50");
+    ta.classList.add("bg-white");
+    ta.focus();
+    autoResize(ta);
+
+    show("btn-save-" + key);
+    show("btn-cancel-" + key);
+    show("edit-hint-" + key);
+    hide("btn-edit-" + key);
+    setCardBorder(key, "editing");
+  }
+
+  function cancelEdit(key) {
+    const ta = document.getElementById("textarea-" + key);
+    ta.value = ta.dataset.original;
+    ta.readOnly = true;
+    ta.classList.add("bg-gray-50");
+    ta.classList.remove("bg-white");
+
+    hide("btn-save-" + key);
+    hide("btn-cancel-" + key);
+    hide("edit-hint-" + key);
+    show("btn-edit-" + key);
+    setCardBorder(key, ta.dataset.original === ta.dataset.default ? "default" : "overridden");
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+
+  async function savePrompt(key) {
+    const ta = document.getElementById("textarea-" + key);
+    const text = ta.value;
+
+    const res = await fetch("/api/prompts/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, text }),
+    });
+
+    if (res.ok) {
+      ta.dataset.original = text;
+      ta.readOnly = true;
+      ta.classList.add("bg-gray-50");
+      ta.classList.remove("bg-white");
+
+      hide("btn-save-" + key);
+      hide("btn-cancel-" + key);
+      hide("edit-hint-" + key);
+      show("btn-edit-" + key);
+      show("btn-reset-" + key);
+
+      // Update status badge
+      const card = document.getElementById("card-" + key);
+      const badge = card.querySelector(".border-b span:first-child");
+      setCardBorder(key, "overridden");
+      showToast("✅ Prompt guardado — se aplicará al próximo run");
+    } else {
+      showToast("❌ Error al guardar", "error");
+    }
+  }
+
+  // ── Reset ─────────────────────────────────────────────────────────────────
+
+  async function resetPrompt(key) {
+    if (!confirm(`¿Restaurar el prompt ${key} al default? Se eliminará el override guardado.`)) return;
+
+    const res = await fetch("/api/prompts/reset/" + key, { method: "POST" });
+
+    if (res.ok) {
+      const data = await res.json();
+      const ta = document.getElementById("textarea-" + key);
+      ta.value = data.text;
+      ta.dataset.original = data.text;
+      ta.readOnly = true;
+      ta.classList.add("bg-gray-50");
+      ta.classList.remove("bg-white");
+
+      hide("btn-save-" + key);
+      hide("btn-cancel-" + key);
+      hide("edit-hint-" + key);
+      hide("btn-reset-" + key);
+      show("btn-edit-" + key);
+
+      autoResize(ta);
+      setCardBorder(key, "default");
+      showToast("↺ Prompt restaurado al default");
+    } else {
+      showToast("❌ Error al restaurar", "error");
+    }
+  }
+
+  // ── Utilities ─────────────────────────────────────────────────────────────
+
+  function show(id) { document.getElementById(id)?.classList.remove("hidden"); }
+  function hide(id) { document.getElementById(id)?.classList.add("hidden"); }
+
+  // Init: auto-size all textareas on load
+  document.querySelectorAll("textarea").forEach(autoResize);
+</script>
+{% endblock %}
