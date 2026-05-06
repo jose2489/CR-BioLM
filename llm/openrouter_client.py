@@ -141,6 +141,7 @@ class OpenRouterClient:
 
         payload = {
             "model": modelo_a_usar,
+            "max_tokens": 4096,
             "messages": [
                 {
                     "role": "user",

@@ -23,7 +23,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import config
-from llm.judge_client import JudgeClient, ficha_summary
+from llm.judge_client import EnsembleJudge, ficha_summary
 
 RUNS_DIR = os.path.join("experiment", "runs")
 TIERS    = ["T0", "T1", "T2", "T3"]
@@ -81,7 +81,7 @@ def encontrar_archivos_por_tier(especie_dir: str) -> dict:
 
 # ── Evaluación de un experimento ──────────────────────────────────────────────
 
-def evaluar_experimento(exp_dir: str, judge: JudgeClient,
+def evaluar_experimento(exp_dir: str, judge: EnsembleJudge,
                         resume: bool = False, dry_run: bool = False,
                         solo_especie: str = None) -> list[dict]:
     exp_id    = os.path.basename(exp_dir)
@@ -228,7 +228,10 @@ def main():
     if not args.exp_id and not args.all:
         parser.error("Debes especificar --exp-id o --all")
 
-    judge = JudgeClient(api_key=config.OPENROUTER_API_KEY)
+    judge = EnsembleJudge(
+        openrouter_api_key=config.OPENROUTER_API_KEY,
+        groq_api_key=config.GROQ_API_KEY,
+    )
 
     if args.all:
         exp_dirs = sorted(glob.glob(os.path.join(RUNS_DIR, "EXP-*")))
