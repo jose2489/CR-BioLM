@@ -633,7 +633,8 @@ async def eval_form(request: Request, exp_id: str, especie_id: str,
     with get_conn() as conn:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("SELECT model_A, model_B FROM expert_sessions WHERE username = %s", (user,))
-        session = cur.fetchone()
+        _row = cur.fetchone()
+        session = dict(_row) if _row else None
     model_A = session["model_A"] if session else "openai/gpt-4o"
     model_B = session["model_B"] if session else "anthropic/claude-sonnet-4-5"
 
@@ -650,7 +651,7 @@ async def eval_form(request: Request, exp_id: str, especie_id: str,
             SELECT tier FROM human_evaluations
             WHERE exp_id=%s AND especie=%s AND evaluator=%s
         """, (exp_id, data["especie"], user))
-        submitted = cur.fetchall()
+        submitted = [dict(r) for r in cur.fetchall()]
     submitted_tiers = {r["tier"] for r in submitted}
 
     return TEMPLATES.TemplateResponse(request, "eval_form.html", {
@@ -680,7 +681,8 @@ async def eval_submit(request: Request, exp_id: str, especie_id: str,
     with get_conn() as conn:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cur.execute("SELECT model_A, model_B FROM expert_sessions WHERE username = %s", (user,))
-        session = cur.fetchone()
+        _row = cur.fetchone()
+        session = dict(_row) if _row else None
     model_A = session["model_A"] if session else "openai/gpt-4o"
     model_B = session["model_B"] if session else "anthropic/claude-sonnet-4-5"
 
