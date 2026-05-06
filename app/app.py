@@ -157,6 +157,8 @@ def get_experiment_detail(exp_id):
             continue
         especie = os.path.basename(especie_dir).replace("_", " ")
         perfil  = meta.get("persona", "botanico")
+        if perfil == "random":
+            perfil = exp_log.get(f"{especie}|persona", perfil)
 
         pregunta_key = f"{especie}|pregunta|{perfil}"
         pregunta     = exp_log.get(pregunta_key, {}).get("pregunta", "—")
@@ -261,6 +263,8 @@ def get_species_detail(exp_id, especie_id):
     exp_log     = load_json(os.path.join(exp_dir, "experiment_log.json"))
     perfil      = meta.get("persona", "botanico")
     especie     = especie_id.replace("_", " ")
+    if perfil == "random":
+        perfil = exp_log.get(f"{especie}|persona", perfil)
 
     pregunta_key = f"{especie}|pregunta|{perfil}"
     pregunta     = exp_log.get(pregunta_key, {}).get("pregunta", "—")
