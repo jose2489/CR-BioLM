@@ -635,8 +635,8 @@ async def eval_form(request: Request, exp_id: str, especie_id: str,
         cur.execute("SELECT model_A, model_B FROM expert_sessions WHERE username = %s", (user,))
         _row = cur.fetchone()
         session = dict(_row) if _row else None
-    model_A = session["model_A"] if session else "openai/gpt-4o"
-    model_B = session["model_B"] if session else "anthropic/claude-sonnet-4-5"
+    model_A = (session.get("model_A") or session.get("model_a")) if session else "openai/gpt-4o"
+    model_B = (session.get("model_B") or session.get("model_b")) if session else "anthropic/claude-sonnet-4-5"
 
     # Build ordered species list for prev/next navigation
     all_species = _get_species_list(exp_id)
@@ -683,8 +683,8 @@ async def eval_submit(request: Request, exp_id: str, especie_id: str,
         cur.execute("SELECT model_A, model_B FROM expert_sessions WHERE username = %s", (user,))
         _row = cur.fetchone()
         session = dict(_row) if _row else None
-    model_A = session["model_A"] if session else "openai/gpt-4o"
-    model_B = session["model_B"] if session else "anthropic/claude-sonnet-4-5"
+    model_A = (session.get("model_A") or session.get("model_a")) if session else "openai/gpt-4o"
+    model_B = (session.get("model_B") or session.get("model_b")) if session else "anthropic/claude-sonnet-4-5"
 
     especie = especie_id.replace("_", " ")
     comment = form.get(f"{tier}_comment") or None

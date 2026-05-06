@@ -341,7 +341,7 @@ def upsert_expert_session(username, model_A, model_B):
             (username, model_A, model_B, datetime.now(timezone.utc).isoformat())
         )
         conn.commit()
-        return {"username": username, "model_A": model_A, "model_B": model_B}
+        return {"username": username, "model_a": model_A, "model_b": model_B}
 
 
 if __name__ == "__main__":
