@@ -27,7 +27,8 @@ from fastapi.templating import Jinja2Templates
 import pandas as pd
 import uvicorn
 
-from experiment.db import (init_db, get_expert_progress, upsert_expert_session,
+import psycopg2.extras
+from experiment.db import (init_db, get_conn, get_expert_progress, upsert_expert_session,
                            save_human_evaluation, get_first_unsubmitted,
                            get_raw_scores_for_kappa)
 
@@ -625,11 +626,10 @@ async def eval_form(request: Request, exp_id: str, especie_id: str,
     data = get_species_detail(exp_id, especie_id)
 
     # Determine Modelo A / Modelo B mapping for this user
-    from experiment.db import get_conn
     with get_conn() as conn:
-        session = conn.execute(
-            "SELECT model_A, model_B FROM expert_sessions WHERE username = ?", (user,)
-        ).fetchone()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT model_A, model_B FROM expert_sessions WHERE username = %s", (user,))
+        session = cur.fetchone()
     model_A = session["model_A"] if session else "openai/gpt-4o"
     model_B = session["model_B"] if session else "anthropic/claude-sonnet-4-5"
 
@@ -640,12 +640,13 @@ async def eval_form(request: Request, exp_id: str, especie_id: str,
     next_s = all_species[idx + 1] if idx < len(all_species) - 1 else None
 
     # Already submitted tiers for this user
-    from experiment.db import get_conn
     with get_conn() as conn:
-        submitted = conn.execute("""
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("""
             SELECT tier FROM human_evaluations
-            WHERE exp_id=? AND especie=? AND evaluator=?
-        """, (exp_id, data["especie"], user)).fetchall()
+            WHERE exp_id=%s AND especie=%s AND evaluator=%s
+        """, (exp_id, data["especie"], user))
+        submitted = cur.fetchall()
     submitted_tiers = {r["tier"] for r in submitted}
 
     return TEMPLATES.TemplateResponse(request, "eval_form.html", {
@@ -672,11 +673,10 @@ async def eval_submit(request: Request, exp_id: str, especie_id: str,
     if tier not in ("T0", "T1", "T3"):
         raise HTTPException(status_code=400, detail="Tier inválido")
 
-    from experiment.db import get_conn
     with get_conn() as conn:
-        session = conn.execute(
-            "SELECT model_A, model_B FROM expert_sessions WHERE username = ?", (user,)
-        ).fetchone()
+        cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cur.execute("SELECT model_A, model_B FROM expert_sessions WHERE username = %s", (user,))
+        session = cur.fetchone()
     model_A = session["model_A"] if session else "openai/gpt-4o"
     model_B = session["model_B"] if session else "anthropic/claude-sonnet-4-5"
 

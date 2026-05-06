@@ -13,7 +13,6 @@ import os
 import sys
 import json
 import glob
-import sqlite3
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -45,7 +44,7 @@ def _coerce(val):
         return s
 
 
-def sync_experiment(exp_dir, conn):
+def sync_experiment(exp_dir, cur):
     meta_path = os.path.join(exp_dir, "experiment_meta.json")
     csv_path  = os.path.join(exp_dir, "results.csv")
 
@@ -59,13 +58,13 @@ def sync_experiment(exp_dir, conn):
     exp_id = meta.get("exp_id", os.path.basename(exp_dir))
 
     # Upsert experiment row
-    conn.execute("""
+    cur.execute("""
         INSERT INTO experiments (exp_id, persona, n_species, started_at, status, notes)
-        VALUES (?,?,?,?,?,?)
+        VALUES (%s,%s,%s,%s,%s,%s)
         ON CONFLICT(exp_id) DO UPDATE SET
-            status=excluded.status,
-            n_species=excluded.n_species,
-            notes=excluded.notes
+            status=EXCLUDED.status,
+            n_species=EXCLUDED.n_species,
+            notes=EXCLUDED.notes
     """, (
         exp_id,
         meta.get("persona"),
@@ -84,19 +83,19 @@ def sync_experiment(exp_dir, conn):
     upserted = 0
 
     for _, row in df.iterrows():
-        conn.execute("""
+        cur.execute("""
             INSERT INTO llm_evaluations
                 (exp_id, especie, tier, perfil, modelo_generador, stratum,
                  M1, M2, M3, M4, M5, score_compuesto,
                  taxonomy_valid, disagree_flag, needs_human_review, synced_at)
-            VALUES (?,?,?,?,?,?, ?,?,?,?,?,?, ?,?,?,?)
+            VALUES (%s,%s,%s,%s,%s,%s, %s,%s,%s,%s,%s,%s, %s,%s,%s,%s)
             ON CONFLICT(exp_id, especie, tier, modelo_generador) DO UPDATE SET
-                M1=excluded.M1, M2=excluded.M2, M3=excluded.M3,
-                M4=excluded.M4, M5=excluded.M5,
-                score_compuesto=excluded.score_compuesto,
-                taxonomy_valid=excluded.taxonomy_valid,
-                disagree_flag=excluded.disagree_flag,
-                synced_at=excluded.synced_at
+                M1=EXCLUDED.M1, M2=EXCLUDED.M2, M3=EXCLUDED.M3,
+                M4=EXCLUDED.M4, M5=EXCLUDED.M5,
+                score_compuesto=EXCLUDED.score_compuesto,
+                taxonomy_valid=EXCLUDED.taxonomy_valid,
+                disagree_flag=EXCLUDED.disagree_flag,
+                synced_at=EXCLUDED.synced_at
         """, (
             exp_id,
             row.get("especie"),
@@ -131,14 +130,16 @@ def main(target_exp=None):
 
     total = 0
     with get_conn() as conn:
+        cur = conn.cursor()
         for exp_dir in dirs:
             if not os.path.isdir(exp_dir):
                 continue
             exp_id = os.path.basename(exp_dir)
             print(f"Syncing {exp_id}...")
-            n = sync_experiment(exp_dir, conn)
+            n = sync_experiment(exp_dir, cur)
             print(f"  → {n} rows upserted")
             total += n
+        conn.commit()
 
     print(f"\nDone. {total} total rows synced.")
 
