@@ -43,17 +43,19 @@ app = FastAPI(title="CR-BioLM Experiment Viewer")
 security = HTTPBasic()
 
 _CREDENTIALS = {
-    os.getenv("EXPERT_1_USER", "expert1"): os.getenv("EXPERT_1_PASS", ""),
-    os.getenv("EXPERT_2_USER", "expert2"): os.getenv("EXPERT_2_PASS", ""),
-    os.getenv("ADMIN_USER",    "admin"):   os.getenv("ADMIN_PASS",    ""),
+    os.getenv("ADMIN_USER", "admin"): os.getenv("ADMIN_PASS", ""),
 }
+_MODEL_SEED = {}
+_i = 1
+while True:
+    _u = os.getenv(f"EXPERT_{_i}_USER")
+    _p = os.getenv(f"EXPERT_{_i}_PASS", "")
+    if not _u:
+        break
+    _CREDENTIALS[_u] = _p
+    _MODEL_SEED[_u] = ("openai/gpt-4o", "anthropic/claude-sonnet-4-5")
+    _i += 1
 _ADMIN_USER = os.getenv("ADMIN_USER", "admin")
-
-# Model A/B randomization seed (same for both experts — required for IRR calc)
-_MODEL_SEED = {
-    os.getenv("EXPERT_1_USER", "expert1"): ("openai/gpt-4o", "anthropic/claude-sonnet-4-5"),
-    os.getenv("EXPERT_2_USER", "expert2"): ("openai/gpt-4o", "anthropic/claude-sonnet-4-5"),
-}
 
 
 def require_eval_auth(credentials: HTTPBasicCredentials = Depends(security)):
