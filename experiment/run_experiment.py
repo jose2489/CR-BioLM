@@ -7,9 +7,9 @@
 #
 # Uso:
 #   python experiment/run_experiment.py --persona botanico
+#   python experiment/run_experiment.py --persona random --n 15 --seed 7
 #   python experiment/run_experiment.py --exp-id EXP-20260416-001-botanico --resume
-#   python experiment/run_experiment.py --dry-run --persona turista
-#   python experiment/run_experiment.py --species-file lista.txt --persona municipalidad
+#   python experiment/run_experiment.py --dry-run --persona turista --n 10
 
 import os
 import sys
@@ -28,6 +28,7 @@ from main import procesar_especie
 RUNS_DIR     = os.path.join("experiment", "runs")
 CATALOG_PATH = os.path.join("outputs", "picked_species_enhanced_clean.csv")
 TIERS        = ["T0", "T1", "T3"]  # T2 dropped — ficha leakage fix
+PERSONAS     = ["botanico", "turista"]
 
 
 # ── Experiment ID ─────────────────────────────────────────────────────────────
@@ -35,7 +36,6 @@ TIERS        = ["T0", "T1", "T3"]  # T2 dropped — ficha leakage fix
 def generar_exp_id(persona: str) -> str:
     """Genera un código único: EXP-YYYYMMDD-NNN-{persona}"""
     hoy = datetime.date.today().strftime("%Y%m%d")
-    # Buscar el siguiente número disponible para este día
     counter = 1
     while True:
         exp_id = f"EXP-{hoy}-{counter:03d}-{persona}"
@@ -88,6 +88,38 @@ def cargar_catalogo(species_file: str = None) -> pd.DataFrame:
     return df
 
 
+# ── Question pre-assignment ────────────────────────────────────────────────────
+
+def assign_questions(especies_list: list, persona_map: dict, log: dict, rng: random.Random) -> dict:
+    """
+    Assign questions without replacement per persona pool.
+    persona_map: {especie: persona_str}
+    Returns: {especie: {"q": ..., "stratum": ...}}
+    """
+    assignments = {}
+
+    # Group species that still need assignment, per persona
+    needs = {}
+    for sp in especies_list:
+        persona = persona_map[sp]
+        key = f"{sp}|pregunta|{persona}"
+        if key not in log:
+            needs.setdefault(persona, []).append(sp)
+
+    # Build pool per persona and assign
+    for persona, species_needing in needs.items():
+        entries = get_question_meta(persona)
+        pool = []
+        while len(pool) < len(species_needing):
+            chunk = entries[:]
+            rng.shuffle(chunk)
+            pool.extend(chunk)
+        for sp, entry in zip(species_needing, pool):
+            assignments[sp] = entry
+
+    return assignments
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -97,18 +129,25 @@ def main():
     parser.add_argument("--species-file", type=str, default=None,
                         help="TXT con una especie por línea (default: catálogo completo)")
     parser.add_argument("--persona", type=str, default="botanico",
-                        choices=["turista", "botanico"])
-    parser.add_argument("--notes",    type=str, default="",
+                        choices=["turista", "botanico", "random"],
+                        help="Persona fija o 'random' para asignar aleatoriamente por especie")
+    parser.add_argument("--n", type=int, default=None,
+                        help="Número de especies a muestrear del catálogo (default: todas)")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="Semilla aleatoria para reproducibilidad (default: 42)")
+    parser.add_argument("--notes",   type=str, default="",
                         help="Notas opcionales para documentar el experimento")
-    parser.add_argument("--resume",   action="store_true",
+    parser.add_argument("--resume",  action="store_true",
                         help="Salta tiers ya completados (requiere --exp-id)")
-    parser.add_argument("--dry-run",  action="store_true",
+    parser.add_argument("--dry-run", action="store_true",
                         help="Muestra el plan sin ejecutar nada")
     args = parser.parse_args()
 
     os.makedirs(RUNS_DIR, exist_ok=True)
+    rng = random.Random(args.seed)
 
     # ── Resolver ID del experimento ──
+    persona_label = "mixed" if args.persona == "random" else args.persona
     if args.exp_id:
         exp_id  = args.exp_id
         exp_dir = os.path.join(RUNS_DIR, exp_id)
@@ -116,26 +155,62 @@ def main():
             print(f"[ERROR] No existe el experimento: {exp_id}")
             sys.exit(1)
     else:
-        exp_id  = generar_exp_id(args.persona)
+        exp_id  = generar_exp_id(persona_label)
         exp_dir = os.path.join(RUNS_DIR, exp_id)
 
     os.makedirs(exp_dir, exist_ok=True)
 
     log      = load_log(exp_dir) if args.resume else {}
     catalogo = cargar_catalogo(args.species_file)
-    total    = len(catalogo)
+
+    # ── Muestrear N especies si se especificó --n ──
+    if args.n is not None:
+        if args.n > len(catalogo):
+            print(f"[WARN] --n {args.n} es mayor que el catálogo ({len(catalogo)}), usando todas.")
+        else:
+            catalogo = catalogo.sample(n=args.n, random_state=args.seed).reset_index(drop=True)
+            print(f"[INFO] Muestreadas {args.n} especies con seed={args.seed}")
+
+    total = len(catalogo)
+    especies_list = [str(r["species"]).strip() for _, r in catalogo.iterrows()]
+
+    # ── Asignar persona por especie ──
+    persona_map = {}
+    if args.persona == "random":
+        # Recover from log if resuming
+        for sp in especies_list:
+            log_key = f"{sp}|persona"
+            if log_key in log:
+                persona_map[sp] = log[log_key]
+            else:
+                persona_map[sp] = rng.choice(PERSONAS)
+        # Persist new persona assignments immediately
+        changed = False
+        for sp in especies_list:
+            log_key = f"{sp}|persona"
+            if log_key not in log:
+                log[log_key] = persona_map[sp]
+                changed = True
+        if changed and not args.dry_run:
+            save_log(log, exp_dir)
+    else:
+        for sp in especies_list:
+            persona_map[sp] = args.persona
+
+    # ── Pre-asignar preguntas sin reemplazo por pool de persona ──
+    _question_assignments = assign_questions(especies_list, persona_map, log, rng)
 
     # ── Guardar metadatos del experimento ──
     meta = {
-        "exp_id":       exp_id,
-        "persona":      args.persona,
-        "n_species":    total,
-        "tiers":        TIERS,
-        "question_seed": 42,
-        "notes":        args.notes,
-        "started_at":   datetime.datetime.now().isoformat(),
-        "species_file": args.species_file or "catalogo_completo",
-        "models":       ["openai/gpt-4o", "anthropic/claude-sonnet-4-5"],
+        "exp_id":        exp_id,
+        "persona":       args.persona,
+        "n_species":     total,
+        "tiers":         TIERS,
+        "seed":          args.seed,
+        "notes":         args.notes,
+        "started_at":    datetime.datetime.now().isoformat(),
+        "species_file":  args.species_file or "catalogo_completo",
+        "models":        ["openai/gpt-4o", "anthropic/claude-sonnet-4-5"],
     }
     if not args.dry_run:
         save_meta(exp_dir, meta)
@@ -143,7 +218,7 @@ def main():
     print(f"\n{'='*60}")
     print(f"[EXPERIMENTO] {exp_id}")
     print(f"[EXPERIMENTO] {total} especies × {len(TIERS)} tiers (T0/T1/T3) × 2 modelos")
-    print(f"[EXPERIMENTO] Persona: {args.persona} | Resume: {args.resume}")
+    print(f"[EXPERIMENTO] Persona: {args.persona} | Seed: {args.seed} | Resume: {args.resume}")
     print(f"[EXPERIMENTO] Directorio: {exp_dir}")
     if args.notes:
         print(f"[EXPERIMENTO] Notas: {args.notes}")
@@ -151,33 +226,13 @@ def main():
 
     done_count = fail_count = skip_count = 0
 
-    # ── Pre-assign questions without replacement across all species ───────────
-    # Ensures no two species in the same run get the same question.
-    # If n_species > pool size, the pool is cycled (shuffled again from full set).
-    especies_list = [str(r["species"]).strip() for _, r in catalogo.iterrows()]
-    _question_assignments = {}
-    _needs_assignment = [
-        sp for sp in especies_list
-        if f"{sp}|pregunta|{args.persona}" not in log
-    ]
-    if _needs_assignment:
-        entries = get_question_meta(args.persona)
-        rng = random.Random(42)
-        pool = []
-        while len(pool) < len(_needs_assignment):
-            chunk = entries[:]
-            rng.shuffle(chunk)
-            pool.extend(chunk)
-        for sp, entry in zip(_needs_assignment, pool):
-            _question_assignments[sp] = entry
-    # ─────────────────────────────────────────────────────────────────────────
-
     for idx, (_, row) in enumerate(catalogo.iterrows(), 1):
         especie = str(row["species"]).strip()
-        print(f"\n[{idx}/{total}] {especie}")
+        persona = persona_map[especie]
+        print(f"\n[{idx}/{total}] {especie}  (persona: {persona})")
 
-        # ── Asignar pregunta fija (misma en T0/T1/T2/T3 para esta especie) ──
-        pregunta_key = f"{especie}|pregunta|{args.persona}"
+        # ── Asignar pregunta fija (misma en T0/T1/T3 para esta especie) ──
+        pregunta_key = f"{especie}|pregunta|{persona}"
         if pregunta_key in log and "pregunta" in log[pregunta_key]:
             pregunta = log[pregunta_key]["pregunta"]
             stratum  = log[pregunta_key].get("stratum", "A")
@@ -220,6 +275,7 @@ def main():
                     log[key] = {
                         "status":    "done",
                         "output":    tier_dir,
+                        "persona":   persona,
                         "pregunta":  pregunta,
                         "stratum":   stratum,
                         "timestamp": datetime.datetime.now().isoformat(),
@@ -247,11 +303,11 @@ def main():
 
     # ── Actualizar metadatos con resultado final ──
     if not args.dry_run:
-        meta["finished_at"]  = datetime.datetime.now().isoformat()
-        meta["done_count"]   = done_count
-        meta["fail_count"]   = fail_count
-        meta["skip_count"]   = skip_count
-        meta["status"]       = "complete" if fail_count == 0 else "partial"
+        meta["finished_at"] = datetime.datetime.now().isoformat()
+        meta["done_count"]  = done_count
+        meta["fail_count"]  = fail_count
+        meta["skip_count"]  = skip_count
+        meta["status"]      = "complete" if fail_count == 0 else "partial"
         save_meta(exp_dir, meta)
 
     print(f"\n{'='*60}")
