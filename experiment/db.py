@@ -1,6 +1,7 @@
 import os
 import psycopg2
 import psycopg2.extras
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -62,11 +63,19 @@ CREATE TABLE IF NOT EXISTS human_evaluations (
 """
 
 
+@contextmanager
 def get_conn():
     if not DATABASE_URL:
         raise RuntimeError("DATABASE_URL env var is not set")
     conn = psycopg2.connect(DATABASE_URL)
-    return conn
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def _cur(conn):
