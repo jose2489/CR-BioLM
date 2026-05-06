@@ -36,7 +36,9 @@ PLAN_*.md
 Thumbs.db
 
 # Resultados de experimentos y datos derivados
-experiment/runs/
+# Individual runs are committed selectively (git add -f experiment/runs/EXP-*)
+# Archive of contaminated pre-cleanup runs is never committed
+experiment/runs/_archive_pre_cleanup/
 experiment/results.csv
 experiment/experiment_log.json
 experiment/evaluation_log.json

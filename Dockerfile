@@ -9,9 +9,6 @@ RUN pip install --no-cache-dir -r requirements_app.txt
 # Copy the full project (code only — data comes via volume/commit)
 COPY . .
 
-# Data directory — Railway will mount a volume here or we use committed data
-RUN mkdir -p data/runs
-
 EXPOSE 8080
 
 CMD ["uvicorn", "app.app:app", "--host", "0.0.0.0", "--port", "8080"]
