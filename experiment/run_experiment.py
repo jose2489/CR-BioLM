@@ -16,6 +16,7 @@ import sys
 import json
 import argparse
 import datetime
+import logging
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -29,6 +30,20 @@ RUNS_DIR     = os.path.join("experiment", "runs")
 CATALOG_PATH = os.path.join("outputs", "picked_species_enhanced_clean.csv")
 TIERS        = ["T0", "T1", "T3"]  # T2 dropped — ficha leakage fix
 PERSONAS     = ["botanico", "turista"]
+
+
+# ── Run logger ───────────────────────────────────────────────────────────────
+
+def _setup_run_logger(exp_dir: str, name: str) -> logging.Logger:
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        logger.setLevel(logging.DEBUG)
+        fh = logging.FileHandler(os.path.join(exp_dir, "run.log"), encoding="utf-8")
+        fh.setFormatter(logging.Formatter(
+            "%(asctime)s | %(levelname)-5s | %(message)s",
+            datefmt="%Y-%m-%dT%H:%M:%S"))
+        logger.addHandler(fh)
+    return logger
 
 
 # ── Experiment ID ─────────────────────────────────────────────────────────────
@@ -159,6 +174,7 @@ def main():
         exp_dir = os.path.join(RUNS_DIR, exp_id)
 
     os.makedirs(exp_dir, exist_ok=True)
+    logger = _setup_run_logger(exp_dir, exp_id)
 
     log      = load_log(exp_dir) if args.resume else {}
     catalogo = cargar_catalogo(args.species_file)
@@ -223,6 +239,7 @@ def main():
     if args.notes:
         print(f"[EXPERIMENTO] Notas: {args.notes}")
     print(f"{'='*60}\n")
+    logger.info(f"START | {exp_id} | {total} species | persona={args.persona}")
 
     done_count = fail_count = skip_count = 0
 
@@ -253,6 +270,7 @@ def main():
 
             if args.resume and is_done(log, key):
                 print(f"  [SKIP] {tier} ya completado")
+                logger.info(f"GEN | {especie} | {tier} | skip")
                 skip_count += 1
                 continue
 
@@ -282,6 +300,7 @@ def main():
                     }
                     done_count += 1
                     print(f"  [OK] {tier} → {tier_dir}")
+                    logger.info(f"GEN | {especie} | {tier} | done")
                 else:
                     log[key] = {
                         "status":    "failed",
@@ -290,6 +309,7 @@ def main():
                     }
                     fail_count += 1
                     print(f"  [FAIL] {tier}")
+                    logger.warning(f"GEN | {especie} | {tier} | failed | procesar_especie returned False")
             except Exception as e:
                 log[key] = {
                     "status":    "failed",
@@ -298,6 +318,7 @@ def main():
                 }
                 fail_count += 1
                 print(f"  [ERROR] {tier}: {e}")
+                logger.warning(f"GEN | {especie} | {tier} | failed | {str(e)[:100]}")
 
             save_log(log, exp_dir)
 
@@ -316,6 +337,7 @@ def main():
     else:
         print(f"[FIN] {exp_id}")
         print(f"      Completados: {done_count} | Saltados: {skip_count} | Fallidos: {fail_count}")
+        logger.info(f"END | {exp_id} | done={done_count} failed={fail_count} skip={skip_count}")
     print(f"[DIR] {exp_dir}")
     print(f"{'='*60}")
 

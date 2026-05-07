@@ -325,6 +325,17 @@ def get_raw_scores_for_kappa(exp_id):
     return result
 
 
+def get_submitted_tiers(exp_id, especie, evaluator):
+    """Returns set of tier strings already submitted by this evaluator for the species."""
+    with get_conn() as conn:
+        cur = _cur(conn)
+        cur.execute("""
+            SELECT tier FROM human_evaluations
+            WHERE exp_id=%s AND especie=%s AND evaluator=%s
+        """, (exp_id, especie, evaluator))
+        return {r["tier"] for r in cur.fetchall()}
+
+
 def upsert_expert_session(username, model_A, model_B):
     """Create expert session if it doesn't exist; return existing if it does."""
     with get_conn() as conn:

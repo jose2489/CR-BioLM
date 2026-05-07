@@ -2,10 +2,10 @@
 #
 # Módulo de evaluación automática (LLM-as-Judge) para CR-BioLM.
 #
-# Arquitectura: ensemble de 2 jueces con tie-breaker Groq.
-#   Judge A: google/gemini-2.0-flash-001 via OpenRouter
-#   Judge B: openai/gpt-4o-mini via OpenRouter
-#   Judge C: meta-llama/llama-3.3-70b-versatile via Groq (tie-breaker, gratis)
+# Arquitectura: ensemble de 2 jueces con tie-breaker — todos via OpenRouter.
+#   Judge A: meta-llama/llama-3.3-70b-instruct  (~$0.10/MTok)
+#   Judge B: mistralai/mistral-small-3.1-24b     (~$0.10/MTok)
+#   Judge C: nvidia/nemotron-3-super-120b-a12b:free  (tie-breaker, gratis)
 #
 # Reglas:
 #   - A y B puntúan cada respuesta de forma independiente.
@@ -39,19 +39,19 @@ import requests
 # ── Judge model configuration ─────────────────────────────────────────────────
 
 JUDGE_A = {
-    "model":    "google/gemini-2.0-flash-001",
+    "model":    "meta-llama/llama-3.3-70b-instruct",
     "base_url": "https://openrouter.ai/api/v1/chat/completions",
-    "family":   "gemini",
+    "family":   "llama",
 }
 JUDGE_B = {
-    "model":    "openai/gpt-4o-mini",
+    "model":    "mistralai/mistral-small-3.1-24b",
     "base_url": "https://openrouter.ai/api/v1/chat/completions",
-    "family":   "gpt",
+    "family":   "mistral",
 }
 JUDGE_C = {
-    "model":    "llama-3.3-70b-versatile",
-    "base_url": "https://api.groq.com/openai/v1/chat/completions",
-    "family":   "llama",
+    "model":    "nvidia/nemotron-3-super-120b-a12b:free",
+    "base_url": "https://openrouter.ai/api/v1/chat/completions",
+    "family":   "nemotron",
 }
 
 # Generator family tags — used for self-enhancement guard
@@ -65,6 +65,10 @@ _FAMILY_MAP = {
     "llama":      "llama",
     "meta-llama": "llama",
     "deepseek":   "deepseek",
+    "mistral":    "mistral",
+    "mistralai":  "mistral",
+    "nemotron":   "nemotron",
+    "nvidia":     "nemotron",
 }
 
 # ── CR-specific context block injected into every judge prompt ────────────────
@@ -365,15 +369,15 @@ class JudgeClient:
 
 class EnsembleJudge:
     """
-    Ensemble de 2 jueces (A + B) con tie-breaker C (Groq, gratis).
+    Ensemble de 2 jueces (A + B) con tie-breaker C — todos via OpenRouter.
     Implementa self-enhancement guard y disagreement flag.
     """
 
     DISAGREE_THRESHOLD = 2  # |A − B| >= threshold en cualquier métrica → invocar C
 
     def __init__(self, openrouter_api_key: str, groq_api_key: str | None = None):
-        self._or_key   = openrouter_api_key
-        self._groq_key = groq_api_key
+        # groq_api_key kept for backward compat; ignored (all judges now on OpenRouter)
+        self._or_key = openrouter_api_key
 
         self._judge_a = JudgeClient(
             model=JUDGE_A["model"],
@@ -387,9 +391,9 @@ class EnsembleJudge:
         )
         self._judge_c = JudgeClient(
             model=JUDGE_C["model"],
-            api_key=groq_api_key or "",
+            api_key=openrouter_api_key,
             base_url=JUDGE_C["base_url"],
-        ) if groq_api_key else None
+        )
 
     def _select_judges(self, modelo_generador: str):
         """
@@ -401,10 +405,10 @@ class EnsembleJudge:
         ja, jb = self._judge_a, self._judge_b
         la, lb = "A", "B"
 
-        if gen_family == JUDGE_A["family"] and self._judge_c:
+        if gen_family == JUDGE_A["family"]:
             print(f"[ENSEMBLE] Self-enhancement guard: reemplazando Judge A ({JUDGE_A['model']}) por C (familia={gen_family})")
             ja, la = self._judge_c, "C"
-        elif gen_family == JUDGE_B["family"] and self._judge_c:
+        elif gen_family == JUDGE_B["family"]:
             print(f"[ENSEMBLE] Self-enhancement guard: reemplazando Judge B ({JUDGE_B['model']}) por C (familia={gen_family})")
             jb, lb = self._judge_c, "C"
 
@@ -477,7 +481,7 @@ class EnsembleJudge:
         scores_c    = None
         used_tiebreaker = False
 
-        if disagree and self._judge_c:
+        if disagree:
             print(f"[ENSEMBLE] Desacuerdo (max_diff={max_diff:.1f}) — invocando tie-breaker C ({self._judge_c.model})...")
             scores_c = self._judge_c.evaluar(pregunta, respuesta, ficha_mdp, tier)
             used_tiebreaker = True

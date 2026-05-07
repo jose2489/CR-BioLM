@@ -17,6 +17,7 @@ import json
 import argparse
 import datetime
 import glob
+import logging
 
 import pandas as pd
 
@@ -28,6 +29,20 @@ from llm.judge_client import EnsembleJudge, ficha_summary
 RUNS_DIR = os.path.join("experiment", "runs")
 TIERS    = ["T0", "T1", "T2", "T3"]
 MODELOS  = ["openai_gpt_4o", "anthropic_claude_sonnet_4_5"]
+
+
+# ── Run logger ────────────────────────────────────────────────────────────────
+
+def _setup_run_logger(exp_dir: str, name: str) -> logging.Logger:
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        logger.setLevel(logging.DEBUG)
+        fh = logging.FileHandler(os.path.join(exp_dir, "run.log"), encoding="utf-8")
+        fh.setFormatter(logging.Formatter(
+            "%(asctime)s | %(levelname)-5s | %(message)s",
+            datefmt="%Y-%m-%dT%H:%M:%S"))
+        logger.addHandler(fh)
+    return logger
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -89,6 +104,7 @@ def evaluar_experimento(exp_dir: str, judge: EnsembleJudge,
     exp_log   = load_json(os.path.join(exp_dir, "experiment_log.json"))
     meta      = load_json(os.path.join(exp_dir, "experiment_meta.json"))
     perfil    = meta.get("persona", "botanico")
+    logger    = _setup_run_logger(exp_dir, f"{exp_id}_eval")
 
     all_rows      = []
     total_eval    = 0
@@ -136,6 +152,7 @@ def evaluar_experimento(exp_dir: str, judge: EnsembleJudge,
 
                 if resume and key in eval_log and eval_log[key].get("status") == "done":
                     print(f"    [SKIP] {tier} | {modelo_limpio.split('_')[1]}")
+                    logger.info(f"SKIP | {especie} | {tier} | {modelo_limpio} | already done")
                     all_rows.append(eval_log[key]["scores"])
                     total_skip += 1
                     continue
@@ -176,6 +193,7 @@ def evaluar_experimento(exp_dir: str, judge: EnsembleJudge,
                           f"M3={scores.get('M3_relevancia_respuesta')} "
                           f"M2={scores.get('M2_precision_altitudinal')} "
                           f"M4={scores.get('M4_variable_climatica')}")
+                    logger.info(f"EVAL | {especie} | {tier} | {modelo_limpio} | done | score={scores['score_compuesto']:.3f}")
                 else:
                     eval_log[key] = {
                         "status":    "failed",
@@ -183,6 +201,7 @@ def evaluar_experimento(exp_dir: str, judge: EnsembleJudge,
                     }
                     total_fail += 1
                     print("[FAIL]")
+                    logger.warning(f"EVAL | {especie} | {tier} | {modelo_limpio} | failed")
 
                 save_json(eval_log, os.path.join(exp_dir, "evaluation_log.json"))
 
