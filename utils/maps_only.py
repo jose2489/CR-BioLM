@@ -1,0 +1,146 @@
+"""
+maps_only.py
+------------
+Minimal local-only pipeline: GBIF → altitude enrichment → habitat map.
+No climate rasters, no RF, no SHAP/LIME, no LLM calls.
+
+Entry point: run_maps_only(especie_nombre)
+CLI:         python main.py maps-only -s "Sobralia amabilis"
+             python main.py maps-only -f species.txt
+"""
+
+import os
+import pandas as pd
+from datetime import datetime
+
+import config
+from data.gbif_extractor import GBIFExtractor
+from data.expert_maps import ExpertMapLoader
+from utils.geoprocesamiento import extraer_altitud
+from utils.map_gen.habitat_map import generate_habitat_map
+from utils.maps_checklist import Checklist
+
+
+_CATALOG_PATH = os.path.join("outputs", "picked_species_enhanced_clean.csv")
+
+
+def _crear_directorio_maps_only(especie_nombre: str) -> str:
+    """Create outputs/{especie}/maps_only_YYYYMMDD_HHMMSS/ and return the path."""
+    especie_fmt = especie_nombre.replace(" ", "_")
+    timestamp   = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ruta = os.path.join(config.OUTPUT_BASE_DIR, especie_fmt, f"maps_only_{timestamp}")
+    os.makedirs(ruta, exist_ok=True)
+    return ruta
+
+
+def run_maps_only(especie_nombre: str) -> bool:
+    """
+    Minimal pipeline for one species.
+
+    Steps:
+      1. Create output directory
+      2. Load CR boundary
+      3. Fetch GBIF occurrences (Mesoamerica) + clip to CR
+      4. Enrich with altitude from DEM
+      5. Load Manual de Plantas catalog row
+      6. Generate habitat map (V2)
+
+    Returns True on success, False on fatal error.
+    """
+    cl = Checklist(f"{especie_nombre} — maps-only")
+
+    # 1. Output directory
+    out_dir = _crear_directorio_maps_only(especie_nombre)
+    cl.check("Directorio de salida creado", ok=True, detail=out_dir)
+
+    # 2. CR boundary
+    try:
+        map_loader  = ExpertMapLoader()
+        cr_bounds   = map_loader.load_country_boundary(config.DEFAULT_COUNTRY)
+        meso_bounds = map_loader.load_mesoamerica_boundary()
+        if meso_bounds is None or meso_bounds.empty:
+            meso_bounds = cr_bounds
+        cl.check("Límite CR cargado", ok=True)
+    except Exception as e:
+        cl.check("Límite CR cargado", ok=False, detail=str(e))
+        cl.done()
+        return False
+
+    # 3. GBIF fetch + CR clip
+    try:
+        extractor      = GBIFExtractor()
+        presencias_meso = extractor.fetch_occurrences_mesoamerica(especie_nombre)
+        presencias_meso = extractor.clean_spatial_outliers(presencias_meso, meso_bounds)
+
+        if presencias_meso is None or presencias_meso.empty:
+            cl.check("GBIF fetched", ok=False, detail="sin registros en Mesoamérica")
+            cl.done()
+            return False
+
+        presencias_cr = extractor.clean_spatial_outliers(presencias_meso, cr_bounds)
+        if presencias_cr is None or presencias_cr.empty:
+            presencias_cr = presencias_meso  # fallback
+        cl.check("GBIF fetched",
+                 ok=True,
+                 detail=f"Meso n={len(presencias_meso)}, CR n={len(presencias_cr)}")
+    except Exception as e:
+        cl.check("GBIF fetched", ok=False, detail=str(e))
+        cl.done()
+        return False
+
+    # 4. Altitude enrichment
+    try:
+        ruta_altitud  = config.DEM_PATH
+        presencias_cr = extraer_altitud(presencias_cr, ruta_altitud)
+        cl.check("Altitud enriquecida", ok=True, detail="DEM EPSG:4326")
+    except Exception as e:
+        cl.check("Altitud enriquecida", ok=False, detail=str(e))
+        # Non-fatal — continue without altitude column
+
+    # 5. Manual catalog row
+    geographic_notes = None
+    elevation_min    = None
+    elevation_max    = None
+    elev_outlier_min = None
+    elev_outlier_max = None
+
+    try:
+        catalog = pd.read_csv(_CATALOG_PATH)
+        row_df  = catalog[catalog["species"] == especie_nombre]
+        if not row_df.empty:
+            r = row_df.iloc[0]
+            geographic_notes = r.get("geographic_notes")
+            elevation_min    = r.get("elevation_min_m")
+            elevation_max    = r.get("elevation_max_m")
+            _out_min         = r.get("elev_outlier_min_m")
+            _out_max         = r.get("elev_outlier_max_m")
+            elev_outlier_min = None if (not _out_min or str(_out_min) == "nan") else float(_out_min)
+            elev_outlier_max = None if (not _out_max or str(_out_max) == "nan") else float(_out_max)
+            cl.check("Catálogo Manual cargado", ok=True,
+                     detail=f"elev {elevation_min}–{elevation_max} m")
+        else:
+            cl.check("Catálogo Manual cargado", ok=False,
+                     detail=f"'{especie_nombre}' no en catálogo")
+    except Exception as e:
+        cl.check("Catálogo Manual cargado", ok=False, detail=str(e))
+
+    # 6. Habitat map
+    try:
+        map_path = generate_habitat_map(
+            species_name=especie_nombre,
+            geographic_notes=geographic_notes or "",
+            elevation_min=elevation_min,
+            elevation_max=elevation_max,
+            presencias_gdf=presencias_cr,
+            output_path=os.path.join(out_dir, "mapa_habitat_manual.png"),
+            elev_outlier_min=elev_outlier_min,
+            elev_outlier_max=elev_outlier_max,
+        )
+        cl.check("Mapa de hábitat renderizado", ok=True, detail=str(map_path))
+    except Exception as e:
+        cl.check("Mapa de hábitat renderizado", ok=False, detail=str(e))
+        cl.done()
+        return False
+
+    cl.done()
+    return True

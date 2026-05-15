@@ -1,4 +1,5 @@
 import os
+import sys
 import argparse
 import config
 import numpy as np
@@ -17,6 +18,7 @@ from xai.grad_cam import MultimodalGradCAM
 from utils.geoprocesamiento import extraer_altitud, generar_contexto_conservacion
 from llm.openrouter_client import OpenRouterClient
 from utils.map_gen.habitat_map import generate_habitat_map
+from utils.maps_checklist import Checklist
 
 
 def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_override=None):
@@ -24,6 +26,7 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
     Ejecuta el pipeline completo de CR-BioLM para una especie especifica.
     Retorna True si fue exitoso, False si fue omitida por falta de datos.
     """
+    cl = Checklist(f"{especie_nombre} — full pipeline")
     print("=" * 60)
     print(f"[INICIO] Ejecutando pipeline para: {especie_nombre.upper()}")
     print("=" * 60)
@@ -31,6 +34,7 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
     # 1. Preparar directorio de salida
     out_dir = output_dir_override if output_dir_override else config.crear_directorio_ejecucion(especie_nombre)
     os.makedirs(out_dir, exist_ok=True)
+    cl.check("Directorio de salida creado", ok=True, detail=out_dir)
     print(f"[INFO] Resultados se guardaran en: {out_dir}")
 
     # 2. Cargar geometrías base: CR (para outputs) y Mesoamérica (para entrenamiento)
@@ -41,6 +45,7 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
     if meso_bounds is None:
         print("[ADVERTENCIA] No se pudo cargar el límite Mesoamericano. Se usará solo CR.")
         meso_bounds = cr_bounds
+    cl.check("Geometrías CR / Mesoamérica cargadas", ok=True)
 
     # 3. Mapa experto BIEN reemplazado por mapa de hábitat del Manual de Plantas CR
     expert_map_cr = None  # ya no se usa BIEN
@@ -54,6 +59,8 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
     presencias_cr = extractor.clean_spatial_outliers(presencias_meso, cr_bounds) if presencias_meso is not None else None
 
     if presencias_meso is None or presencias_meso.empty:
+        cl.check("GBIF fetched", ok=False, detail="sin registros Mesoamérica")
+        cl.done()
         print(f"[ERROR FATAL] No se obtuvieron registros de presencia para {especie_nombre} en Mesoamérica.")
         return False
 
@@ -62,6 +69,8 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
         print("[INFO] Se continuará con el modelo Mesoamericano, pero los outputs serán limitados.")
         presencias_cr = presencias_meso  # fallback: usar todo Mesoamérica para outputs
 
+    cl.check("GBIF fetched", ok=True,
+             detail=f"Meso n={len(presencias_meso)}, CR n={len(presencias_cr)}")
     print(f"[INFO] Presencias Mesoamérica: {len(presencias_meso)} | Solo CR: {len(presencias_cr)}")
 
     # Mapa Mesoamericano de entrenamiento (overview de todos los puntos)
@@ -76,8 +85,9 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
     )
 
     # Enriquecer presencias CR con topografía (raster solo cubre CR)
-    ruta_altitud = os.path.join("data_raw", "topography", "altitud_cr.tif")
+    ruta_altitud = config.DEM_PATH
     presencias_cr = extraer_altitud(presencias_cr, ruta_altitud)
+    cl.check("Altitud enriquecida", ok=True, detail="DEM EPSG:4326")
 
     # --- Mapa de hábitat principal: Manual de Plantas CR + Unidades Fitogeográficas + GBIF ---
     import pandas as pd
@@ -139,11 +149,16 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
                 f.write(f"Tipo de hábitat:\n  {r.get('habitat_type', 'N/D')}\n\n")
                 f.write(f"Descripción original (habitat_raw):\n  {r.get('habitat_raw', 'N/D')}\n\n")
                 f.write(f"Ocurrencias GBIF en catálogo:\n  {r.get('occurrences', 'N/D')}\n")
+            cl.check("Mapa de hábitat Manual generado", ok=True,
+                     detail=str(ruta_mapa_manual))
             print(f"[INFO] Ficha Manual guardada: {ruta_ficha}")
             print(f"[INFO] Mapa hábitat Manual generado: {ruta_mapa_manual}")
         else:
+            cl.check("Mapa de hábitat Manual generado", ok=False,
+                     detail=f"'{especie_nombre}' no en catálogo")
             print(f"[INFO] '{especie_nombre}' no encontrada en el catálogo del Manual — mapa de hábitat omitido.")
     except Exception as e:
+        cl.check("Mapa de hábitat Manual generado", ok=False, detail=str(e))
         print(f"[WARN] No se pudo generar el mapa del Manual: {e}")
 
     # 5. Rasters climáticos recortados a Mesoamérica (para entrenamiento del RF)
@@ -382,6 +397,7 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
         print(f"[ERROR] Fallo en la inicialización del Agente Híbrido: {e}")
     # ==========================================================
 
+    cl.done()
     print(f"\n[EXITO] Pipeline completado para {especie_nombre}.")
     return True
 
@@ -401,20 +417,62 @@ def leer_lista_especies(ruta_archivo):
         return []
 
 if __name__ == "__main__":
-    # Configuracion de argumentos de terminal
     from utils.question_bank import get_random_question
+    from utils.maps_only import run_maps_only
 
-    parser = argparse.ArgumentParser(description="Ejecutor del Pipeline CR-BioLM.")
-    parser.add_argument("-s", "--species", type=str, help="Ejecutar para una sola especie. Ej: 'Quercus costaricensis'")
-    parser.add_argument("-f", "--file", type=str, help="Ruta a un archivo .txt con una lista de especies (una por linea).")
-    parser.add_argument("-q", "--question", type=str, default=None,
-                        help="Pregunta libre para el LLM.")
-    parser.add_argument("--persona", type=str, default=None, choices=["turista", "botanico"],
-                        help="Selecciona una pregunta aleatoria del banco según el perfil de usuario.")
+    # ── Backward-compatible subcommand detection ──────────────────────────────
+    # If the first positional arg is not a known subcommand, treat it as "full".
+    _SUBCOMMANDS = {"full", "maps-only"}
+    if len(sys.argv) > 1 and sys.argv[1] not in _SUBCOMMANDS and not sys.argv[1].startswith("-"):
+        sys.argv.insert(1, "full")
 
-    args = parser.parse_args()
+    root_parser = argparse.ArgumentParser(description="Ejecutor del Pipeline CR-BioLM.")
+    subparsers  = root_parser.add_subparsers(dest="subcommand")
 
-    # Resolver la pregunta: explícita > banco por persona > None
+    # ── Subcommand: full (existing pipeline) ──────────────────────────────────
+    full_parser = subparsers.add_parser("full", help="Pipeline completo (RF + LLM).")
+    full_parser.add_argument("-s", "--species", type=str,
+                             help="Ejecutar para una sola especie.")
+    full_parser.add_argument("-f", "--file", type=str,
+                             help="Ruta a un .txt con una especie por línea.")
+    full_parser.add_argument("-q", "--question", type=str, default=None,
+                             help="Pregunta libre para el LLM.")
+    full_parser.add_argument("--persona", type=str, default=None,
+                             choices=["turista", "botanico"],
+                             help="Seleccionar pregunta aleatoria del banco.")
+
+    # ── Subcommand: maps-only (local processing, no LLM) ─────────────────────
+    maps_parser = subparsers.add_parser(
+        "maps-only",
+        help="Genera solo el mapa de hábitat (GBIF → altitud → mapa). Sin RF ni LLM.",
+    )
+    maps_parser.add_argument("-s", "--species", type=str,
+                             help="Ejecutar para una sola especie.")
+    maps_parser.add_argument("-f", "--file", type=str,
+                             help="Ruta a un .txt con una especie por línea.")
+
+    args = root_parser.parse_args()
+
+    # Default to "full" if no subcommand given
+    if not args.subcommand:
+        root_parser.print_help()
+        sys.exit(0)
+
+    # ── maps-only branch ──────────────────────────────────────────────────────
+    if args.subcommand == "maps-only":
+        if args.species:
+            run_maps_only(args.species)
+        elif args.file:
+            lista = leer_lista_especies(args.file)
+            print(f"[INFO] maps-only batch: {len(lista)} especie(s)")
+            for i, esp in enumerate(lista, 1):
+                print(f"\n[LOTE {i}/{len(lista)}]")
+                run_maps_only(esp)
+        else:
+            maps_parser.print_help()
+        sys.exit(0)
+
+    # ── full branch ───────────────────────────────────────────────────────────
     def resolver_pregunta():
         if args.question:
             return args.question
@@ -432,12 +490,12 @@ if __name__ == "__main__":
         print(f"[INFO] Modo Batch iniciado. Se detectaron {len(lista_especies)} especies en el archivo.")
         for i, especie in enumerate(lista_especies, 1):
             print(f"\n[LOTE {i}/{len(lista_especies)}]")
-            # En batch: si hay persona, cada especie obtiene una pregunta aleatoria independiente
             procesar_especie(especie, resolver_pregunta())
 
     else:
-        print("[ERROR] Debes proporcionar un argumento. Usa -s para una especie o -f para una lista txt.")
-        print("Ejemplo 1: python main.py -s \"Quercus costaricensis\"")
-        print("Ejemplo 2: python main.py -s \"Quercus costaricensis\" -q \"¿Cómo le afecta el cambio climático?\"")
-        print("Ejemplo 3: python main.py -s \"Quercus costaricensis\" --persona botanico")
-        print("Ejemplo 4: python main.py -f especies.txt --persona turista  (pregunta aleatoria por especie)")
+        full_parser.print_help()
+        print("\nEjemplos:")
+        print("  python main.py full -s \"Quercus costaricensis\"")
+        print("  python main.py full -f especies.txt --persona botanico")
+        print("  python main.py maps-only -s \"Sobralia amabilis\"")
+        print("  python main.py maps-only -f especies.txt")
