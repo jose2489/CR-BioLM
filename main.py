@@ -164,7 +164,7 @@ def procesar_especie(especie_nombre, user_question=None):
         X, y, test_size=0.2, random_state=config.SEED, stratify=y
     )
 
-# ==========================================
+    # ==========================================
     # 8. MODELADO PREDICTIVO ( RF vs CNN)
     # ==========================================
     EJECUTAR_CNN = False

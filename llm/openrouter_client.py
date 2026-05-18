@@ -5,7 +5,7 @@ import requests
 from .prompt_templates import BIMODAL_PROMPT, traducir_variable
 
 class OpenRouterClient:
-    def __init__(self, api_key, model="openai/gpt-4o"):
+    def __init__(self, api_key, model="openrouter/free"):
         """
         Cliente para comunicarse con OpenRouter soportando modelos multimodales.
         """
@@ -68,69 +68,135 @@ class OpenRouterClient:
         # 2. CONFIGURAR VARIABLES RESTANTES Y FORMATEAR PROMPT
         # ==========================================================
         rf_auc = rf_metrics.get('roc_auc', 0.0) if rf_metrics else 0.0
+        rf_accuracy = rf_metrics.get('accuracy', 0.0) if rf_metrics else 0.0
         pregunta_texto = user_question if user_question else "Analiza el hábitat ideal de esta especie."
 
-        # Asegúrate de que las llaves de .format() coincidan exactamente con tu BIMODAL_PROMPT
-        fuente_manual = ""
-        if texto_manual:
-            fuente_manual = (
-                "\nFUENTE 3: REFERENCIA BOTÁNICA (Manual de Plantas de Costa Rica)\n"
-                + texto_manual
-                + "\nLa imagen 2 adjunta muestra el hábitat potencial según el Manual, "
-                "cruzado con las Unidades Fitogeográficas de CR. Úsala para validar o "
-                "contrastar los hallazgos matemáticos del modelo predictivo.\n"
-            )
-        try:
-            prompt_listo = BIMODAL_PROMPT.format(
-                species_name=species_name,
-                rf_auc=rf_auc,
-                info_altitud=info_altitud,
-                var_humana=var_humana,
-                direccion=direccion,
-                zona_humana=zona_humana,
-                secundaria_1=secundaria_1,
-                secundaria_2=secundaria_2,
-                area_texto="No calculada", # Por si aún tienes esta llave en el template
-                fuente_manual=fuente_manual,
-                instruccion_pregunta=f"PREGUNTA DEL USUARIO: {pregunta_texto}"
-            )
-        except KeyError as e:
-            print(f"[ERROR] Falta una llave en el BIMODAL_PROMPT: {e}. Revisa llm/prompt_templates.py")
-            return False
+        # Detectar si es modelo de solo texto
+        is_text = "" in modelo_a_usar.lower()
+
+        if is_text:
+            # PROMPT OPTIMIZADO PARA SOLO TEXTO
+            print("[INFO] Generando prompt optimizado para solo texto")
+            
+            # Construir resumen SHAP legible
+            shap_summary = f"""
+        1. {var_humana} (factor principal, impacto {direccion})
+        2. {secundaria_1} (factor secundario)
+        3. {secundaria_2} (factor terciario)
+        Ecosistema predominante: {zona_humana}
+        """
+            
+            prompt_listo = f"""## ANÁLISIS ECOLÓGICO: {species_name}
+
+        ### Métricas del Modelo Predictivo
+        - Precisión (Accuracy): {rf_accuracy:.1%}
+        - Capacidad predictiva (ROC-AUC): {rf_auc:.3f}
+
+        ### Factores Climáticos Clave (SHAP)
+        {shap_summary}
+
+        ### Rango Altitudinal Observado
+        {info_altitud}
+
+        ### Contexto Botánico
+        {texto_manual if texto_manual else 'Información del Manual de Plantas no disponible'}
+
+        ### Pregunta del Usuario
+        {pregunta_texto}
+
+        ---
+
+        **TAREA**: Genera un perfil ecológico completo en español para esta especie. Incluye:
+        1. Descripción de su distribución geográfica y altitudinal
+        2. Requerimientos climáticos específicos basados en los factores SHAP
+        3. Tipo de ecosistema donde prospera
+        4. Recomendaciones de conservación y amenazas potenciales
+        5. Respuesta directa a la pregunta del usuario
+
+        Sé técnico pero accesible. Usa los datos proporcionados para fundamentar el análisis."""
+
+        else:
+            # PROMPT ORIGINAL BIMODAL (CON IMÁGENES)
+            print("[INFO] Generando prompt bimodal (texto + imágenes)")
+            
+            fuente_manual = ""
+            if texto_manual:
+                fuente_manual = (
+                    "\nFUENTE 3: REFERENCIA BOTÁNICA (Manual de Plantas de Costa Rica)\n"
+                    + texto_manual
+                    + "\nLa imagen 2 adjunta muestra el hábitat potencial según el Manual, "
+                    "cruzado con las Unidades Fitogeográficas de CR. Úsala para validar o "
+                    "contrastar los hallazgos matemáticos del modelo predictivo.\n"
+                )
+            
+            try:
+                prompt_listo = BIMODAL_PROMPT.format(
+                    species_name=species_name,
+                    rf_auc=rf_auc,
+                    info_altitud=info_altitud,
+                    var_humana=var_humana,
+                    direccion=direccion,
+                    zona_humana=zona_humana,
+                    secundaria_1=secundaria_1,
+                    secundaria_2=secundaria_2,
+                    area_texto="No calculada",
+                    fuente_manual=fuente_manual,
+                    instruccion_pregunta=f"PREGUNTA DEL USUARIO: {pregunta_texto}"
+                )
+            except KeyError as e:
+                print(f"[ERROR] Falta una llave en el BIMODAL_PROMPT: {e}. Revisa llm/prompt_templates.py")
+                return False
 
         # ==========================================================
         # 3. CODIFICAR IMAGEN(ES) Y ARMAR PAYLOAD PARA LA API
         # ==========================================================
-        imagen_base64 = self._codificar_imagen(image_path)
 
-        content_parts = [
-            {"type": "text", "text": prompt_listo},
-            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{imagen_base64}"}}
-        ]
-
-        if manual_image_path and os.path.isfile(str(manual_image_path)):
-            manual_b64 = self._codificar_imagen(str(manual_image_path))
-            content_parts.append({
-                "type": "image_url",
-                "image_url": {"url": f"data:image/png;base64,{manual_b64}"}
-            })
-            print(f"[INFO] Segunda imagen (Manual) adjunta: {manual_image_path}")
+        # Detectar si el modelo no soporta imágenes
+        is_text = "" in modelo_a_usar.lower()
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
 
-        payload = {
-            "model": modelo_a_usar,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": content_parts
-                }
+        if is_text:
+            # Solo texto, sin imágenes
+            print("[INFO] Modelo Textual detectado - usando prompt solo texto")
+            payload = {
+                "model": modelo_a_usar,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt_listo  # Solo texto
+                    }
+                ]
+            }
+        else:
+            # Modelos visuales: Con imágenes
+            print("[INFO] Modelo visual detectado - incluyendo imágenes")
+            imagen_base64 = self._codificar_imagen(image_path)
+            content_parts = [
+                {"type": "text", "text": prompt_listo},
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{imagen_base64}"}}
             ]
-        }
-
+            
+            if manual_image_path and os.path.isfile(str(manual_image_path)):
+                manual_b64 = self._codificar_imagen(str(manual_image_path))
+                content_parts.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{manual_b64}"}
+                })
+                print(f"[INFO] Segunda imagen (Manual) adjunta: {manual_image_path}")
+            
+            payload = {
+                "model": modelo_a_usar,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": content_parts
+                    }
+                ]
+            }
         # ==========================================================
         # 4. EJECUTAR LLAMADA A OPENROUTER Y GUARDAR RESULTADOS
         # ==========================================================
