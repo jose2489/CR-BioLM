@@ -41,7 +41,7 @@ def train_random_forest_node(state: GraphState) -> GraphState:
         "test_samples": len(X_test),
         "features": list(X_train.columns),
         "status": "ok"
-    }, state['output_dir'], "n08a_train_random_forest.json")
+    }, state['output_dir'], "n07_train_random_forest.json")
 
     print(f"[N07:✓] RF entrenado | Accuracy: {rf_metrics.get('accuracy', 0):.3f} | "
           f"ROC-AUC: {rf_metrics.get('roc_auc', 0):.3f}")

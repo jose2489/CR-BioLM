@@ -28,7 +28,7 @@ def predict_node(state: GraphState) -> GraphState:
         "probabilidad_min": float(probabilities.min()),
         "probabilidad_max": float(probabilities.max()),
         "status": "ok"
-    }, state['output_dir'], "n08b_predict.json")
+    }, state['output_dir'], "n08_predict.json")
 
     print(f"[N08:✓] Predicciones generadas: {len(predictions)} muestras")
     return state
