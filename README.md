@@ -78,7 +78,6 @@ Límites CR + Meso  ──┘    N03: LoadClimate
 ## Instalación
 
 ```bash
-git clone https://github.com/jose2489/CR-BioLM
 cd CR-BioLM
 pip install -r requirements.txt
 
