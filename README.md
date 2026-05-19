@@ -11,8 +11,7 @@ Para garantizar la ejecucion correcta de este pipeline, el sistema debe contar c
 
 ## Instalacion y Configuracion
 
-1. Clona el repositorio: `git clone https://github.com/jose2489/CR-BioLM`
-2. Instala las dependencias: `pip install -r requirements.txt`
-3. Descarga los mapas base (`data_raw`) desde [https://drive.google.com/drive/folders/10jiTbZTVk_1yVn-YLimAWxNzfDQEOb0H?usp=sharing] y colócalos en el folder de data_raw.
-4. Crea un archivo `.env` y coloca tu API Key: `GROQ_API_KEY=tu_llave`
-5. Continuar a `cr-biolm-frontend/README.md`
+1. Instala las dependencias: `pip install -r requirements.txt`
+2. Descarga los mapas base (`data_raw`) desde [https://drive.google.com/drive/folders/10jiTbZTVk_1yVn-YLimAWxNzfDQEOb0H?usp=sharing] y colócalos en el folder de data_raw.
+3. Crea un archivo `.env` y coloca tu API Key: `GROQ_API_KEY=tu_llave`
+4. Continuar a `cr-biolm-frontend/README.md`
