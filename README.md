@@ -81,6 +81,9 @@ Límites CR + Meso  ──┘    N03: LoadClimate
 git clone https://github.com/jose2489/CR-BioLM
 cd CR-BioLM
 pip install -r requirements.txt
+
+# Instalar Dependencias adicionales
+pip install langgraph pandas geopandas dotenv pygbif rasterio scikit-learn shap lime seaborn
 ```
 
 Crea un archivo `.env` con tu clave de OpenRouter:
