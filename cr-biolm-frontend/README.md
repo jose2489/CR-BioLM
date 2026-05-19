@@ -37,12 +37,16 @@ CR-BioLM permite a investigadores y conservacionistas ingresar el nombre cientí
 ## Instalación
 
 ```bash
-# Desde la raíz del repositorio principal
-cd cr-biolm-frontend
 
 # Instalar dependencias
-npm install
-```
+# Instalar dependencias
+# En /backend
+npm install @vitejs/plugin-react --save-dev
+npm install uvicorn
+pip install --no-cache-dir lime scikit-learn pandas numpy matplotlib geopandas fastapi dotenv torch seaborn pygbif rasterio shap groq
+
+# En /cr-biolm-frontend
+npm install react react-dom axios zustand```
 
 ---
 
