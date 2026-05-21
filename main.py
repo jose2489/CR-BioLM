@@ -111,14 +111,12 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
                 try:
                     if not (math.isnan(float(_emin)) or math.isnan(float(_emax))):
                         from utils.distribution_map.ficha import ElevationRange
-                        _ficha = _ficha.__class__(
-                            **{**_ficha.to_dict(),
-                               "elevation": ElevationRange(
-                                   min_m=float(_emin), max_m=float(_emax),
-                                   outlier_min_m=None if (not _out_min or str(_out_min) == 'nan') else float(_out_min),
-                                   outlier_max_m=None if (not _out_max or str(_out_max) == 'nan') else float(_out_max),
-                               )}
-                        )
+                        from dataclasses import replace as _replace
+                        _ficha = _replace(_ficha, elevation=ElevationRange(
+                            min_m=float(_emin), max_m=float(_emax),
+                            outlier_min_m=None if (not _out_min or str(_out_min) == 'nan') else float(_out_min),
+                            outlier_max_m=None if (not _out_max or str(_out_max) == 'nan') else float(_out_max),
+                        ))
                 except Exception:
                     pass
             ruta_mapa_manual = generate_distribution_map(
