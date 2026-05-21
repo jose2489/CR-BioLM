@@ -13,7 +13,7 @@
     {
       "canonical_name": "Valle Central (Occidental)",
       "hierarchy_level": "valle",
-      "source_span": "lle Central. "
+      "source_span": "e Central (Tr"
     }
   ],
   "parks": [],
@@ -32,8 +32,8 @@
     }
   ],
   "elevation": {
-    "min_m": 1105.0,
-    "max_m": 1494.9999999999998,
+    "min_m": 1300.0,
+    "max_m": 1300.0,
     "outlier_min_m": null,
     "outlier_max_m": null
   },

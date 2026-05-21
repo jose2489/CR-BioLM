@@ -17,14 +17,14 @@
       "source_span": "lamanca, Tablazo, Cerro"
     },
     {
-      "canonical_name": "Valle Central Oriental",
-      "hierarchy_level": "valle",
-      "source_span": ", Cerro Turrubar"
-    },
-    {
       "canonical_name": "Valle Central Occidental",
       "hierarchy_level": "valle",
       "source_span": ". Fl. ene.—dic. "
+    },
+    {
+      "canonical_name": "Valle Central Oriental",
+      "hierarchy_level": "valle",
+      "source_span": ", Cerro Turrubar"
     },
     {
       "canonical_name": "Turrubares",

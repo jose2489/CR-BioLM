@@ -12,11 +12,6 @@
       "source_span": " de Talamanca, Llanura"
     },
     {
-      "canonical_name": "Cordillera de Talamanca",
-      "hierarchy_level": "cordillera",
-      "source_span": " de Tortugue"
-    },
-    {
       "canonical_name": "Llanuras de Tortuguero / Santa Clara",
       "hierarchy_level": "llanura",
       "source_span": "e Tortuguero, vert. P"
@@ -42,7 +37,7 @@
   "cantons": [],
   "districts": [],
   "elevation": {
-    "min_m": 0,
+    "min_m": 0.0,
     "max_m": 850.0,
     "outlier_min_m": null,
     "outlier_max_m": null
@@ -51,7 +46,7 @@
   "confidence": {
     "overall": 1.0,
     "geographic": 1.0,
-    "elevation": 1.0
+    "elevation": 0.0
   },
   "unresolved_tokens": []
 }

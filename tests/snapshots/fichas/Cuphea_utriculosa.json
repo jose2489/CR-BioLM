@@ -42,6 +42,11 @@
       "source_span": ", región de P"
     },
     {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": ", región de P"
+    },
+    {
       "canonical_name": "Península de Nicoya",
       "hierarchy_level": "peninsula",
       "source_span": " Central, P.N. Cara"
@@ -55,11 +60,6 @@
       "canonical_name": "Fila Costeña Norte",
       "hierarchy_level": "fila",
       "source_span": "ivisión), llan"
-    },
-    {
-      "canonical_name": "Fila Costeña (Norte)",
-      "hierarchy_level": "fila",
-      "source_span": "fila costena"
     },
     {
       "canonical_name": "Puriscal - Los Santos",
@@ -88,10 +88,10 @@
   ],
   "districts": [],
   "elevation": {
-    "min_m": null,
-    "max_m": null,
+    "min_m": 0.0,
+    "max_m": 1000.0,
     "outlier_min_m": null,
-    "outlier_max_m": null
+    "outlier_max_m": 1500.0
   },
   "forest_types": [
     "seco"

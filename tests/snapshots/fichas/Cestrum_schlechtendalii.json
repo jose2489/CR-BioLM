@@ -12,6 +12,21 @@
       "source_span": "s cords. principales, vert. Pac.,"
     },
     {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "s cords. principales, vert. Pac.,"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "s cords. principales, vert. Pac.,"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "s cords. principales, vert. Pac.,"
+    },
+    {
       "canonical_name": "Llanuras de San Carlos",
       "hierarchy_level": "llanura",
       "source_span": "uras de San Carlos, de"
@@ -43,10 +58,10 @@
   ],
   "districts": [],
   "elevation": {
-    "min_m": null,
-    "max_m": null,
+    "min_m": 0.0,
+    "max_m": 1900.0,
     "outlier_min_m": null,
-    "outlier_max_m": null
+    "outlier_max_m": 2400.0
   },
   "forest_types": [
     "húmedo"

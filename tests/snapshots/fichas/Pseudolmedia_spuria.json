@@ -47,10 +47,10 @@
   "cantons": [],
   "districts": [],
   "elevation": {
-    "min_m": null,
-    "max_m": null,
+    "min_m": 0.0,
+    "max_m": 550.0,
     "outlier_min_m": null,
-    "outlier_max_m": null
+    "outlier_max_m": 1600.0
   },
   "forest_types": [
     "húmedo"

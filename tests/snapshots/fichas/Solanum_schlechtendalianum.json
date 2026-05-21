@@ -27,14 +27,14 @@
       "source_span": "rt. Pac. Cor"
     },
     {
-      "canonical_name": "Llanuras de San Carlos",
-      "hierarchy_level": "llanura",
-      "source_span": "de San Carlos, de Tort"
-    },
-    {
       "canonical_name": "Llanuras de Guanacaste",
       "hierarchy_level": "llanura",
       "source_span": ".N. Santa Rosa), Sitio"
+    },
+    {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": "de San Carlos, de Tort"
     },
     {
       "canonical_name": "LLanura de los Guatusos",
@@ -53,6 +53,11 @@
     },
     {
       "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "el Río Grande"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
       "hierarchy_level": "valle",
       "source_span": "el Río Grande"
     },
@@ -87,10 +92,10 @@
   "cantons": [],
   "districts": [],
   "elevation": {
-    "min_m": null,
-    "max_m": null,
+    "min_m": 0.0,
+    "max_m": 1000.0,
     "outlier_min_m": null,
-    "outlier_max_m": null
+    "outlier_max_m": 1250.0
   },
   "forest_types": [
     "húmedo"

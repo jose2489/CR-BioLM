@@ -44,17 +44,17 @@
     {
       "canonical_name": "Valle Central (Occidental)",
       "hierarchy_level": "valle",
-      "source_span": "valle central"
-    },
-    {
-      "canonical_name": "Península de Nicoya",
-      "hierarchy_level": "peninsula",
-      "source_span": " Central, P"
+      "source_span": "iones de Puri"
     },
     {
       "canonical_name": "Península de Osa - Golfito",
       "hierarchy_level": "peninsula",
       "source_span": "t.-dic. SE "
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": " Central, P"
     },
     {
       "canonical_name": "Baja Talamanca",
@@ -88,7 +88,7 @@
   ],
   "districts": [],
   "elevation": {
-    "min_m": 0,
+    "min_m": 0.0,
     "max_m": 1700.0,
     "outlier_min_m": null,
     "outlier_max_m": null
@@ -99,7 +99,7 @@
   "confidence": {
     "overall": 1.0,
     "geographic": 1.0,
-    "elevation": 1.0
+    "elevation": 0.0
   },
   "unresolved_tokens": []
 }

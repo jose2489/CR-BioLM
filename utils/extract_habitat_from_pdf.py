@@ -34,9 +34,9 @@ INPUT_CSV = os.path.join(OUTPUT_BASE_DIR, "picked_species.csv")
 OUTPUT_CSV = os.path.join(OUTPUT_BASE_DIR, "picked_species_enhanced.csv")
 
 VOLUME_TO_PDF = {
-    "Vol. II":   "ManualPlantasCostaRica_BHL_v2.pdf",
-    "Vol. III":  "ManualPlantasCostaRica_BHL_v3.pdf",
-    "Vol. VI":   "ManualPlantasCostaRica_BHL_v6.pdf",
+    "Vol. II":   "ManualPlantasCostaRica_BHL_v2_Gimnospermas y Monocotiledoneas.pdf",
+    "Vol. III":  "ManualPlantasCostaRica_BHL_v3_Monocotileidoneas.pdf",
+    "Vol. VI":   "ManualPlantasCostaRica_BHL_v6_Dicotiledoneas.pdf",
     "Vol. VIII": "ManualPlantasCostaRica_BHL_v8.pdf",
 }
 

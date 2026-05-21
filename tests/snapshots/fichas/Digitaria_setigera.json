@@ -14,7 +14,12 @@
     {
       "canonical_name": "Llanuras de San Carlos",
       "hierarchy_level": "llanura",
-      "source_span": "ib., vert. Pac., Pen. d"
+      "source_span": " toda la vert. Carib., "
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": " toda la vert. Carib., "
     },
     {
       "canonical_name": "Valle Central",
@@ -24,7 +29,7 @@
     {
       "canonical_name": "Valle Central (Occidental)",
       "hierarchy_level": "valle",
-      "source_span": "la del Coco. "
+      "source_span": "l, Pen. de Os"
     },
     {
       "canonical_name": "Península de Nicoya",
@@ -46,7 +51,7 @@
   "cantons": [],
   "districts": [],
   "elevation": {
-    "min_m": 0,
+    "min_m": 0.0,
     "max_m": 850.0,
     "outlier_min_m": null,
     "outlier_max_m": null
@@ -55,7 +60,7 @@
   "confidence": {
     "overall": 1.0,
     "geographic": 1.0,
-    "elevation": 1.0
+    "elevation": 0.0
   },
   "unresolved_tokens": [
     "Isla del Coco. FI. ene."

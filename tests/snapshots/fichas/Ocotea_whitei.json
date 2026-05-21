@@ -29,7 +29,7 @@
     {
       "canonical_name": "Valle Central (Occidental)",
       "hierarchy_level": "valle",
-      "source_span": "Dulce"
+      "source_span": "General, regi"
     },
     {
       "canonical_name": "Península de Osa - Golfito",
@@ -43,7 +43,7 @@
   "elevation": {
     "min_m": 400.0,
     "max_m": 1850.0,
-    "outlier_min_m": 100.0,
+    "outlier_min_m": null,
     "outlier_max_m": null
   },
   "forest_types": [

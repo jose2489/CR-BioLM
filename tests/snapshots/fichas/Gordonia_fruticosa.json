@@ -29,7 +29,7 @@
     {
       "canonical_name": "Valle Central (Occidental)",
       "hierarchy_level": "valle",
-      "source_span": "valle central"
+      "source_span": "n vert. Carib"
     },
     {
       "canonical_name": "Fila Costeña (Norte)",
@@ -39,7 +39,7 @@
     {
       "canonical_name": "Fila Costeña (Sur)",
       "hierarchy_level": "fila",
-      "source_span": "fila costena"
+      "source_span": "Central, reg"
     },
     {
       "canonical_name": "Turrubares",
@@ -53,7 +53,7 @@
   "elevation": {
     "min_m": 300.0,
     "max_m": 1700.0,
-    "outlier_min_m": 50.0,
+    "outlier_min_m": null,
     "outlier_max_m": 2000.0
   },
   "forest_types": [

@@ -49,7 +49,7 @@
   "elevation": {
     "min_m": 800.0,
     "max_m": 2350.0,
-    "outlier_min_m": 50.0,
+    "outlier_min_m": null,
     "outlier_max_m": 2750.0
   },
   "forest_types": [

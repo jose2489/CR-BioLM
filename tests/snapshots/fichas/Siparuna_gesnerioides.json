@@ -44,7 +44,7 @@
     {
       "canonical_name": "Valle Central (Occidental)",
       "hierarchy_level": "valle",
-      "source_span": "ión de Purisc"
+      "source_span": "bares, P.N. C"
     },
     {
       "canonical_name": "Valle del Coto Brus",
@@ -64,7 +64,7 @@
     {
       "canonical_name": "Fila Costeña (Sur)",
       "hierarchy_level": "fila",
-      "source_span": "d de Jacó, r"
+      "source_span": "egión de Tur"
     },
     {
       "canonical_name": "Turrubares",
@@ -93,10 +93,10 @@
   ],
   "districts": [],
   "elevation": {
-    "min_m": null,
-    "max_m": null,
+    "min_m": 0.0,
+    "max_m": 2000.0,
     "outlier_min_m": null,
-    "outlier_max_m": null
+    "outlier_max_m": 2300.0
   },
   "forest_types": [
     "húmedo"

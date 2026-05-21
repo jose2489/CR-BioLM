@@ -106,8 +106,9 @@ def _build_alias_index() -> list[tuple[str, str, str, str, str, str]]:
             norm = normalize_text(alias.strip())
             if norm:
                 entries.append((norm, canonical, level, shapefile, attribute, value))
-    # Sort by alias length descending — longest match wins
-    entries.sort(key=lambda x: -len(x[0]))
+    # Sort by (length DESC, alias, level) — keeps same-alias/same-level entries
+    # adjacent so the grouped-match logic in lookup() can collect them together.
+    entries.sort(key=lambda x: (-len(x[0]), x[0], x[2]))
     return entries
 
 
@@ -139,15 +140,30 @@ def lookup(text: str) -> dict[str, list[dict]]:
     norm = normalize_text(text)
     index = _alias_index()
 
-    # consumed positions tracked per (hierarchy_level) separately
+    # consumed positions tracked per hierarchy_level separately
     consumed_by_level: dict[str, set[int]] = {}
-    # also track (canonical_name, hierarchy_level) to avoid duplicate entries
+    # track (canonical_name, hierarchy_level) to avoid duplicate entries
     seen_entities: set[tuple[str, str]] = set()
 
     matched: list[dict] = []
 
-    for alias_norm, canonical, level, shapefile, attr, value in index:
-        consumed = consumed_by_level.setdefault(level, set())
+    # The index is sorted by (-len, alias_norm, level) so entries sharing the
+    # same (alias_norm, level) are adjacent. We process them as a group so that
+    # ONE alias that maps to N entities (e.g. "todas las cordilleras principales"
+    # → all 4 cordilleras) matches ALL N entities at the same span position
+    # before consuming that span.
+    i = 0
+    while i < len(index):
+        alias_norm, canonical_0, level_0, _, _, _ = index[i]
+
+        # Collect all consecutive entries with the same alias + level
+        j = i
+        group: list[tuple] = []
+        while j < len(index) and index[j][0] == alias_norm and index[j][2] == level_0:
+            group.append(index[j])
+            j += 1
+
+        consumed = consumed_by_level.setdefault(level_0, set())
         start = 0
         while True:
             pos = norm.find(alias_norm, start)
@@ -155,19 +171,26 @@ def lookup(text: str) -> dict[str, list[dict]]:
                 break
             end = pos + len(alias_norm)
             span_positions = set(range(pos, end))
-            entity_key = (canonical, level)
-            if not (span_positions & consumed) and entity_key not in seen_entities:
-                matched.append({
-                    "canonical_name":   canonical,
-                    "hierarchy_level":  level,
-                    "target_shapefile": shapefile,
-                    "target_attribute": attr,
-                    "target_value":     value,
-                    "source_span":      text[pos:end] if pos < len(text) else alias_norm,
-                })
+
+            if not (span_positions & consumed):
+                # Always consume the span to block shorter aliases at this level,
+                # even when all entities in the group were already seen.
                 consumed |= span_positions
-                seen_entities.add(entity_key)
+                for (an, cn, lv, sf, at, tv) in group:
+                    entity_key = (cn, lv)
+                    if entity_key not in seen_entities:
+                        matched.append({
+                            "canonical_name":   cn,
+                            "hierarchy_level":  lv,
+                            "target_shapefile": sf,
+                            "target_attribute": at,
+                            "target_value":     tv,
+                            "source_span":      text[pos:end] if pos < len(text) else an,
+                        })
+                        seen_entities.add(entity_key)
             start = end
+
+        i = j
 
     # Group by hierarchy_level
     result: dict[str, list[dict]] = {}

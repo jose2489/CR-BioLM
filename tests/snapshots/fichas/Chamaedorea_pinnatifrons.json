@@ -12,6 +12,21 @@
       "source_span": "das las cords. principales, vert."
     },
     {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "das las cords. principales, vert."
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "das las cords. principales, vert."
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "das las cords. principales, vert."
+    },
+    {
       "canonical_name": "LLanura de los Guatusos",
       "hierarchy_level": "llanura",
       "source_span": "Lla- nuras de Los Guatus"
@@ -23,6 +38,11 @@
     },
     {
       "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "ia. Fl. ene."
+    },
+    {
+      "canonical_name": "Fila Costeña (Sur)",
       "hierarchy_level": "fila",
       "source_span": "ia. Fl. ene."
     },

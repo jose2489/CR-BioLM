@@ -14,12 +14,17 @@
     {
       "canonical_name": "Cordillera de Tilarán",
       "hierarchy_level": "cordillera",
-      "source_span": ". principales, vert. Pac. Cord. d"
+      "source_span": "das las cords. principales, vert."
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "das las cords. principales, vert."
     },
     {
       "canonical_name": "Cordillera de Talamanca",
       "hierarchy_level": "cordillera",
-      "source_span": "lamanca, Cerros de Esca"
+      "source_span": "das las cords. principales, vert."
     },
     {
       "canonical_name": "Valle Central Oriental",
@@ -35,11 +40,6 @@
       "canonical_name": "Fila Costeña Sur",
       "hierarchy_level": "fila",
       "source_span": "(Fila Cruces)."
-    },
-    {
-      "canonical_name": "Fila Costeña (Norte)",
-      "hierarchy_level": "fila",
-      "source_span": "fila costena"
     }
   ],
   "parks": [],

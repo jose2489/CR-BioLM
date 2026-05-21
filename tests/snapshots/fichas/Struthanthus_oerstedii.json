@@ -39,7 +39,7 @@
     {
       "canonical_name": "Valle Central (Occidental)",
       "hierarchy_level": "valle",
-      "source_span": "ndelaria y de"
+      "source_span": "e los Ríos Gr"
     },
     {
       "canonical_name": "Península de Nicoya",
@@ -68,7 +68,7 @@
   "elevation": {
     "min_m": 450.0,
     "max_m": 1500.0,
-    "outlier_min_m": 0.0,
+    "outlier_min_m": null,
     "outlier_max_m": 2100.0
   },
   "forest_types": [

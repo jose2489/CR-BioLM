@@ -26,6 +26,11 @@
       "source_span": " S Valle de G"
     },
     {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": " S Valle de G"
+    },
+    {
       "canonical_name": "Península de Nicoya",
       "hierarchy_level": "peninsula",
       "source_span": "icoya, vecindad de "
@@ -35,10 +40,10 @@
   "cantons": [],
   "districts": [],
   "elevation": {
-    "min_m": null,
-    "max_m": null,
+    "min_m": 0.0,
+    "max_m": 350.0,
     "outlier_min_m": null,
-    "outlier_max_m": null
+    "outlier_max_m": 800.0
   },
   "forest_types": [
     "seco"

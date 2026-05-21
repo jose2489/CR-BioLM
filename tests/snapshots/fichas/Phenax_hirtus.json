@@ -12,24 +12,19 @@
       "source_span": "manca, a e Escazú, S Fi"
     },
     {
-      "canonical_name": "Cordillera de Tilarán",
-      "hierarchy_level": "cordillera",
-      "source_span": "s. de Tilarán, Central"
-    },
-    {
       "canonical_name": "Cordillera Central",
       "hierarchy_level": "cordillera",
       "source_span": " de Talamanca, vert. P"
     },
     {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. de Tilarán, Central"
+    },
+    {
       "canonical_name": "Fila Costeña Sur",
       "hierarchy_level": "fila",
       "source_span": ". ene.-jul., s"
-    },
-    {
-      "canonical_name": "Fila Costeña (Norte)",
-      "hierarchy_level": "fila",
-      "source_span": " CR y O Pan."
     }
   ],
   "parks": [],
@@ -38,7 +33,7 @@
   "elevation": {
     "min_m": 1000.0,
     "max_m": 2800.0,
-    "outlier_min_m": 800.0,
+    "outlier_min_m": null,
     "outlier_max_m": 3000.0
   },
   "forest_types": [

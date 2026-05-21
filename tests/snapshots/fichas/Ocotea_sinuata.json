@@ -32,6 +32,11 @@
       "source_span": "ds. de Tilará"
     },
     {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "ds. de Tilará"
+    },
+    {
       "canonical_name": "Península de Osa - Golfito",
       "hierarchy_level": "peninsula",
       "source_span": ". y Guat., El Sa"
@@ -54,7 +59,7 @@
   "elevation": {
     "min_m": 600.0,
     "max_m": 1900.0,
-    "outlier_min_m": 0.0,
+    "outlier_min_m": null,
     "outlier_max_m": null
   },
   "forest_types": [

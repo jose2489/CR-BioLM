@@ -72,17 +72,16 @@ def _parse_elevation(text: str) -> ElevationRange:
             outlier_max_m= _clean(hi_out),
         )
 
-    # Approximate single value (ca. 1150 m)
+    # Approximate single value (ca. 1150 m) — use exact, let CSV supplement range
     m2 = _RE_ELEV_APPROX.search(text)
     if m2:
         v = float(m2.group(1))
-        return ElevationRange(min_m=v * 0.85, max_m=v * 1.15)
+        return ElevationRange(min_m=v, max_m=v)
 
-    # Single value (last resort)
-    m3 = _RE_ELEV_SINGLE.search(text)
-    if m3:
-        v = float(m3.group(1))
-        return ElevationRange(min_m=0, max_m=v)
+    # Single value like "0–700 m" already handled above; bare "1300 m" means
+    # we only know the ceiling, so leave it for the CSV supplement.
+    # (Returning empty lets maps_only.py apply the catalog-extracted range.)
+    return ElevationRange()
 
     return ElevationRange()
 

@@ -35,11 +35,6 @@
       "canonical_name": "Fila Costeña Sur",
       "hierarchy_level": "fila",
       "source_span": "General, Pen. "
-    },
-    {
-      "canonical_name": "Fila Costeña (Norte)",
-      "hierarchy_level": "fila",
-      "source_span": "., dic. S Mé"
     }
   ],
   "parks": [],
@@ -48,7 +43,7 @@
   "elevation": {
     "min_m": 700.0,
     "max_m": 1700.0,
-    "outlier_min_m": 0.0,
+    "outlier_min_m": null,
     "outlier_max_m": null
   },
   "forest_types": [

@@ -37,6 +37,11 @@
       "source_span": "tina, P.N, Ca"
     },
     {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "tina, P.N, Ca"
+    },
+    {
       "canonical_name": "Península de Nicoya",
       "hierarchy_level": "peninsula",
       "source_span": "Lucas, Valle Centra"
@@ -57,7 +62,7 @@
   "cantons": [],
   "districts": [],
   "elevation": {
-    "min_m": 0,
+    "min_m": 0.0,
     "max_m": 1150.0,
     "outlier_min_m": null,
     "outlier_max_m": null
@@ -68,7 +73,7 @@
   "confidence": {
     "overall": 1.0,
     "geographic": 1.0,
-    "elevation": 1.0
+    "elevation": 0.0
   },
   "unresolved_tokens": []
 }

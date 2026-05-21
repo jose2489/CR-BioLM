@@ -37,8 +37,8 @@
   ],
   "districts": [],
   "elevation": {
-    "min_m": null,
-    "max_m": null,
+    "min_m": 0.0,
+    "max_m": 700.0,
     "outlier_min_m": null,
     "outlier_max_m": null
   },

@@ -32,6 +32,11 @@
       "source_span": "t. Pac. Cord."
     },
     {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "t. Pac. Cord."
+    },
+    {
       "canonical_name": "Península de Nicoya",
       "hierarchy_level": "peninsula",
       "source_span": ", región de Purisca"
@@ -43,6 +48,11 @@
     },
     {
       "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "uanacaste, P"
+    },
+    {
+      "canonical_name": "Fila Costeña (Sur)",
       "hierarchy_level": "fila",
       "source_span": "uanacaste, P"
     },

@@ -17,14 +17,14 @@
       "source_span": "Fl. ene.-jun., nov., di"
     },
     {
-      "canonical_name": "Cordillera de Tilarán",
-      "hierarchy_level": "cordillera",
-      "source_span": "s. de Tilarán, Central"
-    },
-    {
       "canonical_name": "Cordillera Central",
       "hierarchy_level": "cordillera",
       "source_span": " de Tala- manca, ambas"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. de Tilarán, Central"
     }
   ],
   "parks": [],

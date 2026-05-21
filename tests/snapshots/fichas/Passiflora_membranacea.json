@@ -40,11 +40,6 @@
       "canonical_name": "Fila Costeña Sur",
       "hierarchy_level": "fila",
       "source_span": ", Pen. de Nico"
-    },
-    {
-      "canonical_name": "Fila Costeña (Norte)",
-      "hierarchy_level": "fila",
-      "source_span": "fila costena"
     }
   ],
   "parks": [
@@ -57,10 +52,10 @@
   "cantons": [],
   "districts": [],
   "elevation": {
-    "min_m": null,
-    "max_m": null,
+    "min_m": 0.0,
+    "max_m": 200.0,
     "outlier_min_m": null,
-    "outlier_max_m": null
+    "outlier_max_m": 1200.0
   },
   "forest_types": [
     "húmedo"

@@ -12,19 +12,14 @@
       "source_span": "anacaste. Fl. ene.—may.,"
     },
     {
-      "canonical_name": "Cordillera de Tilarán",
-      "hierarchy_level": "cordillera",
-      "source_span": "rds. de Tilaran, Centr"
-    },
-    {
       "canonical_name": "Cordillera Central",
       "hierarchy_level": "cordillera",
       "source_span": " y de Talamanca, ambas"
     },
     {
-      "canonical_name": "Cordillera de Talamanca",
+      "canonical_name": "Cordillera de Tilarán",
       "hierarchy_level": "cordillera",
-      "source_span": "rts. Cord. d"
+      "source_span": "rds. de Tilaran, Centr"
     }
   ],
   "parks": [],
@@ -33,7 +28,7 @@
   "elevation": {
     "min_m": 400.0,
     "max_m": 1400.0,
-    "outlier_min_m": 250.0,
+    "outlier_min_m": null,
     "outlier_max_m": null
   },
   "forest_types": [

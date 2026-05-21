@@ -14,7 +14,17 @@
     {
       "canonical_name": "Cordillera de Tilarán",
       "hierarchy_level": "cordillera",
-      "source_span": "s. principales, vert. Pac., S Fil"
+      "source_span": "odas las cords. principales, vert"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "odas las cords. principales, vert"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "odas las cords. principales, vert"
     },
     {
       "canonical_name": "Valle del General",
@@ -30,11 +40,6 @@
       "canonical_name": "Fila Costeña Sur",
       "hierarchy_level": "fila",
       "source_span": "tefia (Cerro A"
-    },
-    {
-      "canonical_name": "Fila Costeña (Norte)",
-      "hierarchy_level": "fila",
-      "source_span": "fila costena"
     }
   ],
   "parks": [],

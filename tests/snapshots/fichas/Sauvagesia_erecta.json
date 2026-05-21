@@ -39,7 +39,7 @@
     {
       "canonical_name": "Valle Central (Occidental)",
       "hierarchy_level": "valle",
-      "source_span": "acaste y de T"
+      "source_span": "tral, ambas v"
     },
     {
       "canonical_name": "Península de Osa - Golfito",
@@ -54,7 +54,7 @@
     {
       "canonical_name": "Fila Costeña (Sur)",
       "hierarchy_level": "fila",
-      "source_span": "fila costena"
+      "source_span": "e Puriscal ("
     },
     {
       "canonical_name": "Puriscal - Los Santos",
@@ -72,10 +72,10 @@
   ],
   "districts": [],
   "elevation": {
-    "min_m": null,
-    "max_m": null,
+    "min_m": 0.0,
+    "max_m": 1250.0,
     "outlier_min_m": null,
-    "outlier_max_m": null
+    "outlier_max_m": 1700.0
   },
   "forest_types": [
     "húmedo"

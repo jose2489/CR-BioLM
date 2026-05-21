@@ -11,6 +11,16 @@
       "source_span": "toda la vert. Carib. Fl"
     },
     {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": "toda la vert. Carib. Fl"
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "toda la vert. Carib. Fl"
+    },
+    {
       "canonical_name": "Baja Talamanca",
       "hierarchy_level": "region_other",
       "source_span": "toda la vert. Carib. Fl"
@@ -30,7 +40,7 @@
   ],
   "confidence": {
     "overall": 1.0,
-    "geographic": 0.6666666666666666,
+    "geographic": 1.0,
     "elevation": 0.0
   },
   "unresolved_tokens": []

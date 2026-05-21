@@ -12,14 +12,14 @@
       "source_span": "nuras de Guanacaste, "
     },
     {
-      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
-      "hierarchy_level": "llanura",
-      "source_span": "anuras de Tortuguero y"
-    },
-    {
       "canonical_name": "Llanuras de Guanacaste",
       "hierarchy_level": "llanura",
       "source_span": "n. de Nicoya, Isla Tol"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "anuras de Tortuguero y"
     },
     {
       "canonical_name": "Valle del General",
@@ -28,6 +28,11 @@
     },
     {
       "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "rt. Pac. Cord"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
       "hierarchy_level": "valle",
       "source_span": "rt. Pac. Cord"
     },
@@ -57,7 +62,7 @@
   "cantons": [],
   "districts": [],
   "elevation": {
-    "min_m": 0,
+    "min_m": 0.0,
     "max_m": 1450.0,
     "outlier_min_m": null,
     "outlier_max_m": null
@@ -68,7 +73,7 @@
   "confidence": {
     "overall": 1.0,
     "geographic": 1.0,
-    "elevation": 1.0
+    "elevation": 0.0
   },
   "unresolved_tokens": []
 }

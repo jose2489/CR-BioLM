@@ -6,19 +6,14 @@
   ],
   "regions": [
     {
-      "canonical_name": "Cordillera de Tilarán",
-      "hierarchy_level": "cordillera",
-      "source_span": "rds. de Tilaran, Centr"
-    },
-    {
       "canonical_name": "Cordillera Central",
       "hierarchy_level": "cordillera",
       "source_span": " y de Talamanca. Fl. f"
     },
     {
-      "canonical_name": "Cordillera de Talamanca",
+      "canonical_name": "Cordillera de Tilarán",
       "hierarchy_level": "cordillera",
-      "source_span": "l. feb.—set."
+      "source_span": "rds. de Tilaran, Centr"
     },
     {
       "canonical_name": "Península de Osa - Golfito",
@@ -32,7 +27,7 @@
   "elevation": {
     "min_m": 1050.0,
     "max_m": 2100.0,
-    "outlier_min_m": 450.0,
+    "outlier_min_m": null,
     "outlier_max_m": null
   },
   "forest_types": [],

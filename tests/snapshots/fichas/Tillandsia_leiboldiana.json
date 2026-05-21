@@ -39,7 +39,7 @@
     {
       "canonical_name": "Valle Central (Occidental)",
       "hierarchy_level": "valle",
-      "source_span": "ords. de Tila"
+      "source_span": "e Central, am"
     },
     {
       "canonical_name": "Valle Central Occidental",
@@ -55,11 +55,6 @@
       "canonical_name": "Fila Costeña Sur",
       "hierarchy_level": "fila",
       "source_span": "a Cruces), Pen"
-    },
-    {
-      "canonical_name": "Fila Costeña (Norte)",
-      "hierarchy_level": "fila",
-      "source_span": "fila costena"
     }
   ],
   "parks": [],

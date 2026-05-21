@@ -129,20 +129,23 @@ def run_maps_only(especie_nombre: str) -> bool:
                     geographic_notes = geographic_notes or "",
                     species          = especie_nombre,
                 )
-                # Supplement elevation from catalog if parser didn't extract it
-                if not ficha.elevation.has_data() and elevation_min is not None and elevation_max is not None:
+                # Catalog elevation always takes precedence over parser approximation
+                if elevation_min is not None and elevation_max is not None:
                     import math
-                    if not (math.isnan(float(elevation_min)) or math.isnan(float(elevation_max))):
-                        from utils.distribution_map.ficha import ElevationRange
-                        ficha = ficha.__class__(
-                            **{**ficha.to_dict(),
-                               "elevation": ElevationRange(
-                                   min_m=float(elevation_min),
-                                   max_m=float(elevation_max),
-                                   outlier_min_m=elev_outlier_min,
-                                   outlier_max_m=elev_outlier_max,
-                               )}
-                        )
+                    try:
+                        if not (math.isnan(float(elevation_min)) or math.isnan(float(elevation_max))):
+                            from utils.distribution_map.ficha import ElevationRange
+                            ficha = ficha.__class__(
+                                **{**ficha.to_dict(),
+                                   "elevation": ElevationRange(
+                                       min_m=float(elevation_min),
+                                       max_m=float(elevation_max),
+                                       outlier_min_m=elev_outlier_min,
+                                       outlier_max_m=elev_outlier_max,
+                                   )}
+                            )
+                    except Exception:
+                        pass
                 ficha_path = os.path.join(out_dir, "ficha.json")
                 ficha.save(ficha_path)
                 cl.check("Ficha estructurada", ok=True, detail=ficha.summary())

@@ -17,6 +17,11 @@
       "source_span": ", Isla del Co"
     },
     {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": ", Isla del Co"
+    },
+    {
       "canonical_name": "Península de Nicoya",
       "hierarchy_level": "peninsula",
       "source_span": "Nicoya, vecindad de"
@@ -37,10 +42,10 @@
   ],
   "districts": [],
   "elevation": {
-    "min_m": null,
-    "max_m": null,
+    "min_m": 0.0,
+    "max_m": 50.0,
     "outlier_min_m": null,
-    "outlier_max_m": null
+    "outlier_max_m": 1200.0
   },
   "forest_types": [
     "seco"

@@ -107,7 +107,7 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
             _ficha    = build_ficha(habitat_raw=_raw, geographic_notes=_geo, species=especie_nombre)
             import math
             _emin, _emax = r.get('elevation_min_m'), r.get('elevation_max_m')
-            if not _ficha.elevation.has_data() and _emin and _emax:
+            if _emin and _emax:
                 try:
                     if not (math.isnan(float(_emin)) or math.isnan(float(_emax))):
                         from utils.distribution_map.ficha import ElevationRange

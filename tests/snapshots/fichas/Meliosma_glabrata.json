@@ -37,11 +37,6 @@
       "source_span": "Fila Cruces), "
     },
     {
-      "canonical_name": "Fila Costeña (Norte)",
-      "hierarchy_level": "fila",
-      "source_span": "fila costena"
-    },
-    {
       "canonical_name": "Turrubares",
       "hierarchy_level": "region_other",
       "source_span": "la Costeña"
@@ -62,10 +57,10 @@
   ],
   "districts": [],
   "elevation": {
-    "min_m": null,
-    "max_m": null,
+    "min_m": 0.0,
+    "max_m": 1400.0,
     "outlier_min_m": null,
-    "outlier_max_m": null
+    "outlier_max_m": 1800.0
   },
   "forest_types": [
     "muy húmedo"

@@ -37,6 +37,11 @@
       "source_span": "tral, ambas v"
     },
     {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "tral, ambas v"
+    },
+    {
       "canonical_name": "Valle del Coto Brus",
       "hierarchy_level": "valle",
       "source_span": "mar.-set."
@@ -48,6 +53,11 @@
     },
     {
       "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "región de Pu"
+    },
+    {
+      "canonical_name": "Fila Costeña (Sur)",
       "hierarchy_level": "fila",
       "source_span": "región de Pu"
     },

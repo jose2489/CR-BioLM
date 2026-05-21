@@ -14,7 +14,17 @@
     {
       "canonical_name": "Cordillera de Tilarán",
       "hierarchy_level": "cordillera",
-      "source_span": ", Llanuras de San Carlos, de Tort"
+      "source_span": "s las cords. principales, Llanura"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "s las cords. principales, Llanura"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "s las cords. principales, Llanura"
     },
     {
       "canonical_name": "Llanuras de San Carlos",
@@ -52,7 +62,7 @@
   "cantons": [],
   "districts": [],
   "elevation": {
-    "min_m": 0,
+    "min_m": 0.0,
     "max_m": 850.0,
     "outlier_min_m": null,
     "outlier_max_m": null
@@ -63,7 +73,7 @@
   "confidence": {
     "overall": 1.0,
     "geographic": 1.0,
-    "elevation": 1.0
+    "elevation": 0.0
   },
   "unresolved_tokens": []
 }
