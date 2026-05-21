@@ -1,0 +1,63 @@
+{
+  "species": "Tillandsia usneoides",
+  "habitat_raw": "Bosque muy htimedo y pluvial, 0Q— 1900 m; vert. Carib. Cords. Central y de Talamanca, Lago Are- nal, Llanuras de San Carlos y de Santa Clara, vert. Pac. Cord. de Tilaran, Cerros de Escazu, Pen. de Osa. Fr. mar. SE EUA—Arg., Antillas. (J. F Morales et al. 2286; CR, INB, MO) Se reconoce facilmente por su tamafio pequefio y su habito, tipicamente en forma de masas colgantes.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " y de Talamanca, Lago "
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "Tilaran, Cerros de Es"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": ", Llanuras d"
+    },
+    {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": "ras de San Carlos y de"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": " Clara, ver"
+    },
+    {
+      "canonical_name": "Valle Central Oriental",
+      "hierarchy_level": "valle",
+      "source_span": "zu, Pen. de Osa."
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "r. mar. SE EUA—A"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 1900.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": [
+    "Antillas."
+  ]
+}

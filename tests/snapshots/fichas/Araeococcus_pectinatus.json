@@ -1,0 +1,47 @@
+{
+  "species": "Araeococcus pectinatus",
+  "habitat_raw": "Bosque muy himedo, 0—900 m; vert. Pac. N Cord. de Talamanca (regiones de Acosta y Tarrazt), desde P.N. Carara al S. Fr. ene., feb., jul.—dic. CR—Col. (A. L. Marin & Gutiérrez 43; INB, MO)",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "d. de Talamanca (region"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": " Tarra"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "ara al S. Fr. ene., fe"
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Acosta (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": " Tarra"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 900.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

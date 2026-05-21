@@ -31,22 +31,35 @@ import unicodedata
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-import matplotlib.colors as mcolors
 import geopandas as gpd
 import rasterio
 from rasterio.mask import mask as rio_mask
 from shapely.geometry import mapping
 from shapely.ops import unary_union
 
-# ---------------------------------------------------------------------------
-# Paths (loaded from project config)
-# ---------------------------------------------------------------------------
+# Ensure project root is on sys.path before importing local packages
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 import config as _cfg
+
+from utils.distribution_map.style import (
+    REGION_COLORS,
+    FALLBACK_REGION_COLOR as _FALLBACK_COLOR,
+    mute_color as _mute_color,
+)
+from utils.distribution_map.geodata import (
+    load_regiones_botanicas,
+    load_protected_areas,
+    filter_pa_to_regions,
+)
+
+# ---------------------------------------------------------------------------
+# Paths (for DEM and CLI usage)
+# ---------------------------------------------------------------------------
 
 REGIONES_BOTANICAS_SHP = Path(_cfg.REGIONES_BOTANICAS_SHP)
 PROTECTED_AREAS_SHP    = Path(_cfg.PROTECTED_AREAS_V2_SHP)
@@ -57,8 +70,13 @@ DEM_PATH               = Path(_cfg.DEM_PATH)
 # Maps Manual de Plantas vocabulary → list of Nombre values in the shapefile.
 # Patterns are matched against accent-normalized lowercase text.
 # Order matters: more specific patterns must precede broader ones.
+#
+# The hardcoded table below is the baseline. An external CSV override file
+# (data_raw/region_xref.csv) is merged on top at load time — rows with
+# enabled=yes are appended, giving you an editable lookup without touching code.
+# CSV columns: pattern, region_nombre, description, enabled
 # ---------------------------------------------------------------------------
-TRANSLATION_TABLE_V2: list[tuple[str, list[str]]] = [
+_TRANSLATION_TABLE_BASE: list[tuple[str, list[str]]] = [
     # ── Catch-alls (must precede individual cordillera entries) ──────────────
     (
         r"todas las cords?\.?\s*principales|todas las cordilleras\s*principales",
@@ -131,44 +149,32 @@ TRANSLATION_TABLE_V2: list[tuple[str, list[str]]] = [
 ]
 
 # ---------------------------------------------------------------------------
-# Per-region color palette — one stable color per Nombre value.
-# Medium-brightness colors chosen for readability on the dark (#111827) background.
-# Grouped semantically: cordilleras=blues, llanuras=greens, valles=oranges,
-# peninsulas=purples, filas=pinks, others=mixed.
+# Load external xref CSV and merge into the translation table
 # ---------------------------------------------------------------------------
-REGION_COLORS: dict[str, str] = {
-    # Cordilleras
-    "Cordillera de Guanacaste":             "#4fc3f7",  # sky blue
-    "Cordillera de Tilarán":               "#29b6f6",  # bright blue
-    "Cordillera Central":                  "#03a9f4",  # medium blue
-    "Cordillera de Talamanca":             "#0288d1",  # deep blue
-    # Llanuras
-    "Llanuras de Guanacaste":             "#81c784",  # light green
-    "Llanuras de Tortuguero / Santa Clara": "#4caf50", # green
-    "Llanuras de San Carlos":             "#26a69a",  # teal-green
-    "LLanura de los Guatusos":            "#00897b",  # teal
-    "Llanuras del Diquís":               "#80cbc4",  # pale teal
-    # Valles
-    "Valle Central Oriental":             "#ffb74d",  # amber-orange
-    "Valle Central Occidental":           "#ffa726",  # orange
-    "Valle del General":                  "#ff8a65",  # salmon-orange
-    "Valle del Coto Brus":               "#ff7043",  # deep orange
-    # Penínsulas
-    "Península de Nicoya":               "#ce93d8",  # lilac
-    "Península de Osa - Golfito":        "#ab47bc",  # purple
-    # Filas Costeñas
-    "Fila Costeña Norte":               "#f06292",  # pink
-    "Fila Costeña Sur":                 "#ec407a",  # deep pink
-    # Others
-    "Tárcoles - Térraba":              "#dce775",  # yellow-green
-    "Baja Talamanca":                    "#ffee58",  # yellow
-    "Puriscal - Los Santos":            "#a5d6a7",  # pale green
-    "Turrubares":                        "#80deea",  # cyan
-    "Coto Colorado":                     "#b0bec5",  # blue-gray
-    "Punta Burica":                      "#f48fb1",  # light pink
-    "Filas Chonta y Nara":              "#c5e1a5",  # pale lime
-}
-_FALLBACK_COLOR = "#78909c"   # used for any Nombre not in the palette
+_XREF_PATH = Path(__file__).parent.parent.parent / "data_raw" / "region_xref.csv"
+
+def _load_translation_table() -> list[tuple[str, list[str]]]:
+    table = list(_TRANSLATION_TABLE_BASE)
+    if _XREF_PATH.exists():
+        try:
+            import pandas as _pd
+            xref = _pd.read_csv(_XREF_PATH)
+            added = 0
+            for _, row in xref.iterrows():
+                if str(row.get("enabled", "yes")).strip().lower() != "yes":
+                    continue
+                pattern = str(row["pattern"]).strip()
+                nombre  = str(row["region_nombre"]).strip()
+                if pattern and nombre:
+                    table.append((pattern, [nombre]))
+                    added += 1
+            if added:
+                print(f"  [xref] Loaded {added} extra region mappings from region_xref.csv")
+        except Exception as e:
+            print(f"  [xref] Could not load region_xref.csv: {e}")
+    return table
+
+TRANSLATION_TABLE_V2 = _load_translation_table()
 
 # ---------------------------------------------------------------------------
 # Core helpers
@@ -179,65 +185,23 @@ def _normalize(text: str) -> str:
     return nfkd.encode("ascii", "ignore").decode("ascii").lower()
 
 
-def _mute_color(hex_color: str, saturation: float = 0.3, lightness: float = 0.4) -> str:
-    """Return a desaturated/darkened version of a hex color."""
-    import colorsys
-    r, g, b = mcolors.to_rgb(hex_color)
-    h, s, v = colorsys.rgb_to_hsv(r, g, b)
-    r2, g2, b2 = colorsys.hsv_to_rgb(h, s * saturation, v * lightness)
-    return mcolors.to_hex((r2, g2, b2))
-
-
-def load_regiones_botanicas() -> gpd.GeoDataFrame:
-    """Load, reproject, and clean-up the botanical regions shapefile."""
-    gdf = gpd.read_file(REGIONES_BOTANICAS_SHP)
-    if gdf.crs and gdf.crs.to_epsg() != 4326:
-        gdf = gdf.to_crs(epsg=4326)
-    # Fix malformed "NULLVertiente..." values from shapefile data quality issue
-    null_mask = gdf["Vertiente"].str.startswith("NULL", na=False)
-    if null_mask.any():
-        print(f"  [WARN] Fixing {null_mask.sum()} malformed Vertiente value(s) in shapefile")
-        gdf.loc[null_mask, "Vertiente"] = (
-            gdf.loc[null_mask, "Vertiente"].str.replace(r"^NULL", "", regex=True)
-        )
-    gdf["vert_norm"] = gdf["Vertiente"].apply(
-        lambda v: "carib" if "carib" in str(v).lower() else "pacifico"
-    )
-    return gdf
-
-
-def load_protected_areas() -> gpd.GeoDataFrame:
-    """Load and reproject the protected areas shapefile."""
-    gdf = gpd.read_file(PROTECTED_AREAS_SHP)
-    if gdf.crs and gdf.crs.to_epsg() != 4326:
-        gdf = gdf.to_crs(epsg=4326)
-    return gdf
-
-
-def filter_pa_to_regions(pa_gdf: gpd.GeoDataFrame,
-                          region_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def match_parks(geographic_notes: str, pa_gdf: gpd.GeoDataFrame) -> set[str]:
     """
-    Return protected areas clipped to the union of highlighted regions.
-    Geometries are truncated at region boundaries so no PA outline
-    extends into non-highlighted areas.
+    Return set of nombre_asp values from the PA layer whose name appears
+    in geographic_notes. Matching is accent-normalized and case-insensitive.
+    Short names (<5 chars) require word boundaries to avoid false positives.
     """
-    if region_gdf.empty:
-        return pa_gdf.iloc[0:0]
-    try:
-        # Repair invalid geometries before clip (common in SINAC shapefiles)
-        pa_valid     = pa_gdf.copy()
-        pa_valid["geometry"] = pa_valid.geometry.buffer(0)
-        region_valid = region_gdf.copy()
-        region_valid["geometry"] = region_valid.geometry.buffer(0)
-
-        region_union = unary_union(region_valid.geometry)
-        clipped = gpd.clip(pa_valid, region_union)
-        # Drop empty slivers from clipping artefacts
-        clipped = clipped[~clipped.is_empty].reset_index(drop=True)
-        return clipped
-    except Exception as e:
-        print(f"  [WARN] Protected-area clip failed: {e}")
-        return pa_gdf.iloc[0:0]
+    text = _normalize(geographic_notes)
+    matched: set[str] = set()
+    for nombre in pa_gdf["nombre_asp"].dropna().unique():
+        norm = _normalize(nombre)
+        if len(norm) < 5:
+            pat = r'\b' + re.escape(norm) + r'\b'
+        else:
+            pat = re.escape(norm)
+        if re.search(pat, text):
+            matched.add(nombre)
+    return matched
 
 
 def match_regions_v2(geographic_notes: str) -> tuple[set[str], str]:
@@ -290,10 +254,11 @@ def generate_habitat_map(
 
     Layers (bottom to top):
       1. Unmatched regions — dark gray
-      2. Matched geographic regions — muted by vertiente side
-      3. Elevation highlight (cyan) within matched regions
-      3b. Outlier elevation bands (hatched cyan)
-      4. Protected areas — green outline/fill
+      2. Matched botanical regions — muted color per region
+      3. Named parks from Manual — bright orange fill + outline
+      3b. Elevation highlight (cyan) within regions + named parks
+      3c. Outlier elevation bands (hatched cyan)
+      4. All protected areas clipped to matched regions — amber outline
       5. GBIF points — red dots
     Plus: dual legend boxes + Fuentes footer.
 
@@ -306,8 +271,10 @@ def generate_habitat_map(
     regiones = load_regiones_botanicas()
     pa_all   = load_protected_areas()
 
+    notes_text = geographic_notes or ""
+
     # ── Region matching ───────────────────────────────────────────────────
-    matched_nombres, vert_flag = match_regions_v2(geographic_notes or "")
+    matched_nombres, vert_flag = match_regions_v2(notes_text)
 
     if matched_nombres:
         nombre_mask = regiones["Nombre"].isin(matched_nombres)
@@ -315,25 +282,44 @@ def generate_habitat_map(
             vert_mask = regiones["vert_norm"] == vert_flag
             matched_mask = nombre_mask & vert_mask
             if matched_mask.sum() == 0:
-                # Vertiente filter removed everything — fall back to name-only
                 matched_mask = nombre_mask
         else:
             matched_mask = nombre_mask
         fallback = False
     else:
-        print(f"  [WARN] No region match for: '{(geographic_notes or '')[:60]}' — showing all")
+        print(f"  [WARN] No region match for: '{notes_text[:60]}' — showing all")
         matched_mask = np.ones(len(regiones), dtype=bool)
         fallback = True
 
     matched_gdf   = regiones[matched_mask].copy()
     unmatched_gdf = regiones[~matched_mask].copy()
 
-    # ── Protected areas filtered to highlighted regions ───────────────────
+    # ── Named park matching ───────────────────────────────────────────────
+    matched_park_names = match_parks(notes_text, pa_all)
+    named_parks_gdf = (
+        pa_all[pa_all["nombre_asp"].isin(matched_park_names)].copy()
+        if matched_park_names else pa_all.iloc[0:0]
+    )
+    if matched_park_names:
+        print(f"  [parks] Named parks matched: {sorted(matched_park_names)}")
+
+    # ── Protected areas clipped to matched regions (background layer) ─────
     pa_filtered = (
         filter_pa_to_regions(pa_all, matched_gdf)
         if not matched_gdf.empty
         else pa_all.iloc[0:0]
     )
+
+    # ── Combined geometry for elevation masking (regions + named parks) ───
+    elev_mask_gdf = matched_gdf.copy()
+    if not named_parks_gdf.empty:
+        parks_reproj = named_parks_gdf.to_crs(matched_gdf.crs) if named_parks_gdf.crs != matched_gdf.crs else named_parks_gdf
+        elev_mask_gdf = gpd.GeoDataFrame(
+            pd.concat([matched_gdf, parks_reproj[["geometry"]].assign(
+                Nombre="", Vertiente="", vert_norm="pacifico"
+            )], ignore_index=True),
+            crs=matched_gdf.crs,
+        )
 
     # ── Elevation flags ────────────────────────────────────────────────────
     has_elevation = (
@@ -387,32 +373,39 @@ def generate_habitat_map(
             linewidth=0.6, alpha=0.90, zorder=2,
         )
 
-    # ── Layer 3: Elevation highlight ──────────────────────────────────────
-    if has_elevation and not matched_gdf.empty:
+    # ── Layer 3: Named parks (bright orange fill) ─────────────────────────
+    if not named_parks_gdf.empty:
+        named_parks_gdf.plot(
+            ax=ax, facecolor="#f97316", edgecolor="#fed7aa",
+            linewidth=1.0, alpha=0.75, zorder=6,
+        )
+
+    # ── Layer 3b: Elevation highlight (regions + named parks) ────────────
+    if has_elevation and not elev_mask_gdf.empty:
         _overlay_elevation(
-            ax=ax, matched_gdf=matched_gdf, dem_path=dem_path,
+            ax=ax, matched_gdf=elev_mask_gdf, dem_path=dem_path,
             elev_min=elev_min, elev_max=elev_max,
         )
 
-    # ── Layer 3b: Outlier elevation bands ────────────────────────────────
-    if has_outlier:
+    # ── Layer 3c: Outlier elevation bands ────────────────────────────────
+    if has_outlier and not elev_mask_gdf.empty:
         out_lo = float(elev_outlier_min) if elev_outlier_min is not None else elev_min
         out_hi = float(elev_outlier_max) if elev_outlier_max is not None else elev_max
         _overlay_elevation_outlier(
-            ax=ax, matched_gdf=matched_gdf, dem_path=dem_path,
+            ax=ax, matched_gdf=elev_mask_gdf, dem_path=dem_path,
             elev_min=out_lo, elev_max=out_hi,
             main_min=elev_min, main_max=elev_max,
         )
 
-    # ── Layer 4: Protected areas (clipped to matched regions) ────────────
+    # ── Layer 4: All protected areas clipped to matched regions ──────────
     if not pa_filtered.empty:
         pa_filtered.plot(
             ax=ax, facecolor="#f59e0b", edgecolor="none",
-            alpha=0.20, zorder=7,
+            alpha=0.15, zorder=7,
         )
         pa_filtered.plot(
             ax=ax, facecolor="none", edgecolor="#fbbf24",
-            linewidth=0.9, alpha=0.80, zorder=8,
+            linewidth=0.7, alpha=0.60, zorder=8,
         )
 
     # ── Layer 5: GBIF points ──────────────────────────────────────────────
@@ -471,6 +464,11 @@ def generate_habitat_map(
     if presencias_gdf is not None and not presencias_gdf.empty:
         right_patches.append(mpatches.Patch(
             color="#ff4444", label=f"Presencias GBIF (n={len(presencias_gdf)})",
+        ))
+    if not named_parks_gdf.empty:
+        right_patches.append(mpatches.Patch(
+            facecolor="#f97316", alpha=0.75, edgecolor="#fed7aa", linewidth=0.8,
+            label=f"Parques mencionados (n={len(matched_park_names)})",
         ))
     if not pa_filtered.empty:
         right_patches.append(mpatches.Patch(

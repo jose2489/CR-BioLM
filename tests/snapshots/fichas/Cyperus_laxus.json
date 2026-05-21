@@ -1,0 +1,63 @@
+{
+  "species": "Cyperus laxus",
+  "habitat_raw": "Bosque himedo y muy htiimedo, bosques abiertos y senderos, orillas de rios y cultivos, O—700 (—1000) m; vert. Carib. Cords. Central y de Talamanca, cuenca del Rio Sapoa, Llanuras de Los Gua- tusos, de San Carlos y de Tortuguero, vecindad de Puerto Limon, Baja Talamanca, vert. Pac., cuenca del Rio Tempisque, S Pen. de Nicoya, desde P.N. Carara al S. Fl. ene.—dic. Méx.—Bol. y Ven., Guyana Fr., E Bras., Par., Cuba. (Q. Jiménez 721; INB, USJ) Se reconoce facilmente por sus espiguillas digitadas con glumas anchas y cuspidadas.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "al y de Talamanca, cue"
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "ras de Los Gua- tusos, d"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": " Nicoya, desde P.N."
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "a Talamanca, v"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "al S. Fl. ene.—dic. Mé"
+    },
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "tuguero, v"
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Limón (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "indad de Puerto Limon, B"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

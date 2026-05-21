@@ -1,0 +1,42 @@
+{
+  "species": "Phenax rugosus",
+  "habitat_raw": "Bosque pluvial y de roble, orillas de quebradas y ríos, 1000-2050 m; vert. Carib. Cord. Central, N Cord. de Talamanca (P.N. Tapantí). Fl. feb., mar., ago., Oct. Méx., CR-Perú. (A. Rodríguez 5888, INB) Boehmeria bullata se reconoce por ser un sufrútice o arbusto rastrero a suberecto con hojas alternas, las de los nudos adyacentes subiguales a levemente desiguales, con la lámina plana a es- casamente rugosa y con puntos translúcidos, y el perianto de las fls. pistiladas y frs. esparcidamente",
+  "vertientes": [
+    "Caribe"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "Talamanca (P.N. Tapantí"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Central, N Cord."
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "úci"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 1000.0,
+    "max_m": 2050.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "pluvial"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

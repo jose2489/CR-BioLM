@@ -17,6 +17,7 @@ DEM_PATH               = os.path.join(DATA_DIR, "topography", "altitud_cr.tif")
 REGIONES_BOTANICAS_SHP = os.path.join(DATA_DIR, "regiones_botanicas",
                                       "Jose_regiones_botanicas_con_vertiente.shp")
 PROTECTED_AREAS_V2_SHP = os.path.join(DATA_DIR, "vectors", "areas_protegidas_v2.shp")
+CARTOGRAFIA_DIR        = os.path.join(DATA_DIR, "Cartografia")
 
 # Crear directorios base si no existen
 os.makedirs(DATA_DIR, exist_ok=True)

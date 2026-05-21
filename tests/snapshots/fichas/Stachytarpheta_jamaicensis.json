@@ -1,0 +1,49 @@
+{
+  "species": "Stachytarpheta jamaicensis",
+  "habitat_raw": "Bosque húmedo y muy húmedo, playas y orillas de caminos, 0-350+ m; vert. Carib., Llanura de Santa Clara, vecindad de Puerto Limón, Baja Talamanca, S vert. Pac., Pen. de Osa. Fl. ene.—jul., oct.—dic. SE EUA (S Florida), S Méx.—Ecua., Bol., Ven., Trin. 4",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "ura de Santa Clara, ve"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "Osa. Fl. ene.—ju"
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": " Talamanca, S "
+    }
+  ],
+  "parks": [],
+  "cantons": [
+    {
+      "canonical_name": "Limón (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "ndad de Puerto Limón, Ba"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

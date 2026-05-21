@@ -1,0 +1,43 @@
+{
+  "species": "Batocarpus costaricensis",
+  "habitat_raw": "Bosque muy húmedo, 0-500 m; vert. Pac., Fila Costeña, desde P.N. Carara al S. Fl. ene.-mar., may.- jul., nov. CR-Bol. (Aguilar 1306; CR, INB, MO) Se reconoce por sus hojas con el pecíolo rojizo y a veces escamoso y la lámina oblicua en la base, ase¬ rrada y con la nervadura prominente y por sus frs. inmersos en un sincarpo globoso, formado por los",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": " Costeña, de"
+    },
+    {
+      "canonical_name": "Fila Costeña (Sur)",
+      "hierarchy_level": "fila",
+      "source_span": "e P.N. Carar"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": " Carara al S. Fl. ene."
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 500.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

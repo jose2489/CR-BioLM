@@ -1,0 +1,46 @@
+{
+  "species": "Passiflora bicornis",
+  "habitat_raw": "Bosque seco, húmedo y muy húmedo, sabanas y lotes baldíos, 0-300(-800) m; vert. Pac. Cord. de Guanacaste, llanuras de Guanacaste al S hasta vecindad de Tivives, Isla Bolaños, Pen. de Nicoya, Isla San Lucas. Fl. ene., abr.-jul., set.-dic. S Méx.-Col., Perú, Ven. (A. Jiménez 2172, CR) Se caracteriza por sus pecíolos eglandulares y láminas foliares bilobuladas, con los lóbulos re¬ dondeados en el ápice, y glándulas oceladas. Además, se distingue por sus brácteas conspicuas y per¬ sistentes en fr. y fls. azuladas. Podría confundirse con Passiflora apétala, P. biflora, P. boenderi y",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": ". de Guanacaste, llanura"
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "de Guanacaste al S has"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "icoya, Isla San Luc"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": [
+    "Isla Bolaños",
+    "Perú",
+    "Ven."
+  ]
+}

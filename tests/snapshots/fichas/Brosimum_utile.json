@@ -1,0 +1,56 @@
+{
+  "species": "Brosimum utile",
+  "habitat_raw": "Bosque muy húmedo, 0-700+ m; vert. Pac., P.N. Carara, región de Puriscal (P.N. La Cangreja), N Valle de General, región de Golfo Dulce, Isla del Caño.",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "e Golfo Dulce, I"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "a del Caño. vert. Pac"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "La Cangr"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": " Carara, región de Pur"
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "La Cangr"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": [
+    "Isla del Cano."
+  ]
+}

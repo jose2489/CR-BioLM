@@ -1,0 +1,68 @@
+{
+  "species": "Gordonia fruticosa",
+  "habitat_raw": "Bosque húmedo, muy húmedo y pluvial, bosques primarios y secundarios, (50-)300— 1700(-2000) m; vert. Carib. Cord. Central, N Cord. de Talamanca, vert. Pac. E Cord. de Talamanca, Montes del Aguacate, Cerro Tu- rrubares, Fila Costeña, Valle Central, región",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": " Talamanca, vert. Pac. "
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "d. Central, N Cord"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "erro Tu- rrubares, "
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "n vert. Carib"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "valle central"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "Central, reg"
+    },
+    {
+      "canonical_name": "Fila Costeña (Sur)",
+      "hierarchy_level": "fila",
+      "source_span": "fila costena"
+    },
+    {
+      "canonical_name": "Turrubares",
+      "hierarchy_level": "region_other",
+      "source_span": "teña, Vall"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 300.0,
+    "max_m": 1700.0,
+    "outlier_min_m": 50.0,
+    "outlier_max_m": 2000.0
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

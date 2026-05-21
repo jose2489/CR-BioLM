@@ -1,0 +1,90 @@
+{
+  "species": "Cedrela odorata",
+  "habitat_raw": "Bosque seco, húmedo y muy húmedo, 0-1200 m; vert. Carib. Cord. Central, Llanura de Santa Clara, vert. Pac. Cord. de Tilarán, N Cord. de Talamanca, llanuras de Guanacaste al S hasta vecindad de Barranca, Pen. de Nicoya, Valle Central, P.N. Carara, región de Puriscal.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": ", llanuras de Guanacast"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "rán, N Cord. de Talam"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Central, Llanura"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "e Santa Clara, vert. P"
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "al S hasta vecindad de"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "región de Pur"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "valle central"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "entral, P.N. Carara"
+    },
+    {
+      "canonical_name": "Tárcoles - Térraba",
+      "hierarchy_level": "region_other",
+      "source_span": "a, Valle"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "lanura d"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "cal. vert. Carib. Cord"
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "lanura d"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 1200.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

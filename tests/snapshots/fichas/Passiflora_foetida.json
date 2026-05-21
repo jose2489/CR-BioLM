@@ -1,0 +1,104 @@
+{
+  "species": "Passiflora foetida",
+  "habitat_raw": "Bosque seco, húmedo, muy húmedo y de roble, 0-1300(-2100) m; vert. Carib. E Cord. de Tala- manca, cuenca del Río Sapoá, Llanuras de Los Guatusos, de San Carlos y de Santa Clara, vecindad de Puerto Limón, ambas verts. Cord. Central, vert. Pac. Cords. de Guanacaste y de Tilarán, Montes del Aguacate, llanuras de Guanacaste, Pen. de Nicoya, Valle Central, vecindad de Parrita, P.N. Manuel Antonio, Pen. de Osa. Fl. ene.-dic. S EUA-Chile y Ven., Trin. & Tob., Guayanas, Bras., Par., Arg., Antillas, Bahamas, tróps. y subtróps. de África y Madag., SE Asia, etc. (Aguilar4782, CR)",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": " y de Tilarán, Montes del"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": ". de Tala- manca, cuenc"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "al, vert. Pac. Cor"
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "s de Los Guatusos, de Sa"
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "en. de Nicoya, Valle C"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "lara, vecin"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "uras de Guanacaste,"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "rita, P.N. Ma"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "e.-dic. S EUA"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "tral, vecindad de P"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "Ven., Trin. & To"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Manuel Antonio",
+      "hierarchy_level": "park",
+      "source_span": "sa. Fl. ene.-dic. S EUA-Chile "
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Limón (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "d de Puerto Limón, ambas"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": [
+    "Trin. & Tob.",
+    "Guayanas",
+    "Bras.",
+    "Par.",
+    "Arg.",
+    "Antillas",
+    "Bahamas",
+    "SE Asia"
+  ]
+}

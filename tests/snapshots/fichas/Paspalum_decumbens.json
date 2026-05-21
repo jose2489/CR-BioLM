@@ -1,0 +1,32 @@
+{
+  "species": "Paspalum decumbens",
+  "habitat_raw": "Bosque pluvial, areas alteradas, pastizales y orillas de caminos, 1900—2600 m; vert. Carib. y cerca de la Division Continental, Cord. Central (Volcanes Pods y Turrialba; Vara Blanca). Fl. ago., set. Nativa de Bras.—Arg., pero naturalizada y cult. en todo el mundo. (Pohl & Davidse 11171; CR, ISC) Esta sp. se encuentra algo relacionada con P. erianthum, pero se distingue por su habito ri- zomatoso y sus espiguillas mas cortas y con pelos mas cortos.",
+  "vertientes": [
+    "Caribe"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "d. Central (Volcan"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 1900.0,
+    "max_m": 2600.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "pluvial"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.3333333333333333,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

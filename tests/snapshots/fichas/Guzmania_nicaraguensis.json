@@ -1,0 +1,41 @@
+{
+  "species": "Guzmania nicaraguensis",
+  "habitat_raw": "Bosque muy htmedo, pluvial y nuboso, 600—1700 m; vert. Carib. Cords. Central y de Talamanca, ambas verts. Cords. de Guanacaste y de Tilaran. Fl. ene.—jul. Méx.—Pan. (J. F Morales & Fuentes 2462; INB, MO) Se distingue de G. stenostachya por su infl. totalmente fértil y sus sépalos mas largos.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "anacaste y de Tilaran. Fl"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "y de Talamanca, ambas "
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. Cords. de"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 600.0,
+    "max_m": 1700.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

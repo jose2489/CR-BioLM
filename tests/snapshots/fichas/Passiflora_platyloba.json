@@ -1,0 +1,47 @@
+{
+  "species": "Passiflora platyloba",
+  "habitat_raw": "Bosque seco y húmedo, 0-600 m; vert. Pac. Cord. de Tilarán (Tilarán; Z.P. Cuenca del Río Aban- gares), llanuras de Guanacaste, N Pen. de Nicoya, cuenca del Río Grande de Tárcoles (La Balsa de Atenas), vecindad de Orotina (Coyolar). Fl. mar., jun.-set. S Méx.-O Col. (/. Chacón 1120, CR) Fácil de reconocer por sus pecíolos biglandulares en la mitad o hacia la base y láminas foliares ampliamente trilobuladas, biglandulares en los senos y glabras. Además, se distingue por sus grandes brácteas florales y por su restringida distribución en los bosques secos y húmedos de CR. Comparar",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": ". de Tilarán (Tilarán"
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "s de Guanacaste, N Pen"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": " Nicoya, cuenca del"
+    },
+    {
+      "canonical_name": "Tárcoles - Térraba",
+      "hierarchy_level": "region_other",
+      "source_span": " Balsa d"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 600.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

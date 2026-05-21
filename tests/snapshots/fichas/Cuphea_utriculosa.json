@@ -1,0 +1,105 @@
+{
+  "species": "Cuphea utriculosa",
+  "habitat_raw": "Bosque seco, húmedo, muy húmedo y nuboso, casi siempre entre rocas a orillas de rápidas cor¬ rientes de agua, 0-1000(-1500) m; vert. Carib. y cerca de la División Continental, Cord. Central, cuenca del Río Sapoá, Llanura de San Carlos, ambas verts. Cord. de Guanacaste, vert. Pac., N Fila Costeña (Río División), llanuras de Guanacaste, Pen. de Nicoya, Valle Central, P.N. Carara, región de Puriscal (P.N. La Cangreja), N Valle de General, cañón del Río Grande de Térraba, Pen. de Osa. Fl. ene.-jul., set.-dic. S Méx.-Pan. (Zúñiga 411; CR, MO)",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "nacaste, vert. Pac., N F"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "d. Central, cuenca"
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "e, Pen. de Nicoya, Val"
+    },
+    {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": "de San Carlos, ambas "
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "el Río Sapoá, Llanur"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "a, Pen. de Osa. "
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": ", región de P"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": " Central, P.N. Cara"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": ". (Zúñiga 411; C"
+    },
+    {
+      "canonical_name": "Fila Costeña Norte",
+      "hierarchy_level": "fila",
+      "source_span": "ivisión), llan"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "fila costena"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "de Gener"
+    },
+    {
+      "canonical_name": "Tárcoles - Térraba",
+      "hierarchy_level": "region_other",
+      "source_span": " Méx.-P"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "iscal (P.N. La Cangrej"
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "de Gener"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

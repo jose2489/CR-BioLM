@@ -1,0 +1,49 @@
+{
+  "species": "Pouteria exfoliata",
+  "habitat_raw": "Bosque muy húmedo, pluvial y nuboso, (400-)600-1600-1800) m; vert. Carib. Cord. Central, ambas verts. Cords. de Guanacaste y de Tilarán, vert. Pac., región de Puriscal. Fl. jun.—ago., oct. ENDÉMICA? (Bello 1034; CR, INB, K, MO) Pouteria exfoliata es muy similar a P. izabalensis, pero se distingue por sus fls. con la corola más rande. Prov. Bocas del Toro), pero su identificación se considera",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "nacaste y de Tilarán, ver"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Central, ambas v"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "., oct. "
+    }
+  ],
+  "parks": [],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "., oct. "
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

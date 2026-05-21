@@ -1,0 +1,42 @@
+{
+  "species": "Albizia niopoides",
+  "habitat_raw": "Bosque seco y húmedo, 0-200 m; vert. Pac., llanuras de Guanacaste al S hasta vecindad de Barranca, N Pen. de Nicoya, Isla San Lucas, vecindad de Orotina.",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "uras de Guanacaste al "
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": " de Nicoya, Isla Sa"
+    },
+    {
+      "canonical_name": "Tárcoles - Térraba",
+      "hierarchy_level": "region_other",
+      "source_span": "anca, N "
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 200.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

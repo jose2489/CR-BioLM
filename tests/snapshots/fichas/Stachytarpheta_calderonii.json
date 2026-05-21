@@ -1,0 +1,54 @@
+{
+  "species": "Stachytarpheta calderonii",
+  "habitat_raw": "Bosque seco y húmedo, sabanas, sitios abiertos, lagunas y orillas de ríos, 0-350(-800) m; vert. Pac. Cord. de Guanacaste, llanuras de Guanacaste, Islas Murciélago (Isla Las Golondrinas), Pen. de Nicoya, vecindad de Miramar al S hasta vecindad de Tivives, Valle Central, S Valle de General. Fl. ene., feb., ago.—dic. S Méx. (Quintana Roo), El Salv. y Hond.-CR. (A. Rodríguez € Ramírez 6718; CR, INB, MO) Los mericarpos de Stachytarpheta calderonii, a diferencia de las otras Stachytarpheta spp. de",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": ". de Guanacaste, llanura"
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "de Guanacaste, Islas M"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "al. Fl. ene., fe"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": " S Valle de G"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "icoya, vecindad de "
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": [
+    "Islas Murciélago"
+  ]
+}

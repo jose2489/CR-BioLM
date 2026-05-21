@@ -1,0 +1,50 @@
+{
+  "species": "Miconia dodecandra",
+  "habitat_raw": "Bosque muy húmedo y pluvial, (0-)600- 2000 m; vert. Carib. Cord. Central, ambas verts. Cords. de Tilarán y de Talamanca, vert. Pac., Isla del Coco. Fl. ene.-mar., jun.-ago., oct., dic. S Méx.-Bol. y Ven., Trin., Guyana, Surinam, S Bras., Antillas. (/. A. Chacón et al. 1780; CAS, CR) Se reconoce fácilmente por su indumento denso, ferrugíneo-estrellado, en el envés de las hojas,",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "arán y de Talamanca, v"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Central, ambas v"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Pac., Isla"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 600.0,
+    "max_m": 2000.0,
+    "outlier_min_m": 0.0,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": [
+    "Isla del Coco. Fl. ene.-mar.",
+    "Trin.",
+    "Guyana",
+    "Surinam",
+    "S Bras.",
+    "Antillas."
+  ]
+}

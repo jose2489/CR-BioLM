@@ -1,0 +1,53 @@
+{
+  "species": "Macrohasseltia macroterantha",
+  "habitat_raw": "Bosque muy húmedo, pluvial y nuboso, 400-1700 m; vert. Carib. y cerca de la División Continental, Cords. de Tilarán y Central, ambas verts. Cord. de Talamanca, vert. Pac., S Fila Costeña (Fila Cruces), N Valle de General.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "manca, vert. Pac., S Fi"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. de Tilarán y Centra"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": ". Carib. y cerca"
+    },
+    {
+      "canonical_name": "Fila Costeña Sur",
+      "hierarchy_level": "fila",
+      "source_span": "ruces), N Vall"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "fila costena"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 400.0,
+    "max_m": 1700.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

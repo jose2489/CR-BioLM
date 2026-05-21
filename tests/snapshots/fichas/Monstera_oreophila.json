@@ -1,0 +1,41 @@
+{
+  "species": "Monstera oreophila",
+  "habitat_raw": "Bosque muy htimedo, pluvial, nuboso y de roble, (800—)1300—2200+ m; ambas verts., todas las cords. principales, centro vert. Pac., Montes del Aguacate, Cerros de Escazti. Fl. ene.—dic. CR y O Pan. (Herrera 5361; INB, MO) Esta es la inica sp. de Monstera con la venacioén de las laminas foliares no reticuladas y espatas rosadas. Desafortunadamente, las espatas en Monstera son efimeras y por lo general no estan pre- sentes. Por otro lado M. oreophila es muy semejante a la difundida M. adansonii (y a veces dificil",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "odas las cords. principales, cent"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": " Aguacate, Cerros d"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "esa"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

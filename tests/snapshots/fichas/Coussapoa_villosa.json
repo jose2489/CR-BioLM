@@ -1,0 +1,44 @@
+{
+  "species": "Coussapoa villosa",
+  "habitat_raw": "Bosque húmedo, muy húmedo y plu- vial, bosques inundables, bordes de bosque, potreros y orillas de ríos, 0-1500+ m; vert. Carib. Cords. Central y de Talamanca, todas las llanuras principales, vecindad de Puerto Limón, Baja Talamanca, ambas verts. Cords.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " y de Talamanca, todas"
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "lamanca, ambas"
+    }
+  ],
+  "parks": [],
+  "cantons": [
+    {
+      "canonical_name": "Limón (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "d de Puerto Limón, Baja "
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

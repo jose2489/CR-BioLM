@@ -1,0 +1,54 @@
+{
+  "species": "Turnera ulmifolia",
+  "habitat_raw": "Bosque seco, húmedo, muy húmedo y pluvial, potreros, áreas abiertas y orillas de playas, a veces cult., 0-50(-1200) m; vert. Carib., Llanura de Santa Clara (Parismina), vecindad de Puerto Limón, Baja Talamanca, vert. Pac., cuenca del Río Tempisque (Cañas), S Pen. de Nicoya, vecindad de Puntarenas, Valle Central, Isla del Coco. Fl. ene., feb., jun.-set. SE EUA (5 Florida), S Méx. y Bel., Hond.-Col. (Isla San Andrés), Tob., Antillas, Bahamas, Bermudas, introd. Hawai, tróps. del Viejo Mundo. (4. Rodríguez 544, INB, MO)",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "ura de Santa Clara (Pa"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": ", Isla del Co"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "Nicoya, vecindad de"
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": " Talamanca, ve"
+    }
+  ],
+  "parks": [],
+  "cantons": [
+    {
+      "canonical_name": "Limón (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "ndad de Puerto Limón, Ba"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

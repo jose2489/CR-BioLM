@@ -1,0 +1,95 @@
+{
+  "species": "Oryctanthus occidentalis",
+  "habitat_raw": "Bosque húmedo, muy húmedo y pluvial, áreas alteradas, 0-1400(-1700+) m; vert. Carib. Cords. Central y de Talamanca, todas las llanuras principales, Baja Talamanca, Valle Central, ambas verts. Cords. de Guanacaste y de Tilarán, vert. Pac. N Cord. de Talamanca, Cerros de Escazú, Fila Costeña, P.N. Carara, región de Puriscal (P.N. La Cangreja), N Valle de General, Uvita, Palmar Sur, Valle de Coto Brus, región de Golfo Dulce, etc. Fl. ene., mar.-set., nov. Nic.-Bol. y Ven., Guyana, Surinam, Bras., Antillas Mayores (Jam.). {Aguilar 1716; INB, MO)",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "nacaste y de Tilarán, ver"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "rros de Escazú, Fila Co"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " de Talamanca, todas l"
+    },
+    {
+      "canonical_name": "Valle Central Oriental",
+      "hierarchy_level": "valle",
+      "source_span": "eña, P.N. Carara"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "o Brus, región d"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "tral, ambas v"
+    },
+    {
+      "canonical_name": "Valle del Coto Brus",
+      "hierarchy_level": "valle",
+      "source_span": "mar.-set."
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "nov. Nic.-Bol. y Ven."
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "región de Pu"
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "manca, Valle C"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "e Genera"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "scal (P.N. La Cangreja"
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "e Genera"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

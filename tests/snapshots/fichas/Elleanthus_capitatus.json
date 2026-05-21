@@ -1,0 +1,45 @@
+{
+  "species": "Elleanthus capitatus",
+  "habitat_raw": "Bosque muy htmedo, pluvial y nuboso, (450—)1050—2100 m; vert. Carib. y cerca de la Divisién Continental, Cords. de Tilaran, Central y de Talamanca. Fl. feb.—set., nov. CR y Pan. (Gémez 3630, CR) Elleanthus glaucophyllus se distingue por sus tallos gruesos, no ramificados e infl. alargada con fls. blancas 0 rosa-moradas, sin tabique al frente de los callos. Elleanthus graminifolius (Barb. Rodr.) L@jtnant, Bot. Not. 129: 447. 1977. Adeneleuterophora graminifolia Barb. Rodr., Gen. spec. Orchid. 2: 171. 1881; E. linifolius sensu Fl. CR, Fl. Guat.,",
+  "vertientes": [
+    "Caribe"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "rds. de Tilaran, Centr"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " y de Talamanca. Fl. f"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "l. feb.—set."
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "rad"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 1050.0,
+    "max_m": 2100.0,
+    "outlier_min_m": 450.0,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

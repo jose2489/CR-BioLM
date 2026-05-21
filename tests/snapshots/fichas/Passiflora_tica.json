@@ -1,0 +1,54 @@
+{
+  "species": "Passiflora tica",
+  "habitat_raw": "Bosque muy húmedo y pluvial, 500-1600 m; vert. Carib. Cords. de Tilarán, Central y de Tala- manca, ambas verts. Cord. de Guanacaste, vert. Pac. N Cord. de Talamanca. Fl. ene.-jun., nov., dic. CR-NO Col. (Gómez-Laurito 11449, CR) Fácil de reconocer por ser la única Passiflora sp. en CR con hábito arbóreo y sin zarcillos. Además, se caracteriza por sus pecíolos con un par de glándulas, poco visibles, en la unión con la lámina y sus láminas foliares grandes, enteras, usualmente péndulas. Según el protólogo, las hojas",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "anacaste, vert. Pac. N C"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "Fl. ene.-jun., nov., di"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. de Tilarán, Central"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " de Tala- manca, ambas"
+    }
+  ],
+  "parks": [],
+  "cantons": [
+    {
+      "canonical_name": "La Unión (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "sus lámi"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": 500.0,
+    "max_m": 1600.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

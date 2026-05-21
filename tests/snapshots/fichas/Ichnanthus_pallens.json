@@ -1,0 +1,35 @@
+{
+  "species": "Ichnanthus pallens",
+  "habitat_raw": "Bosque muy humedo, bosques secundarios y primarios, 100—450 m; S vert. Pac., regi6n de Golfo Dulce. FI. feb., set., nov. CR, Col.—Bol., Bras. (Hammel et al. 18079; INB, MO) Se distingue facilmente por la gran dimensi6n de sus laminas foliares y espiguillas. Ichnanthus tenuis (J. Presl) Hitchc. & Chase, Contr. U. S. Natl. Herb. 18: 334. 1917. Oplismenus tenuis J. Presl, en C. Presl, Relig. haenk. 1: 319. 1830.",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "i6n de Golfo Dulce. F"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 100.0,
+    "max_m": 450.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.3333333333333333,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": [
+    "Col.—Bol.",
+    "Bras."
+  ]
+}

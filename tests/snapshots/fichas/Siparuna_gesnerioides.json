@@ -1,0 +1,112 @@
+{
+  "species": "Siparuna gesnerioides",
+  "habitat_raw": "Bosque húmedo, muy húmedo, pluvial, nuboso y de roble, 0-2000(-2300) m; vert. Carib. Cord. de Guanacaste, N Cord. de Talamanca, Llanura de Santa Clara, ambas verts. Cords. de Tilarán y Cen- tral, vert. Pac. Cord. de Talamanca, Montes del Aguacate, Tablazo, Cerros Turrubares y Caraigres, Fila Costeña, Valle Central, región de Turrubares, P.N. Carara, vecindad de Jacó, región de Puriscal, cuenca del Río Grande de Candelaria, vecindad de Puerto Quepos, N Valle de General, Valle de Coto Brus, región de Golfo Dulce. Fl. ene.-dic. S Méx., CR-Col. y Ven. (Gómez-Laurito 13497, USJ)",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": ". de Guanacaste, N Cord."
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "Talamanca, Llanura de S"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "y Cen- tral, vert. Pac"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "ta Clara, ambas verts."
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "Cerros Turrubares y"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "ión de Golfo Dul"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "bares, P.N. C"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "ión de Purisc"
+    },
+    {
+      "canonical_name": "Valle del Coto Brus",
+      "hierarchy_level": "valle",
+      "source_span": ".-dic. S "
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "x., CR-Col. y Ven. (G"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "egión de Tur"
+    },
+    {
+      "canonical_name": "Fila Costeña (Sur)",
+      "hierarchy_level": "fila",
+      "source_span": "d de Jacó, r"
+    },
+    {
+      "canonical_name": "Turrubares",
+      "hierarchy_level": "region_other",
+      "source_span": "osteña, Va"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "aria, ve"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": " región de Puriscal, c"
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "aria, ve"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": [
+    "CR-Col. y Ven."
+  ]
+}

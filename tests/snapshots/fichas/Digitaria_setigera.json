@@ -1,0 +1,63 @@
+{
+  "species": "Digitaria setigera",
+  "habitat_raw": "Bosque himedo, muy himedo y pluvial, areas alteradas, pastizales y orillas de caminos, 0—850 m; toda la vert. Carib., vert. Pac., Pen. de Nicoya, Valle Central, Pen. de Osa, Isla del Coco. FI. ene., mar., jun., set., nov. Nativa de Asia trop., pero introd. en el Neotrép. (Villalobos 92; INB, MO) Esta sp. es similar al grupo relacionado con D. bicornis (D. ciliaris, D. costaricensis y D. pentzii), pero se separa por sus espiguillas con la gluma inferior ausente y la superior apenas visible y con aspecto de una membrana ciliada, menos de la mitad de la longitud de la espiguilla. El material",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": " toda la vert. Carib., "
+    },
+    {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": "ib., vert. Pac., Pen. d"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "l, Pen. de Os"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "la del Coco. "
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": " Nicoya, Valle Cent"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": " Isla del Coco. "
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": " toda la vert. Carib., "
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 850.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": [
+    "Isla del Coco. FI. ene."
+  ]
+}

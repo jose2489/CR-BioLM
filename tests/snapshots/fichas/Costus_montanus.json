@@ -1,0 +1,51 @@
+{
+  "species": "Costus montanus",
+  "habitat_raw": "Bosque himedo, muy htmedo, pluvial y nuboso, 700—1800(—2100) m; ambas verts. Cords. de Guanacaste, de Tilaran y Central, vert. Pac. Cord. de Talamanca, Tablazo, Cerros de Escazu, Cerro Turrubares. Fl. ene.—dic. ENDEMICA. (Haber 10581, INB) Caracterizada por sus tallos y hojas velutino-ferrugineos, su ligula sumamente larga, agudamente bilobada y su distribuci6n = de altura.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "rds. de Guanacaste, de Ti"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "lamanca, Tablazo, Cerro"
+    },
+    {
+      "canonical_name": "Valle Central Oriental",
+      "hierarchy_level": "valle",
+      "source_span": ", Cerro Turrubar"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": ". Fl. ene.—dic. "
+    },
+    {
+      "canonical_name": "Turrubares",
+      "hierarchy_level": "region_other",
+      "source_span": "ene.—dic. "
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 700.0,
+    "max_m": 1800.0,
+    "outlier_min_m": null,
+    "outlier_max_m": 2100.0
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

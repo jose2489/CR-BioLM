@@ -1,0 +1,47 @@
+{
+  "species": "Krameria ixine",
+  "habitat_raw": "Bosque seco y húmedo, 0-350(-500) m; vert. Pac. Cord. de Guanacaste, llanuras de Guanacaste al S hasta región de Bagaces. Fl. ene., may.-set., nov., dic. Méx.-Hond., CR, Col. y Ven., Guyana, Antillas. (.Espinoza 1326, INB) Se reconoce por sus hojas pecioladas, con la lámina elíptica a oblonga, mucronata en el ápice, sus fls. zigomorfas, con los",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": ". de Guanacaste, llanura"
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "de Guanacaste al S has"
+    }
+  ],
+  "parks": [],
+  "cantons": [
+    {
+      "canonical_name": "Bagaces (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "Fl. ene"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": [
+    "Col. y Ven.",
+    "Guyana",
+    "Antillas."
+  ]
+}

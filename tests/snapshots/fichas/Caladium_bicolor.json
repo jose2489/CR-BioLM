@@ -1,0 +1,46 @@
+{
+  "species": "Caladium bicolor",
+  "habitat_raw": "Bosque muy htiimedo, sobre piedras calizas en pendientes, 300—600 m; vert. Pac., Fila Costefia, regiOn de Puriscal (también cultivada en todas partes como ornamental, y limitadamente escapada). FI. Araceae",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "ila Costefia"
+    },
+    {
+      "canonical_name": "Fila Costeña (Sur)",
+      "hierarchy_level": "fila",
+      "source_span": " Costefia, r"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "Puriscal"
+    }
+  ],
+  "parks": [],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "Puriscal"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": 300.0,
+    "max_m": 600.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

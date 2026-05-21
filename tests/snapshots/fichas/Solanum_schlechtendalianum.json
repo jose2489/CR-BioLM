@@ -1,0 +1,104 @@
+{
+  "species": "Solanum schlechtendalianum",
+  "habitat_raw": "Bosque húmedo, muy húmedo y pluvial, bosques primarios y secundarios, bordes de bosque, tacotales, potreros y orillas de ríos y caminos, 0-1000(-1250) m; vert. Carib. Cord. Central, cuenca del Río Sapoá (Cerro El Hacha), Llanuras de San Carlos, de Tortuguero (R.N.F.S. Barra del Colo- rado) y de Santa Clara, ambas verts. Cords. de Guanacaste y de Talamanca, vert. Pac. Cord. de Tilarán, N llanuras de Guanacaste (P.N. Santa Rosa), Sitio Barranca, Valle Central, P.N. Carara, cuenca del Río Grande de Candelaria, Valles de General y de Coto Brus, Pen. de Osa. Fl. ene.—dic.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "uanacaste y de Talamanca,"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "llanuras de Guanacast"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Central, cuenca "
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "rt. Pac. Cor"
+    },
+    {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": "de San Carlos, de Tort"
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": ".N. Santa Rosa), Sitio"
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "l Río Sapoá (Cerro E"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "lara, ambas"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "Fl. ene.—dic. ver"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "el Río Grande"
+    },
+    {
+      "canonical_name": "Valle del Coto Brus",
+      "hierarchy_level": "valle",
+      "source_span": "ib. Cord."
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "entral, cuenca d"
+    },
+    {
+      "canonical_name": "Tárcoles - Térraba",
+      "hierarchy_level": "region_other",
+      "source_span": ", cuenca"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "e Candelaria, Valles d"
+    },
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "o (R.N.F.S"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

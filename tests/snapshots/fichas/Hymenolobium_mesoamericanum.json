@@ -1,0 +1,53 @@
+{
+  "species": "Hymenolobium mesoamericanum",
+  "habitat_raw": "Bosque muy húmedo, 0-700 m; vert. Carib. Cords. de Guanacaste, Central y de Talamanca, Llanuras de San Carlos y de Tortuguero.",
+  "vertientes": [
+    "Caribe"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. de Guanacaste, Central"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " de Talamanca, Llanura"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "uras de San "
+    },
+    {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": "de San Carlos y de Tor"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "o. vert. C"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 700.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

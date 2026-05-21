@@ -1,0 +1,80 @@
+{
+  "species": "Pilea pubescens",
+  "habitat_raw": "Bosque húmedo, muy húmedo y pluvial, bosques primarios y orillas de quebradas, ríos y caminos, 0-1500(2100+) m; vert. Carib. Cords. Central y de Talamanca, ambas verts. Cords. de Guanacaste y de Tilarán, Valle Central, vert. Pac. N Cord. de Talamanca, Cerros de Escazú, Cerro Caraigres, P.N. Carara, región de Puriscal (PN. La Cangreja), N Valle de General. FL. feb.—ago., oct., dic. Méx.—Perú y Ven., Guayanas, Bras., Par., N Arg., Antillas. (G. Herrera $ Rivera 862, INB)",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "nacaste y de Tilarán, Val"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "rros de Escazú, Cerro C"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " de Talamanca, ambas v"
+    },
+    {
+      "canonical_name": "Valle Central Oriental",
+      "hierarchy_level": "valle",
+      "source_span": "aigres, P.N. Car"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": " dic. Méx.—Perú "
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "a, región de Pu"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "t. Pac. N Cor"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": " General"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "scal (PN. La Cangreja)"
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": " General"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

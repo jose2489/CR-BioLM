@@ -1,0 +1,33 @@
+{
+  "species": "Maxillaria fulgens",
+  "habitat_raw": "Bosque pluvial y de roble, 1150—2500 m; ambas verts. Cord. de Talamanca. Fl. feb., mar., jun.— set. CR y Pan. (Atwood et al. 5052, SEL) Estrechamente relacionada a M. bracteata, pero tiene laminas foliares mas angostas, pseudobulbos mas delgados, segmentos del perianto mas delgados y ovarios triquetros seguidos por frs. trialados.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "d. de Talamanca. Fl. fe"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 1150.0,
+    "max_m": 2500.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "pluvial"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.3333333333333333,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

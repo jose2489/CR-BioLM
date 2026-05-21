@@ -1,0 +1,74 @@
+{
+  "species": "Chrysophyllum argenteum",
+  "habitat_raw": "Bosque muy húmedo y pluvial, 0-700(-1300+) m; vert. Carib. Cords. de Guanacaste y Central, N Cord. de Talamanca, Llanuras de San Carlos, de Tortuguero (P.N. Tortuguero) y de Santa Clara, vert. Pac. Cord. de Talamanca, Fila Costeña, P.N. Carara, vecindad de Parrita, Valle de General, vecindades de Puerto Cortés y de Palmar Norte, Pen. de Osa. Fl. feb.—abr., set. Hond.-Bol. y Ven., Trin. £ Tob., Guayanas, Bras., Arg., Antillas. (J. F Morales et al. 1941; CR, INB, MO) Esta sp. se reconoce por sus láminas foliares con los nervios terciarios subparalelos con los",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. de Guanacaste y Centra"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "Talamanca, Llanuras de "
+    },
+    {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": "n Carlos, de Tortuguer"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "ord. de Tal"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": " y de Palmar Nor"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": " Ven., Trin. £ T"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "d de Parrita"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "o) y de Santa Clara, vert."
+    },
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "Valle de General, veci"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

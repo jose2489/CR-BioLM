@@ -1,0 +1,30 @@
+{
+  "species": "Werauhia kupperiana",
+  "habitat_raw": "Bosque muy htimedo y pluvial, 0— 1100 m; vert. Carib. Cords. de Guanacaste (Volcan Arenal), de",
+  "vertientes": [
+    "Caribe"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "rds. de Guanacaste (Volca"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 1100.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.3333333333333333,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

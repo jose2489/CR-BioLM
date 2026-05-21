@@ -1,0 +1,79 @@
+{
+  "species": "Meliosma glabrata",
+  "habitat_raw": "Bosque muy húmedo y pluvial, áreas alteradas, 0-1400(-1800) m; vert. Carib. Cord. de Guana- caste, vert. Pac. Cord. de Talamanca, Cerro Turrubares, S Fila Costeña (Fila Cruces), región de Puriscal, N Valle de General, región de Golfo Dulce. Fl. ene., mar.—ago. CR y O Pan. (Prov. Chiriquí). (G. Herrera 4239; CR, INB, MO) En CR, esta sp. se reconoce fácilmente por sus infls. espiciformes y pétalos largos (los más largos del género en el país).",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": ". de Guana- caste, vert."
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "lamanca, Cerro Turrubar"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": ", S Fila Costeña"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": ", región de Golf"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "Dulce. Fl. ene., mar."
+    },
+    {
+      "canonical_name": "Fila Costeña Sur",
+      "hierarchy_level": "fila",
+      "source_span": "Fila Cruces), "
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "fila costena"
+    },
+    {
+      "canonical_name": "Turrubares",
+      "hierarchy_level": "region_other",
+      "source_span": "la Costeña"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "e de Gen"
+    }
+  ],
+  "parks": [],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "e de Gen"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

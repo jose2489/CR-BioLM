@@ -1,0 +1,74 @@
+{
+  "species": "Cecropia obtusifolia",
+  "habitat_raw": "Bosque seco, húmedo y muy húmedo, bosques secundarios, tacotales, áreas inundadas, potre- ros y orillas de quebradas y caminos, 0-1150 m; vert. Carib., cuenca del Río Sapoá (Cerro El Hacha), Llanura de Los Guatusos, ambas verts. Cord. de Guanacaste, vert. Pac. Cord. de Tilarán, N Cord. de Talamanca, llanuras de Guanacaste al S hasta región de Abangares, Pen. de Nicoya, Isla San Lucas, Valle Central, vecindad de Orotina, P.N, Carara, vecindad de Tárcoles, cuenca del Río Urticaceae",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "de Guanacaste, vert. Pac"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "llanuras de Guanacaste "
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "n, N Cord. de Talaman"
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "anura de Los Guatusos, "
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": " S hasta región de Aba"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "tina, P.N, Ca"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "Lucas, Valle Centra"
+    },
+    {
+      "canonical_name": "Tárcoles - Térraba",
+      "hierarchy_level": "region_other",
+      "source_span": "aceae ve"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "cuenca"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 1150.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

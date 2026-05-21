@@ -1,0 +1,33 @@
+{
+  "species": "Cyperus tenuis",
+  "habitat_raw": "Bosque htmedo, sabanas himedas, 0—200 m; N vert. Pac., Ilanuras de Guanacaste. Fl. ago.—dic. CR, Ven., Bras., trops. del Viejo Mundo. (Gémez-Laurito et al. 13637, USJ) Se parece a C. haspan, pero se separa de esta sp. por ser anual, con hojas siempre bien desarrolla- das, glumas 0.7—1 mm, y aquenios diminutamente apiculados y ampliamente estipitados.",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "nuras de Guanacaste. F"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 200.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.3333333333333333,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": [
+    "Ven.",
+    "Bras."
+  ]
+}

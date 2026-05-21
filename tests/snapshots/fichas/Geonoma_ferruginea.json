@@ -1,0 +1,48 @@
+{
+  "species": "Geonoma ferruginea",
+  "habitat_raw": "Bosque muy humedo y pluvial, (250—)400—1400 m; vert. Carib. Cords. de Tilaran, Central y de Talamanca, ambas verts. Cord. de Guanacaste. Fl. ene.—may., jul.—set., nov., dic. Guat.—O Pan. (Grayum et al. 4986; INB, MO) Excepto por la muy rara y local G. monospatha (ver clave, copla 8), G. ferruginea es la Unica sp. costarricense de Geonoma con tallos multiples que ocurre arriba de los ca. 700 m de elevacién. Es mas similar a la de tierras mas bajas (pero factiblemente simpatrica) G. longevaginata, mas grande",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "anacaste. Fl. ene.—may.,"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "rds. de Tilaran, Centr"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " y de Talamanca, ambas"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "rts. Cord. d"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 400.0,
+    "max_m": 1400.0,
+    "outlier_min_m": 250.0,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

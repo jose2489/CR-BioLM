@@ -1,0 +1,64 @@
+{
+  "species": "Pseudolmedia spuria",
+  "habitat_raw": "Bosque húmedo, muy húmedo y pluvial, 0-550(-1600) m; vert. Carib. Cord. Central (E.B. La Selva), ambas verts. Cords. de Guanacaste y de Talamanca, vert. Pac., S Pen. de Nicoya, P.N. Carara, P. N. Manuel Antonio, región de Golfo Dulce. Fl. ene., mar., jun.-ago. S Méx.-Pan., Antillas Ma¬ yores. (/. Marín 429, INB) Se reconoce por sus láminas foliares pequeñas, glabras, con la nervadura reticulada y por sus frs. glabros.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "nacaste y de Talamanca, v"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Central (E.B. La"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Pac., S Pe"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": " jun.-ago. S Méx.-Pan"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "arara, P. N. Manuel"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "ntonio, región de Golf"
+    },
+    {
+      "canonical_name": "Parque Nacional Manuel Antonio",
+      "hierarchy_level": "park",
+      "source_span": " Fl. ene., mar"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

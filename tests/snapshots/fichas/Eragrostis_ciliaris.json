@@ -1,0 +1,74 @@
+{
+  "species": "Eragrostis ciliaris",
+  "habitat_raw": "Bosque seco, himedo, muy htimedo y pluvial, 0— 1450 m; vert. Carib., Llanuras de Tortuguero y de Santa Clara, Baja Talamanca (P.N. Cahuita), ambas verts. Valle Central, vert. Pac. Cord. de Tilaran, llanuras de Guanacaste, Pen. de Nicoya, Isla Tolinga, Herradura, Valle de General, Isla del Coco. Fl. ene.—mar., jun.—ago., oct.—dic. Nativa de SE EUA (Florida), S Méx. (Yuc.), Antillas y los trops. del Viejo Mundo, pero ampliamente naturalizada en otras partes del Nuevo Mundo. (J. F: Morales et al. 5037; INB, MO)",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "nuras de Guanacaste, "
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "anuras de Tortuguero y"
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "n. de Nicoya, Isla Tol"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": ". Fl. ene.—mar.,"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "rt. Pac. Cord"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "ga, Herradura, Vall"
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "ja Talamanca ("
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Cahuita",
+      "hierarchy_level": "park",
+      "source_span": "N. Cahuita), ambas vert"
+    },
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "rtuguero y"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 1450.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

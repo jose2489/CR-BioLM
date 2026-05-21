@@ -1,0 +1,50 @@
+{
+  "species": "Arundinella berteroniana",
+  "habitat_raw": "Bosque muy htimedo, sabanas, area alteradas, orillas de caminos y areas rocosas, 550—1750 m; vert. Pac. N Cord. de Talamanca (Fila Bustamante; cuenca del Rio Grande de Candelaria), S Fila Costefia (Canfas Gordas), Valle de General, cafén del Rio Grande de Térraba. Fl. ene., nov., dic. Méx.—Bol. y Ven., Guayanas, Bras., Par., Uru., Arg., Antillas. (J. F. Morales 6769; INB, MO) Se reconoce facilmente por sus espiguillas cortamente aristadas, con el segmento inferior obvia- mente torcid",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "rd. de Talamanca (Fila "
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "de General, café"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "cos"
+    },
+    {
+      "canonical_name": "Fila Costeña Sur",
+      "hierarchy_level": "fila",
+      "source_span": "Costefia (Canf"
+    },
+    {
+      "canonical_name": "Tárcoles - Térraba",
+      "hierarchy_level": "region_other",
+      "source_span": "a. Fl. "
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 550.0,
+    "max_m": 1750.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

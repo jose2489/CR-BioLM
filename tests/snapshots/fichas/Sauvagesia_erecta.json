@@ -1,0 +1,89 @@
+{
+  "species": "Sauvagesia erecta",
+  "habitat_raw": "Bosque húmedo, muy húmedo y pluvial, áreas alteradas, 0-1250(-1700) m; vert. Carib. y cerca de la División Continental, Cords. de Tilarán y Central, todas las llanuras principales, Valle Central, ambas verts. Cords. de Guanacaste y de Talamanca, vert. Pac., Montes del Aguacate, Fila Costeña, región de Puriscal (P.N. La Cangreja), Valle de General, región de Golfo Dulce. Fl. ene.-dic. S Méx.-Bol. y Ven., Trin. & Tob., Guayanas, Bras., Par., N Arg., Antillas, tróps. de África, Madag. (/. González & Morales 868; INB, MO)",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "nacaste y de Talamanca, v"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. de Tilarán y Centra"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Pac., Mont"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "ila Costeña, región"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": " Dulce. Fl. ene."
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "tral, ambas v"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "acaste y de T"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "ic. S Méx.-Bol. y Ven"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "e Puriscal ("
+    },
+    {
+      "canonical_name": "Fila Costeña (Sur)",
+      "hierarchy_level": "fila",
+      "source_span": "fila costena"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "reja), V"
+    }
+  ],
+  "parks": [],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "reja), V"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

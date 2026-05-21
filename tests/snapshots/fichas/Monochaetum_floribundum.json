@@ -1,0 +1,38 @@
+{
+  "species": "Monochaetum floribundum",
+  "habitat_raw": "Bosque pluvial y nuboso, áreas perturbadas, paredones y potreros, 1400-1800 m; ambas verts. Cord. Central, vert. Pac. y cerca de la División Continental, Cords. de Guanacaste y de Triarán. Fl. ene.-jul., oct.-dic. ENDÉMICA. (Umaña et al 261; CAS, CR) Inconfundible debido a sus entrenudos cuadrados con tricomas adpresos, ancistrosos, hojas linear- oblongas, uninervadas y pétalos blancos.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "nacaste y de Triarán. Fl."
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Central, vert. P"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 1400.0,
+    "max_m": 1800.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "pluvial"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.6666666666666666,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

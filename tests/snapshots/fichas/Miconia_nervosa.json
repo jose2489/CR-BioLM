@@ -1,0 +1,85 @@
+{
+  "species": "Miconia nervosa",
+  "habitat_raw": "Bosque húmedo y muy húmedo, márgenes de ríos y áreas perturbadas, 0-700 m; vert. Carib. Cords. de Guanacaste, Central y de Talamanca, Llanuras de San Carlos y de Tortuguero, vecindad de Puerto Limón, Baja Talamanca (R.N.V.S. Gandoca-Manzanillo), vert. Pac. N Cord. de Talamanca (Cerro Nara), P.N. Carara, región de Puriscal (P.N. La Cangreja), Uvita, región de Golfo Dulce, etc. Fl. ene., feb., abr.-jun., ago.-dic. Bel. y Guat.-Bol. y Ven., Trin., Guayanas, Bras. (Aguilar 2137\\ CAS, INB)",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. de Guanacaste, Central"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "manca (Cerro Nara), P.N"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " de Talamanca, Llanura"
+    },
+    {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": "de San Carlos y de Tor"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "b., abr.-jun., ago.-d"
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "manca (R.N.V.S"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "Uvita, r"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "n de Puriscal (P.N. La"
+    },
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "o, vecinda"
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Limón (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "de Puerto Limón, Baja Ta"
+    },
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "Uvita, r"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 700.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

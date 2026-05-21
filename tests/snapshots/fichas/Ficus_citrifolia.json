@@ -1,0 +1,105 @@
+{
+  "species": "Ficus citrifolia",
+  "habitat_raw": "Bosque húmedo, muy húmedo y pluvial, 0-1700 m; vert. Carib. Cord. Central, N Cord. de Tala- manca, Llanuras de Los Guatusos, de Tortuguero y de Santa Clara, Baja Talamanca, ambas verts. Cords. de Guanacaste y de Tilarán, vert. Pac. Cord. de Talamanca, llanuras de Guanacaste, Pens. de Santa Elena y de Nicoya, Valle Central, PN. Carara, regiones de Puriscal (PN. La Cangreja) y de Golfo Dulce. Fr. ene.-jul., set.-dic. SE EUA (S Florida), Méx.-Bol., Bras., Par., N Arg., Antillas Mayores. (/. González & González M. 413; CR, INB, MO)",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "aste y de Tilarán, vert. "
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "Tala- manca, Llanuras d"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Central, N Cord."
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "Los Guatusos, de Tortugu"
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "de Santa Elena y de Ni"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": " Baja Talam"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "iones de Puri"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "valle central"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": " Central, P"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "t.-dic. SE "
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "ca, ambas vert"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "e Golfo "
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": " de Santa "
+    },
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "PN. La"
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "e Golfo "
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 1700.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

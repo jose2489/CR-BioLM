@@ -1,0 +1,52 @@
+{
+  "species": "Astrocaryum alatum",
+  "habitat_raw": "Bosque muy himedo, 0—800 m; toda la vert. Carib., vert. Pac. desde P.N. Carara al S. Fl. may., set., nov. Hond.—Pan. (Davidse & Herrera 30866; CR, MO) Esta es la sp. costarricense de Astrocaryum mas difundida, asi como también la mas pequefia. Di- fiere adicionalmente de las otras dos spp. en tener menos hojuelas, desiguales y arregladas en un solo plano, y frs. mds grandes y prominentemente espinosos. Astrocaryum alatum es particularmente abundante en los bosques pantanosos, tal como en el P.N. Tortuguero. En esta ultima localidad (y",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": " toda la vert. Carib., "
+    },
+    {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": ". Pac. desde P.N. Carar"
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": " toda la vert. Carib., "
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": ". En esta ultima localidad"
+    },
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "rara al S. Fl. may., s"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 800.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

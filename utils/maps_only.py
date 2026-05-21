@@ -19,6 +19,7 @@ from data.expert_maps import ExpertMapLoader
 from utils.geoprocesamiento import extraer_altitud
 from utils.map_gen.habitat_map import generate_habitat_map
 from utils.maps_checklist import Checklist
+from utils.distribution_map import build_ficha
 
 
 _CATALOG_PATH = os.path.join("outputs", "picked_species_enhanced_clean.csv")
@@ -97,7 +98,7 @@ def run_maps_only(especie_nombre: str) -> bool:
         cl.check("Altitud enriquecida", ok=False, detail=str(e))
         # Non-fatal — continue without altitude column
 
-    # 5. Manual catalog row
+    # 5. Manual catalog row + build Ficha
     geographic_notes = None
     elevation_min    = None
     elevation_max    = None
@@ -109,15 +110,32 @@ def run_maps_only(especie_nombre: str) -> bool:
         row_df  = catalog[catalog["species"] == especie_nombre]
         if not row_df.empty:
             r = row_df.iloc[0]
-            geographic_notes = r.get("geographic_notes")
-            elevation_min    = r.get("elevation_min_m")
-            elevation_max    = r.get("elevation_max_m")
-            _out_min         = r.get("elev_outlier_min_m")
-            _out_max         = r.get("elev_outlier_max_m")
+            _geo             = r["geographic_notes"]
+            geographic_notes = str(_geo) if (not pd.isna(_geo) if not isinstance(_geo, str) else True) else None
+            _raw             = r.get("habitat_raw", "")
+            habitat_raw      = str(_raw) if pd.notna(_raw) else ""
+            elevation_min    = r["elevation_min_m"]
+            elevation_max    = r["elevation_max_m"]
+            _out_min         = r["elev_outlier_min_m"]
+            _out_max         = r["elev_outlier_max_m"]
             elev_outlier_min = None if (not _out_min or str(_out_min) == "nan") else float(_out_min)
             elev_outlier_max = None if (not _out_max or str(_out_max) == "nan") else float(_out_max)
             cl.check("Catálogo Manual cargado", ok=True,
                      detail=f"elev {elevation_min}–{elevation_max} m")
+
+            # Build and save Ficha JSON sidecar
+            try:
+                ficha = build_ficha(
+                    habitat_raw      = habitat_raw,
+                    geographic_notes = geographic_notes or "",
+                    species          = especie_nombre,
+                )
+                ficha_path = os.path.join(out_dir, "ficha.json")
+                ficha.save(ficha_path)
+                cl.check("Ficha estructurada", ok=True, detail=ficha.summary())
+            except Exception as fe:
+                cl.check("Ficha estructurada", ok=False, detail=str(fe))
+
         else:
             cl.check("Catálogo Manual cargado", ok=False,
                      detail=f"'{especie_nombre}' no en catálogo")

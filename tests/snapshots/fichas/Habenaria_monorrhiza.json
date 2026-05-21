@@ -1,0 +1,35 @@
+{
+  "species": "Habenaria monorrhiza",
+  "habitat_raw": "Bosque muy himedo, ciénagas, ca. 1150 m; S vert. Pac., S Fila Costefia (Cafias Gordas). Fl. ago. Méx.—CR. (Crow & Rivera 7555, INB) Sus hojas angostas, fls. grandes, blanquecinas y habitat siempre cerca del agua distinguen a esta sp. Orchidaceae",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Fila Costeña Sur",
+      "hierarchy_level": "fila",
+      "source_span": "la Costefia (C"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "Costefia"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 977.5,
+    "max_m": 1322.5,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.6666666666666666,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

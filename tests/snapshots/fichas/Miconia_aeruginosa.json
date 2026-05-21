@@ -1,0 +1,48 @@
+{
+  "species": "Miconia aeruginosa",
+  "habitat_raw": "Bosque húmedo, muy húmedo, pluvial y de roble, (700-) 1100-2000+ m; vert. Carib. Cord. Central, ambas verts. N Cord. de Talamanca, centro vert. Pac., Tablazo, Cerros de Escazú, Valle Cen¬ tral. Fl. feb., may. S Méx. (Chis.)-Bol. y Ven., Guyana. (Grayum et al 8091; INB, MO) El indumento hirsuto en sus partes vegetativas combinado con las glándulas oblongas, hialinas en sus hipantos y la nervadura en el envés de sus hojas, así como su distribución ± restringida a la parte central de CR, ayudan a su identificación.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "manca, centro vert. Pac"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Central, ambas v"
+    },
+    {
+      "canonical_name": "Valle Central Oriental",
+      "hierarchy_level": "valle",
+      "source_span": "e Cen¬ tral. Fl."
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "azú, Va"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

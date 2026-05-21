@@ -1,0 +1,54 @@
+canonical_name,aliases,hierarchy_level,target_shapefile,target_attribute,target_value,vertiente_hint,parent_canonical,notes
+Caribe,vert. carib|vert carib|vertiente carib|vert. caribena|caribena|caribeña|caribe|caribeno,vertiente,,,,,,"Vertiente del Caribe / Atlántico"
+Pacífico,vert. pac|vert pac|vertiente pac|vertiente pacifico|pacifico|pacifica|vert. pacifico,vertiente,,,,,,"Vertiente del Pacífico"
+Cordillera de Guanacaste,cord. de guanacaste|cords. de guanacaste|cord. guanacaste|cords. guanacaste|cord guanacaste|cords guanacaste|cordillera de guanacaste|todas las cords. principales|todas las cordilleras principales,cordillera,regiones_botanicas,Nombre,Cordillera de Guanacaste,ambas,,
+Cordillera de Tilarán,cord. de tilaran|cords. de tilaran|cord. tilaran|cords. tilaran|cord tilaran|cords tilaran|cordillera de tilaran|cordillera tilaran|lago arenal|todas las cords. principales|todas las cordilleras principales,cordillera,regiones_botanicas,Nombre,Cordillera de Tilarán,ambas,,Lago Arenal se ubica en la Cordillera de Tilarán
+Cordillera Central,cord. central|cords. central|cordillera central|central y de talamanca|tilaran central|todas las cords. principales|todas las cordilleras principales,cordillera,regiones_botanicas,Nombre,Cordillera Central,ambas,,Compound aliases capture "Central y de Talamanca" list form
+Cordillera de Talamanca,cord. de talamanca|cords. de talamanca|cord. talamanca|cords. talamanca|cord talamanca|cords talamanca|cordillera de talamanca|cordillera talamanca|de talamanca|todas las cords. principales|todas las cordilleras principales,cordillera,regiones_botanicas,Nombre,Cordillera de Talamanca,ambas,,
+Llanuras de Tortuguero / Santa Clara,llanura de tortuguero|llanuras de tortuguero|llanura tortuguero|llanuras tortuguero|santa clara|llanura de santa clara|llanuras de santa clara|toda la vert. carib|toda la vertiente carib,llanura,regiones_botanicas,Nombre,Llanuras de Tortuguero / Santa Clara,carib,,
+Llanuras de San Carlos,llanura de san carlos|llanuras de san carlos|toda la vert. carib|toda la vertiente carib,llanura,regiones_botanicas,Nombre,Llanuras de San Carlos,carib,,
+LLanura de los Guatusos,llanura de los guatusos|llanuras de los guatusos|guatusos|llanura guatuso|llanuras guatusos|llanura de guatusos|cuenca del rio sapoa|cuenca del rio saboa|toda la vert. carib|toda la vertiente carib,llanura,regiones_botanicas,Nombre,LLanura de los Guatusos,carib,,Includes cuenca del Río Sapoá drainage
+Llanuras de Guanacaste,llanura de guanacaste|llanuras de guanacaste|llanuras guanacaste,llanura,regiones_botanicas,Nombre,Llanuras de Guanacaste,pacifico,,
+Llanuras del Diquís,llanura del diquis|llanuras del diquis|diquis|llanuras diquis,llanura,regiones_botanicas,Nombre,Llanuras del Diquís,pacifico,,
+Valle Central Oriental,valle central oriental|cerros de escazu|cerros de escazú,valle,regiones_botanicas,Nombre,Valle Central Oriental,ambas,,Includes Cerros de Escazú
+Valle Central Occidental,valle central occidental|tablazo|cerro caraigres|montes del aguacate|cerro turrubares,valle,regiones_botanicas,Nombre,Valle Central Occidental,ambas,,Includes Tablazo and Cerro Caraigres
+Valle Central,valle central,valle,regiones_botanicas,Nombre,Valle Central Oriental,ambas,,Generic; maps both halves (see next row too)
+Valle Central (Occidental),valle central,valle,regiones_botanicas,Nombre,Valle Central Occidental,ambas,,Second row so both Oriental and Occidental are matched
+Valle del General,valle del general|valle de general|valles de general|valle general,valle,regiones_botanicas,Nombre,Valle del General,pacifico,,
+Valle del Coto Brus,valle del coto brus|coto brus|valle coto brus,valle,regiones_botanicas,Nombre,Valle del Coto Brus,pacifico,,
+Fila Costeña Norte,fila costena norte|n. fila costena|norte fila costena|fila costena n.|n fila costena|fila costena norte,fila,regiones_botanicas,Nombre,Fila Costeña Norte,pacifico,,
+Fila Costeña Sur,fila costena sur|s. fila costena|sur fila costena|fila costena s.|s fila costena|fila costena sur,fila,regiones_botanicas,Nombre,Fila Costeña Sur,pacifico,,
+Fila Costeña (Norte),fila costena,fila,regiones_botanicas,Nombre,Fila Costeña Norte,pacifico,,Generic; matches both halves
+Fila Costeña (Sur),fila costena,fila,regiones_botanicas,Nombre,Fila Costeña Sur,pacifico,,Second row for generic match
+Península de Nicoya,peninsula de nicoya|pen. de nicoya|pen de nicoya|nicoya|peninsula de santa elena|santa elena|isla san lucas,peninsula,regiones_botanicas,Nombre,Península de Nicoya,pacifico,,Includes Isla San Lucas
+Península de Osa - Golfito,peninsula de osa|pen. de osa|pen de osa|osa|golfito|golfo dulce|region de golfo dulce|region de golfo,peninsula,regiones_botanicas,Nombre,Península de Osa - Golfito,pacifico,,Includes Golfo Dulce region
+Tárcoles - Térraba,tarcoles|terraba|barranca|orotina,region_other,regiones_botanicas,Nombre,Tárcoles - Térraba,pacifico,,
+Baja Talamanca,baja talamanca|fila carbon|fila carbo|toda la vert. carib|toda la vertiente carib,region_other,regiones_botanicas,Nombre,Baja Talamanca,carib,,Includes Fila Carbón
+Puriscal - Los Santos,puriscal|los santos|acosta|tarrazu,region_other,regiones_botanicas,Nombre,Puriscal - Los Santos,pacifico,,Includes cantons Puriscal/Acosta/Tarrazú subregion
+Turrubares,turrubares,region_other,regiones_botanicas,Nombre,Turrubares,pacifico,,
+Punta Burica,punta burica,region_other,regiones_botanicas,Nombre,Punta Burica,pacifico,,
+Coto Colorado,coto colorado,region_other,regiones_botanicas,Nombre,Coto Colorado,pacifico,,
+Filas Chonta y Nara,filas chonta|filas nara|chonta y nara|fila chonta|fila nara|fila chonta y nara,region_other,regiones_botanicas,Nombre,Filas Chonta y Nara,pacifico,,
+Parque Nacional Carara,parque nacional carara|p.n. carara|pn carara|carara|montanas jamaica,park,protected_areas,nombre_asp,Carara,pacifico,,P.N. Carara — Pacific mid-elevation park
+Parque Nacional Tortuguero,parque nacional tortuguero|p.n. tortuguero|pn tortuguero|tortuguero,park,protected_areas,nombre_asp,Tortuguero,carib,,P.N. Tortuguero — Caribbean lowland park
+Parque Nacional Braulio Carrillo,parque nacional braulio carrillo|p.n. braulio carrillo|braulio carrillo,park,protected_areas,nombre_asp,Braulio Carrillo,carib,,P.N. Braulio Carrillo
+Parque Nacional Cahuita,parque nacional cahuita|p.n. cahuita|cahuita,park,protected_areas,nombre_asp,Cahuita,carib,,P.N. Cahuita — Caribbean coast
+Parque Nacional Chirripó,parque nacional chirripo|p.n. chirripo|chirripo,park,protected_areas,nombre_asp,Chirripó,ambas,,P.N. Chirripó — highest peak
+Reserva Biológica Carara,reserva biologica carara|r.b. carara,park,protected_areas,nombre_asp,Carara,pacifico,,Reserve Carara
+Parque Nacional Guanacaste,parque nacional guanacaste|p.n. guanacaste|pn guanacaste,park,protected_areas,nombre_asp,Guanacaste,pacifico,,P.N. Guanacaste — Guanacaste dry forest
+Parque Nacional Manuel Antonio,parque nacional manuel antonio|p.n. manuel antonio|pn manuel antonio|manuel antonio,park,protected_areas,nombre_asp,Manuel Antonio,pacifico,,P.N. Manuel Antonio — Pacific coast park
+Parque Internacional La Amistad,la amistad|parque la amistad|p.n. la amistad|amistad,park,protected_areas,nombre_asp,La Amistad,ambas,,La Amistad International Park
+Parque Nacional Corcovado,parque nacional corcovado|p.n. corcovado|corcovado,park,protected_areas,nombre_asp,Corcovado,pacifico,,P.N. Corcovado — Osa Peninsula
+Puriscal (cantón),puriscal,canton,cantones,CANTÓN,Puriscal,pacifico,San José,Canton Puriscal — subregion of Puriscal-Los Santos
+Tarrazú (cantón),tarrazu,canton,cantones,CANTÓN,Tarrazú,pacifico,San José,Canton Tarrazú
+Acosta (cantón),acosta,canton,cantones,CANTÓN,Acosta,pacifico,San José,Canton Acosta
+La Unión (cantón),la union|tres rios de cartago,canton,cantones,CANTÓN,La Unión,ambas,Cartago,Canton La Unión — hosts district Tres Ríos
+Limón (cantón),limon|puerto limon|vecindad de puerto limon,canton,cantones,CANTÓN,Limón,carib,Limón,Canton Limón — Puerto Limón city
+Bagaces (cantón),bagaces,canton,cantones,CANTÓN,Bagaces,pacifico,Guanacaste,Canton Bagaces in Guanacaste
+Tres Ríos (distrito),tres rios|tres rios de cartago,district,distritos,DISTRITO,Tres Ríos,ambas,La Unión,District Tres Ríos in cantón La Unión
+bosque húmedo,bosque humedo|bosque himedo|bosque htimedo|bosque htmedo|bosque himedo|bh|b. humedo,forest_type,holdridge,nombre,BOSQUE HUMEDO,,,"Holdridge: húmedo — matches zones with MUY HUMEDO in nombre"
+bosque muy húmedo,bosque muy humedo|bosque muy himedo|bosque muy htimedo|bosque muy htmedo|bmh|b. muy humedo,forest_type,holdridge,nombre,BOSQUE MUY HUMEDO,,,"Holdridge: muy húmedo"
+bosque pluvial,bosque pluvial|b. pluvial|pluvial,forest_type,holdridge,nombre,BOSQUE PLUVIAL,,,"Holdridge: pluvial — highest moisture"
+bosque nuboso,bosque nuboso|nuboso|cloud forest,forest_type,holdridge,piso,MONTANO BAJO,,,"Nuboso tends to be in montano bajo / montano elevations"
+bosque seco,bosque seco|b. seco|matorral seco|seco,forest_type,holdridge,nombre,BOSQUE SECO,,,"Holdridge: seco — may not exist in current shapefile coverage"
+páramo,paramo|paramos|paramos pluviales|subalpino,forest_type,holdridge,nombre,PARAMO,,,"High-elevation páramo"

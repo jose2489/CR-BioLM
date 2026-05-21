@@ -1,0 +1,64 @@
+{
+  "species": "Tachigali versicolor",
+  "habitat_raw": "Bosque muy húmedo, 0-400 m; vert. Pac. N Cord. de Talamanca (región de Tarrazú), P.N. Carara, región de Puriscal (P.N. La Cangreja), N Valle de General, región de Golfo Dulce.",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": ". de Talamanca (región "
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "fo Dulce. vert. "
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "c. N Cord. de Talaman"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "ngreja),"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "ra, región de Puriscal"
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "ngreja),"
+    },
+    {
+      "canonical_name": "Tarrazú (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": " P.N. C"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 400.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

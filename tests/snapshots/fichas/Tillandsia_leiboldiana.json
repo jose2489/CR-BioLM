@@ -1,0 +1,83 @@
+{
+  "species": "Tillandsia leiboldiana",
+  "habitat_raw": "Bosque muy htiimedo, pluvial y nuboso, 100—1900 m; vert. Carib. y cerca de la Divisi6n Conti- nental, Cord. Central, Llanura de Santa Clara, Valle Central, ambas verts. Cords. de Tilaran y de Ta- lamanca, Cerros de La Carpintera, vert. Pac. Cord. de Guanacaste, Tablazo, S Fila Costefia (Fila Cruces), Pen. de Osa. Fl. may.—set. Méx.—Pan. (J. F: Morales 3324, INB) Se diferencia de 7: excelsa por su infl. mas pequefia con las bracteas florales conspicuamente nervadas.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "aste, Tablazo, S Fila Co"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "e Tilaran y de Ta- lam"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " Cord. Central, Ll"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "a, Cerros de"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "ura de Santa Clara, Va"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "e Central, am"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "ords. de Tila"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "efia (F"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "y.—set. Méx.—Pan"
+    },
+    {
+      "canonical_name": "Fila Costeña Sur",
+      "hierarchy_level": "fila",
+      "source_span": "a Cruces), Pen"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "fila costena"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 100.0,
+    "max_m": 1900.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": [
+    "Cerros de La Carpintera"
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "species": "Sorocea affinis",
+  "habitat_raw": "Bosque húmedo y muy húmedo, (0-)100-800(-1300+?) m; vert. Carib. Cord. de Tilarán, Llanuras de Los Guatusos y de Tortuguero, ambas verts. Cord. de Guanacaste, vert. Pac., Cerro Turrubares, re¬ giones de Puriscal y de Golfo Dulce. Fl. mar., set., oct., dic. Nic.-NO Col. (Zúñiga 626, INB) Se reconoce por sus estípulas muy pequeñas, láminas foliares generalmente aserradas y fls. esta¬ minadas pediceladas. Está muy relacionada con Sorocea trophoides; aparentemente, están separadas Moraceae",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "acaste, vert. Pac., Cerr"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": ". de Tilarán, Llanura"
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "de Los Guatusos y de Tor"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "giones de Purisc"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": ", set., oct"
+    },
+    {
+      "canonical_name": "Turrubares",
+      "hierarchy_level": "region_other",
+      "source_span": " de Purisc"
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "ulce. Fl"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "o, ambas v"
+    }
+  ],
+  "cantons": [
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "ulce. Fl"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

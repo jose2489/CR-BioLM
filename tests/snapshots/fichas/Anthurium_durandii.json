@@ -1,0 +1,42 @@
+{
+  "species": "Anthurium durandii",
+  "habitat_raw": "Bosque muy himedo y pluvial, 0-—1250(—1600+) m; vert. Carib. Cords. de Tilaran (800-1200 m) y de Talamanca (Rio Dapari, 1250 m), vert. Pac. desde P.N. Carara (Montafias Jamaica) al S. Fl. ene.— dic. CR y Pan. (Grayum et al. 8332; CR, MO) Esta sp. se puede distinguir de otras similares por sus peciolos abaxialmente redondeados y lami- nas foliares negro-glandulares en ambas superficies y con por lo menos dos pares de venas colecti- vas en la base (aunque usualmente solo un par que se extiende al pice). Sostiene alguna semejanza",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "rds. de Tilaran (800-1"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "manca (Rio D"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": " (Montafias Jamaica) a"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 800.0,
+    "max_m": 1200.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

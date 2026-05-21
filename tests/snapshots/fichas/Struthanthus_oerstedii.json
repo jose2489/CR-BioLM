@@ -1,0 +1,85 @@
+{
+  "species": "Struthanthus oerstedii",
+  "habitat_raw": "Bosque seco, húmedo, muy húmedo, pluvial y nuboso, (0-)450-1500(-2100) m; vert. Carib. N Cord. de Talamanca, cuenca del Río Sapoá, ambas verts. Cords. de Guanacaste, de Tilarán y Cen¬ tral, vert. Pac., Montes del Aguacate, Cerro Turrubares, llanuras de Guanacaste al S hasta Puntare- nas, S Pen. de Nicoya, Valle Central, cuencas de los Ríos Grandes de Candelaria y de Térraba, vecindad de Golfito. Fl. ene.-ago., nov. Guat., El Salv.-CR. (/. F. Morales 2266\\ CR, INB, MO) Struthanthus oerstedii se reconoce por sus tallos cilindricos o subcilíndricos, hojas relativamente",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "nacaste, de Tilarán y Cen"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": ". de Talamanca, cuenca "
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "e al S hasta Puntare- "
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "l Río Sapoá, ambas v"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "Cerro Turrubares, l"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "e los Ríos Gr"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "ndelaria y de"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "le Central, cuencas"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "nov. Gu"
+    },
+    {
+      "canonical_name": "Turrubares",
+      "hierarchy_level": "region_other",
+      "source_span": "de Guanaca"
+    },
+    {
+      "canonical_name": "Tárcoles - Térraba",
+      "hierarchy_level": "region_other",
+      "source_span": "fito. F"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 450.0,
+    "max_m": 1500.0,
+    "outlier_min_m": 0.0,
+    "outlier_max_m": 2100.0
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": [
+    "El Salv.-CR."
+  ]
+}

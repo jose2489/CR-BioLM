@@ -1,0 +1,27 @@
+raw,corrected,notes
+htimedo,humedo,OCR corruption of húmedo
+htiimedo,humedo,OCR double-i corruption of húmedo
+htmedo,humedo,OCR short corruption of húmedo
+himedo,humedo,OCR corruption of húmedo
+humedo,humedo,already normalized but keep for explicit mapping
+htumedo,humedo,OCR corruption of húmedo
+6n,on,digit-6 for ó in OCR (Divisi6n → División)
+regiOn,region,OCR capital-O for ó
+divisi6n,division,OCR digit-6 for ó
+divisi6n continental,division continental,compound fix
+cafias,canas,OCR corruption of Cañas
+cafias gordas,canas gordas,OCR compound
+islas murci lago,islas murcielago,OCR space insertion
+llanura de los gua- tusos,llanura de los guatusos,OCR line-break hyphen
+gua- nacaste,guanacaste,OCR line-break hyphen in Guanacaste
+tala- manca,talamanca,OCR line-break
+divisi6n conti- nental,division continental,compound OCR+line-break
+cords. de gua- nacaste,cords. de guanacaste,line-break in cordillera
+costefia,costena,OCR ñ→fi corruption in Fila Costeña
+ilanuras,llanuras,OCR I→Ll confusion in Llanuras
+p.n.,parque nacional,expand park abbreviation
+pen.,peninsula,expand peninsula abbreviation
+cord.,cordillera,expand cordillera abbreviation
+cords.,cordilleras,plural cordillera abbreviation
+vert.,vertiente,expand vertiente abbreviation
+ambas verts.,ambas vertientes,plural vertiente

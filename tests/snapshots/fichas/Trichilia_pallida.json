@@ -1,0 +1,64 @@
+{
+  "species": "Trichilia pallida",
+  "habitat_raw": "Bosque muy húmedo y pluvial, 0-1200+ m; vert. Carib. Cords. de Guanacaste, Central y de Talamanca, Llanuras de Los Guatusos, de San Carlos y de Tortuguero (P.N. Tortuguero), vert. Pac. N Cord. de Talamanca (Cerro Nara), N Fila Costeña (vecindad de Boruca), P.N. Carara, P.N.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. de Guanacaste, Central"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "o Nara), N Fila Costeña"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " de Talamanca, Llanura"
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "de Los Guatusos, de San "
+    },
+    {
+      "canonical_name": "Fila Costeña Norte",
+      "hierarchy_level": "fila",
+      "source_span": "oruca), P.N. C"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "uguero), vert. Pac. N Cord"
+    },
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "parque nacional carara"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

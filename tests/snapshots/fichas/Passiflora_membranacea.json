@@ -1,0 +1,74 @@
+{
+  "species": "Passiflora membranacea",
+  "habitat_raw": "Bosque húmedo, muy húmedo y pluvial, 0-200(-1200) m; vert. Carib. Cord. Central, E Cord. de Talamanca, Llanuras de Tortuguero y de Santa Clara, vert. Pac. y cerca de la División Continental, Cords. de Tilarán y de Guanacaste, N Cord. de Talamanca, S Fila Costeña (Fila Cruces), Pen. de Nicoya, región de Golfo Dulce. Fl. ene.-jul., oct.-",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "Talamanca, Llanuras de "
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "y de Guanacaste, N Cor"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Central, E Cord."
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "rtuguero y de Santa Cl"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "ul., oct.- vert. Cari"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "lfo Dulce. Fl. ene."
+    },
+    {
+      "canonical_name": "Fila Costeña Sur",
+      "hierarchy_level": "fila",
+      "source_span": ", Pen. de Nico"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "fila costena"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "e Santa Cl"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

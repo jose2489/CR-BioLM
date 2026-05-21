@@ -1,0 +1,46 @@
+{
+  "species": "Xanthosoma undipes",
+  "habitat_raw": "Bosque muy htimedo, pluvial y nuboso, orillas de quebradas y lagunas, potreros himedos, (100—)1000—1800+ m; vert. Carib. y cerca de la Divisi6n Continental, Cords. de Guanacaste y Cen- tral, ambas verts. Cords. de Tilaran y Talamanca, S vert. Pac., Fila Costefia, Pen. de Osa. Fl. ene.— mar., may.—dic. CR—Ecua. y Ven. (Grayum 10374; INB, MO) Esta es la mas grande y mas conspicua de todas las spp. costarricenses nativas de Xanthosoma, con el tallo grueso y que logra por lo menos 3 m. Es también la Unica sp. costarricense de Xantho-",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "ords. de Guanacaste y Cen"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "e Tilaran y Talamanca,"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": " ene.— mar., may"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "n. de Osa. F"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

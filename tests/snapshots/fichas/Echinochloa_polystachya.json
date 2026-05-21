@@ -1,0 +1,67 @@
+{
+  "species": "Echinochloa polystachya",
+  "habitat_raw": "Bosque himedo y muy htimedo, areas alteradas, pastizales y areas inundadas, 0—200 m; toda la vert. Carib., vert. Pac., Pen. de Nicoya, cuenca del Rio Tempisque, Tarcoles, Boca Savegre, Valle de General, regidn de Golfo Dulce, etc. Fl. ene., feb., abr., jun.—dic. S EUA—Bol. y Ven., Bras., Uru., Arg., Antillas. (Aguilar 5231; INB, MO) Esta sp. se puede confundir con E. pyramidalis, pero se reconoce por sus espiguillas mas largas",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "; toda la vert. Carib.,"
+    },
+    {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": "ert. Carib., vert. Pac."
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "neral, regidn de"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "e Nicoya, cuenca de"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": ", etc. Fl. "
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "; toda la vert. Carib.,"
+    },
+    {
+      "canonical_name": "Tárcoles - Térraba",
+      "hierarchy_level": "region_other",
+      "source_span": "oca Save"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 200.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": [
+    "Boca Savegre",
+    "Bras.",
+    "Uru.",
+    "Arg.",
+    "Antillas."
+  ]
+}

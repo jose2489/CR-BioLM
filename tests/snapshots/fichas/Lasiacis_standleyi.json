@@ -1,0 +1,56 @@
+{
+  "species": "Lasiacis standleyi",
+  "habitat_raw": "Bosque muy himedo, pluvial y nuboso, (SO—)500—1850(—2500) m; ambas verts., todas las cords. principales, vert. Pac., S Fila Costefia (Cerro Anguciana), N Valle de General, Pen. de Osa. Fl. ene.— abr., jun., ago., oct., dic. Méx.—Perti y Ven. (Herrera 1585; INB, MO) Se puede confundir con L. scabrior, pero se distingue por su habito rastrero a escandente, sus ta- llos que enraizan en los nudos inferiores y sus infls. exertas. Leersia",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "odas las cords. principales, vert"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. principales, vert. Pac., S Fil"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "General, Pen. de"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "sa. Fl. ene.— ab"
+    },
+    {
+      "canonical_name": "Fila Costeña Sur",
+      "hierarchy_level": "fila",
+      "source_span": "tefia (Cerro A"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "fila costena"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 500.0,
+    "max_m": 1850.0,
+    "outlier_min_m": null,
+    "outlier_max_m": 2500.0
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

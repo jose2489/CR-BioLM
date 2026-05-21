@@ -1,0 +1,57 @@
+{
+  "species": "Hymenachne amplexicaulis",
+  "habitat_raw": "Bosque muy himedo y pluvial, areas alteradas, pastizales y sabanas y lagunas, 0-850 m; vert. Carib. Cords. Central y de Talamanca, Llanura de Tortuguero, vert. Pac., Valles de General y de Coto Brus (vecindad de San Vito). Fl. ene., mar., oct. Méx.—Arg., Antillas. (Herrera 2256; CR, MO) Se reconoce por sus espiguillas mas pequefias que en H. amplexicualis. Hyparrhenia Clayton, W. D. 1969. A revision of the genus Hyparrhenia. Kew Bull., Addit. Ser. 2: 1-196.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " de Talamanca, Llanura"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": " de Tortugue"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "e Tortuguero, vert. P"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "eral y de Coto Br"
+    },
+    {
+      "canonical_name": "Valle del Coto Brus",
+      "hierarchy_level": "valle",
+      "source_span": "cindad de"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "o, vert. P"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 850.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

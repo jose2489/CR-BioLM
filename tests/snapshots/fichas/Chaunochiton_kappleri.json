@@ -1,0 +1,37 @@
+{
+  "species": "Chaunochiton kappleri",
+  "habitat_raw": "Bosque muy húmedo, 0-400(-600) m; S vert. Pac., Valle de Coto Brus, región de Golfo Dulce.",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Valle del Coto Brus",
+      "hierarchy_level": "valle",
+      "source_span": " Brus, re"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "ón de Golfo Dulce. S "
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.6666666666666666,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

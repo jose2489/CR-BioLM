@@ -1,0 +1,67 @@
+{
+  "species": "Anthurium scandens",
+  "habitat_raw": "Bosque muy htimedo, pluvial, nuboso y de roble, 0—2800+ m; vert. Carib., Llanura de Tortuguero, ambas verts. todas las cords. principales, Cerros de La Carpintera, vert. Pac., Montes del Aguacate, Tablazo, Cerros de Escazt, Cerro Turrubares, Cerro Caraigres, Fila Costefia, PN. Carara (Montafias Jamaica), Pen. de Osa, Isla del Coco. Fl. ene.—dic. S Méx.—Bol. y S Bras., Trin., Antillas Mayores. (Campos 120, INB)",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "las cords. principales, Cerros de"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "anura de Tortuguero, "
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "cate, Tablazo, Cerr"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "sla del Coco. Fl"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "PN. Carara ("
+    },
+    {
+      "canonical_name": "Turrubares",
+      "hierarchy_level": "region_other",
+      "source_span": "ro Caraigr"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "rtuguero, "
+    },
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": "ias Ja"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

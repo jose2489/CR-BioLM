@@ -1,0 +1,36 @@
+{
+  "species": "Chamaedorea deckeriana",
+  "habitat_raw": "Bosque muy htimedo y pluvial, O—1200+ m; toda la vert. Carib. FI. feb., may.—oct. SE Nic.—Pan. (Haber & Zuchowski 9340; CR, MO) La combinacion de su habito caulescente, laminas foliares simples, algo grandes, con numerosos nervios primarios laterales (>15 por lado), e infls. de ambos sexos espigadas distingue a C. deckeriana de todos sus congéneres costarricenses excepto de C. zamorae de la vert. Pac. (ver clave,",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "; toda la vert. Carib. "
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "; toda la vert. Carib. "
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.6666666666666666,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

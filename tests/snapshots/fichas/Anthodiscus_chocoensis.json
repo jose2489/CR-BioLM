@@ -1,0 +1,38 @@
+{
+  "species": "Anthodiscus chocoensis",
+  "habitat_raw": "Bosque muy húmedo, 0–800 m; vert. Pac., vert. Carib., Cordillera de Talamanca, Cordillera de Guanacaste.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "era de Guanacaste. vert."
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "era de Talamanca, Cordi"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 800.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.6666666666666666,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

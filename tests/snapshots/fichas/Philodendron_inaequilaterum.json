@@ -1,0 +1,46 @@
+{
+  "species": "Philodendron inaequilaterum",
+  "habitat_raw": "Bosque himedo y muy humedo, 0—1000 m; toda la vert. Carib., vert. Pac. desde el Rio Grande de Tarcoles al S. Fl. feb.—jun. Méx.—Ecua. y Ven. (Grayum & Schatz 5269; CR, MO) Philodendron inaequilaterum es una sp. comin, si poco Ilamativa, reconocida por su habito flo- jamente escandente, laminas foliares no cordadas, cartaceas, y con muchas venas primarias laterales, infls. usualmente emparejadas con el espadice delgado, y frs. anaranjado intenso. Philodendron rayanum, una sp. muy escasa, es muy similar, pero difiere en tener laminas foliares juveniles mas",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": " toda la vert. Carib., "
+    },
+    {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": "a la vert. Carib., vert"
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": " toda la vert. Carib., "
+    },
+    {
+      "canonical_name": "Tárcoles - Térraba",
+      "hierarchy_level": "region_other",
+      "source_span": "s al S. "
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 1000.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

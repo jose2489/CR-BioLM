@@ -1,0 +1,74 @@
+{
+  "species": "Bunchosia macrophylla",
+  "habitat_raw": "Bosque húmedo, muy húmedo, pluvial y nuboso, bosques primarios y secundarios, 0-2000 m; vert. Carib. y cerca de la División Continental, Cords. de Guanacaste, de Tilarán y Central, E Cord. de Talamanca, Llanuras de Los Guatusos (R.N.V.S. Caño Negro), de Tortuguero y de Santa Clara, Baja Talamanca (R.N.V.S. Gandoca-Manzanillo), vert. Pac. Cord. de Talamanca, Cerros de Escazú, Valles Central y de Coto Brus, región de Golfo Dulce. Fl. feb.-nov. SE Nic.-Col. (Grayum et al. 3514; CR, MEXU, MICH, MO)",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. de Guanacaste, de Tila"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "Talamanca, Llanuras de "
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "s Guatusos (R.N.V.S. Cañ"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "aja Talaman"
+    },
+    {
+      "canonical_name": "Valle Central Oriental",
+      "hierarchy_level": "valle",
+      "source_span": "s Central y de C"
+    },
+    {
+      "canonical_name": "Valle del Coto Brus",
+      "hierarchy_level": "valle",
+      "source_span": "lfo Dulce"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "Fl. feb.-nov. SE Nic."
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": " (R.N.V.S. Gan"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "e Santa Cl"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 2000.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

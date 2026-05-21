@@ -1,0 +1,36 @@
+{
+  "species": "Eleocharis elegans",
+  "habitat_raw": "Bosque muy htimedo y pluvial, pantanos y sitios himedos en bosques y repastos, 650—2000 m; vert. Pac. Cords. Central y de Talamanca, ambas verts. Cord. de Guanacas",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " y de Talamanca, ambas"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Cord. de G"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 650.0,
+    "max_m": 2000.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.6666666666666666,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

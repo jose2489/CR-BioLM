@@ -1,0 +1,74 @@
+{
+  "species": "Pouteria torta",
+  "habitat_raw": "Bosque muy húmedo, 0-400(-1050+) m; vert. Carib. Cords. de Guanacaste, Central y de Tala- manca, Llanuras de Los Guatusos, de Tortuguero y de Santa Clara, Baja Talamanca (Bribrí), vert. Pac. N Cord. de Talamanca, Valle de General, vecindad de Palmar Norte, región de Golfo Dulce. Fl. ene., abr. S Méx.—Bol. y Ven., Guyana, Guyana Fr., Bras., Par. (J. F Morales 7709; INB, MO) Pouteria torta se reconoce por sus láminas foliares con numerosos nervios secundarios por lado, fis. cortamente pediceladas, 4-meras, relativamente grandes, y frs. con proyecciones gruesas e",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. de Guanacaste, Central"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "lamanca, Valle de Gener"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " de Tala- manca, Llanu"
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "s de Los Guatusos, de To"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "lara, Baja "
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": ", vecindad de Pa"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "Dulce. Fl. ene., abr."
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "lamanca (Bribr"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "ero y de S"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

@@ -1,0 +1,32 @@
+{
+  "species": "Oplismenus burmanni",
+  "habitat_raw": "Bosque humedo, playones arenosos de quebradas, 100—250 m; N vert. Pac., lanuras de Gua- nacaste (P.N. Santa Rosa). Fl. ene. Pantrop. (Liesner 4431; CR, INB, MO) Se reconoce por sus espiguillas ampliamente espaciadas y laxamente distribuidas, con las aristas lisas. Opl",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "e. "
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 100.0,
+    "max_m": 250.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.3333333333333333,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

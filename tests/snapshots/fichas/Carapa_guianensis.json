@@ -1,0 +1,43 @@
+{
+  "species": "Carapa guianensis",
+  "habitat_raw": "Bosque muy húmedo, 0-100 m; vert. Carib., Llanuras de Tortuguero (P.N. Tortuguero) y de Santa Clara. Fl.(?); fr. ago. Bel. y Guat.-Perú y Ven., Trin. & Tob., Guayanas, Bras., Antillas. {Robles et al 2057, K, MO; Standley & Valerio 48535, US) Carapa guianensis se distingue de C. nicaraguensis por los caracteres dados en la clave, sobre todo por sus partes relativamente glabras y semillas generalmente más numerosas y más pequeñas. Aunque más ampliamente repartida en todo que Carapa nicaraguensis, C. guianensis es muy rara",
+  "vertientes": [
+    "Caribe"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "uras de Tortuguero (P."
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "eña"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": " Tortuguero) y de Santa Cl"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 100.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

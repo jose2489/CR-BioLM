@@ -1,0 +1,47 @@
+{
+  "species": "Setaria parviflora",
+  "habitat_raw": "Bosque muy htmedo, zanja en cafetal, ca. 1300 m; vert. Pac. Valle Central (Tres Rios de Cartago). Fl. abr. Méx.—Bol. y Ven., Guayanas, Bras., Par., Uru., Arg., Antillas. (Pohl 12782; ISC, MO) Esta sp. es muy similar a S. paniculifera, pero se distingue por sus infls. con las ramas inferiores mas cortas (2—8 cm) y su habitat restringido (por el momento) al Valle Central.",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "e Central (Tr"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "lle Central. "
+    }
+  ],
+  "parks": [],
+  "cantons": [
+    {
+      "canonical_name": "La Unión (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": " Rios de Cartago). F"
+    }
+  ],
+  "districts": [
+    {
+      "canonical_name": "Tres Ríos (distrito)",
+      "hierarchy_level": "district",
+      "source_span": " Rios de Cartago). F"
+    }
+  ],
+  "elevation": {
+    "min_m": 1105.0,
+    "max_m": 1494.9999999999998,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

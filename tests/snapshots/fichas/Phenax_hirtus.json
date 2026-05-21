@@ -1,0 +1,56 @@
+{
+  "species": "Phenax hirtus",
+  "habitat_raw": "Bosque muy húmedo, pluvial, nuboso y de roble, bosques primarios, bordes de bosque y orillas de quebradas, ríos y caminos, (800-)1000-2800(-3000) m; vert. Carib. y cerca de la División SN tinental, Cords. de Tilarán, Central y de Talamanca, vert. Pac. N Cord. de Talamanca, a e Escazú, S Fila Costeña. Fl. ene.-jul., setdic. CR y O Pan., Ecua.-Bol., Antillas Mayores (Jam.). (A. Rodríguez et al. 5815, INB) Phenax hirtus se reconoce por sus hojas con el pecíolo hasta Ca.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "manca, a e Escazú, S Fi"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "s. de Tilarán, Central"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " de Talamanca, vert. P"
+    },
+    {
+      "canonical_name": "Fila Costeña Sur",
+      "hierarchy_level": "fila",
+      "source_span": ". ene.-jul., s"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": " CR y O Pan."
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 1000.0,
+    "max_m": 2800.0,
+    "outlier_min_m": 800.0,
+    "outlier_max_m": 3000.0
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": [
+    "Ecua.-Bol.",
+    "Antillas Mayores"
+  ]
+}

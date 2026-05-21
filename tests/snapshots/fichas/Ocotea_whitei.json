@@ -1,0 +1,60 @@
+{
+  "species": "Ocotea whitei",
+  "habitat_raw": "Bosque muy húmedo, pluvial, nuboso y de roble, (100-)400-1850 m; vert. Carib. N Cord. de Ta¬ lamanca, ambas verts. Cords. de Guanacaste y de Tilarán, vert. Pac. E Cord. de Talamanca, Cerro Espíritu Santo, Valle Central, N Valle de General, región de Golfo Dulce (vecindad de Golfito). Fl. feb., may.-dic. Guat.-Pan., Ecua. (G. Herrera 2339; CR, MO) Ocotea whitei se reconoce por sus láminas foliares decurrentes en la base, con los nervios tercia¬ rios finamente reticulados y sus cúpulas expandidas.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "anacaste y de Tilarán, ve"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "erro Espíritu Santo, Va"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "e Golfo Dulce (v"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "General, regi"
+    },
+    {
+      "canonical_name": "Valle Central (Occidental)",
+      "hierarchy_level": "valle",
+      "source_span": "Dulce"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "indad de Golfito). Fl"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 400.0,
+    "max_m": 1850.0,
+    "outlier_min_m": 100.0,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": [
+    "Cerro Espíritu Santo"
+  ]
+}

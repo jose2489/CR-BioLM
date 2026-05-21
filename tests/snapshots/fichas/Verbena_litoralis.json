@@ -1,0 +1,33 @@
+{
+  "species": "Verbena litoralis",
+  "habitat_raw": "Bosque húmedo, muy húmedo, pluvial, nu- boso y de roble y páramo, cafetales, potreros, lotes baldíos y orillas de quebradas y cami- nos, (0-)600-2600(-3400+) m; vert. Carib. e btial N Cord. de Talamanca, Llanura de San A",
+  "vertientes": [
+    "Caribe"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "Cord. de Talamanca, Lla"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo",
+    "páramo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.3333333333333333,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

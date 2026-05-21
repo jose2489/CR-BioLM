@@ -1,0 +1,43 @@
+{
+  "species": "Philodendron thalassicum",
+  "habitat_raw": "Bosque pluvial, nuboso y de roble, 1000—2100 m; vert. Carib. y cerca de la Divisi6n Continen- tal, Cords. de Tilaran y Central, ambas verts. Cord. de Talamanca, centro vert. Pac., Tablazo. FI. ene.—dic. CR y O Pan. (Grayum & Schatz 5181; CR, MO) Philodendron thalassicum es una sp. variable, caracterizada por las fibras persistentes de los catafilos, laminas foliares grandes, cordadas a sagitadas, blanquecinas en el envés, y el tubo de la es- pata uniformemente verdoso o blanquecino internamente. Como aqui entendida, es una de las muy",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "alamanca, centro vert. "
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "ords. de Tilaran y Cen"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "ic. CR "
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 1000.0,
+    "max_m": 2100.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "pluvial"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

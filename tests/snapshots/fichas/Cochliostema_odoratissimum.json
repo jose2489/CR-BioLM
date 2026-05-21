@@ -1,0 +1,52 @@
+{
+  "species": "Cochliostema odoratissimum",
+  "habitat_raw": "Bosque himedo y muy htmedo, dosel de bosques primarios, 0—250 m; vert. Carib. Cord. Cen- tral, Llanuras de Tortuguero y de Santa Clara, Baja Talamanca, S vert. Pac., Pen. de Osa. Fl. ene.— abr., jun., oct. Nic.—Ecua. (J. F. Morales et al. 1865, INB) Esta sp. se distingue facilmente de todas las otras spp. de la familia por su habito epifito, brome- lioide, y de la mayoria de las Bromeliaceae por sus hojas + suculentas con el nervio medio obvio. Las",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "d. Cen- tral, Llan"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "as de Tortuguero y de "
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "a. Fl. ene.— abr"
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "alamanca, S ve"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "uero y de "
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 250.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

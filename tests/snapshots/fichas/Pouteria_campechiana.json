@@ -1,0 +1,84 @@
+{
+  "species": "Pouteria campechiana",
+  "habitat_raw": "Bosque seco, húmedo y muy húmedo, 0-750-1000+) m; vert. Carib. Cord. Central, cuenca del Río Sapoá (Cerro El Hacha), Llanuras de Los Guatusos, de San Carlos y de Tortuguero, Baja Talamanca (Bribrí), ambas verts. Cord. de Guanacaste, vert. Pac., llanuras de Guanacaste, Pen. de Nicoya, vecindad de Esparza, Valle Central, vecindad de Orotina (cult.), P.N. Carara, Pens. de Osa y de Burica (Punta Banco; cult.). Fl. feb.-may., ago., dic. Méx.—Pan., cult. y naturalizada SE EUA (S Florida), Ecua., Antillas Mayores (Cuba; PR), tróps. de África, etc. (O. Jiménez et al. 2105; CR,",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "acaste, vert. Pac., llan"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": ". Central, cuenca "
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "de Los Guatusos, de San "
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": ", Pen. de Nicoya, veci"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "Orotina (cult"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "ad de Esparza, Vall"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "Fl."
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "manca (Bribrí)"
+    },
+    {
+      "canonical_name": "Tárcoles - Térraba",
+      "hierarchy_level": "region_other",
+      "source_span": "a, Pens"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": " de Burica (Punta Banc"
+    },
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "o, Baja Ta"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

@@ -1,0 +1,53 @@
+{
+  "species": "Digitaria abyssinica",
+  "habitat_raw": "Bosque seco y himedo, areas alteradas, pastizales, sabanas y orillas de caminos, 0— 1200 m; vert. Pac., N Fila Costefia (Boruca), llanuras de Guanacaste (Bagaces), Puntarenas, Valle Central (Hda. Argentina; Carrillos de Pods; San José). Méx.—Ven., Antillas. (Pohl & Davidse 10990; CR, ISC) Se distingue de las spp. relacionadas por el pequefio tamajio de sus espiguillas. Digitaria bicornis (Lam.) Roem. & Schult., Syst. veg. 2: 470. 1817. Paspalum bicorne Lam., Tabl.",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "anuras de Guanacaste ("
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "lle Central ("
+    },
+    {
+      "canonical_name": "Fila Costeña Norte",
+      "hierarchy_level": "fila",
+      "source_span": "ila Costefia ("
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "Costefia"
+    }
+  ],
+  "parks": [],
+  "cantons": [
+    {
+      "canonical_name": "Bagaces (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "gaces),"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 1200.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

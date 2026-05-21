@@ -1,0 +1,62 @@
+{
+  "species": "Chamaedorea pinnatifrons",
+  "habitat_raw": "Bosque himedo, muy htiimedo, pluvial, nuboso y de roble, (O—)400—2600+ m; vert. Carib., Lla- nuras de Los Guatusos y de Tortuguero, Baja Talamanca, ambas verts. todas las cords. principales, vert. Pac. Montes del Aguacate, Cerros de Escazt, Tablazo, Cerro Turrubares, Cerro Caraigres, Fila Costefia. Fl. ene.—dic. S Méx. (Oax., Ver.)—Bol. y Ven. (Rios 161; CR, MO) Chamaedorea pinnatifrons es la mas ampliamente distribuida y frecuentemente recolectada sp. del género en CR, y en general. Aunque muy variable y poco llamativa, usualmente puede ser re-",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "das las cords. principales, vert."
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "Lla- nuras de Los Guatus"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "Aguacate, Cerros de"
+    },
+    {
+      "canonical_name": "Fila Costeña (Norte)",
+      "hierarchy_level": "fila",
+      "source_span": "ia. Fl. ene."
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": ", Baja Talaman"
+    },
+    {
+      "canonical_name": "Turrubares",
+      "hierarchy_level": "region_other",
+      "source_span": " Cerro Car"
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "e Tortugue"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

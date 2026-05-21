@@ -1,0 +1,40 @@
+{
+  "species": "Philodendron schottianum",
+  "habitat_raw": "Bosque muy htimedo, pluvial y de roble, 750—2100 m; vert. Carib. y cerca de la Divisi6n Conti- nental, Cords. de Tilaran, Central y de Talamanca. Fl. ene., abr.—ago. CR y Pan. (Grayum 7333; CR, MO) Philodendron schottianum es una sp. montana, reconocida por su habito adpreso-trepador, catafi- los fibrosos con esterillas pergamentaceas adheridas, laminas foliares grandes, cordadas, espatas ro- jizas internamente, y espadices proporcionalmente gruesos. Es mas similar a P. alticola, de elevaciones",
+  "vertientes": [
+    "Caribe"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "Cords. de Tilaran, Cen"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "al y de Talamanca. Fl."
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "manca. Fl. e"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 750.0,
+    "max_m": 2100.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

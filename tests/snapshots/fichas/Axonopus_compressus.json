@@ -1,0 +1,43 @@
+{
+  "species": "Axonopus compressus",
+  "habitat_raw": "Bosque muy htmedo, pluvial, nuboso y de roble, areas alteradas y pastizales, 1200—2500 m; vert. Carib. y cerca de la Divisi6n Continental, Cords. de Tilaran y Central, ambas verts. Cord. de Talamanca, centro vert. Pac., Cerros de Escazu. Fl. ene., mar., may., ago., dic. SE EUA—Bol. y Ven., Poaceae",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "amanca, centro vert. Pa"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "ds. de Tilaran y Centr"
+    },
+    {
+      "canonical_name": "Valle Central Oriental",
+      "hierarchy_level": "valle",
+      "source_span": " ene., mar., may"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 1200.0,
+    "max_m": 2500.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": [
+    "Poaceae"
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "species": "Cissus alata",
+  "habitat_raw": "Bosque seco y húmedo, charrales y orillas de ríos y caminos, 0-700+ m; vert. Pac. N Cord. de Talamanca (región de Dota), Montes del Aguacate, llanuras de Guanacaste, Pen. de Santa Elena, N Pen. de Nicoya, Valle Central, región de Turrubares, Valle de General, cañón del Río Grande de Térraba. Fl. mar., jul.-oct. S Méx. (Chis.), Nic.—Bol. y Ven., Trin., Guayana, Guyana Fr., Bras. (Solomon 19313; INB, MO) Cissus alata se distingue por sus tallos con tricomas septados, estípulas reflexas y persistentes,",
+  "vertientes": [
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": ". de Talamanca (región "
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": "de Guanacaste, Pen. de"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": "l Aguacate, llanura"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": "añón del Río Gra"
+    },
+    {
+      "canonical_name": "Valle Central",
+      "hierarchy_level": "valle",
+      "source_span": "ón de Turruba"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "anta Elena, N Pen. de Ni"
+    },
+    {
+      "canonical_name": "Turrubares",
+      "hierarchy_level": "region_other",
+      "source_span": "e General,"
+    },
+    {
+      "canonical_name": "Tárcoles - Térraba",
+      "hierarchy_level": "region_other",
+      "source_span": "jul.-oc"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

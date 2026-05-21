@@ -1,0 +1,37 @@
+{
+  "species": "Triolena hirsuta",
+  "habitat_raw": "Bosque muy húmedo y pluvial, tierras bajas y orillas de ríos, 0-900(-1300+) m; toda la vert. Carib. Fl. ene.-ago., nov., dic. Nic.-Ecua. (/. González 1691; CR, INB, MO) Entre las spp. costarricenses de Triolena, T. hirsuta es más similar a T. pumila, de la cual se",
+  "vertientes": [
+    "Caribe"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": "toda la vert. Carib. Fl"
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "toda la vert. Carib. Fl"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "muy húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 0.6666666666666666,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

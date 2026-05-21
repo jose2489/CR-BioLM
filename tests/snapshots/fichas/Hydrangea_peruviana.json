@@ -1,0 +1,63 @@
+{
+  "species": "Hydrangea peruviana",
+  "habitat_raw": "Bosque húmedo, muy húmedo, pluvial, nuboso y de roble, bosques primarios y secundarios, (0-)750-2350 m; vert. Carib., Baja Talamanca, ambas verts. todas las cords. principales, vert. Pac., Tablazo, Cerros de Escazú, Cerro Turrubares, región de Golfito (P.N. Piedras Blancas). Fl. ene.- mar., may., ago.-dic. CR-Perú. (/. F. Morales 767; CR, MO) Hydrangea peruviana es fácilmente distinguible por sus fls. rosadas, las estériles usualmente pre¬ sentes y conspicuamente 4-lobuladas.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "s cords. principales, vert. Pac.,"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": " Pac., Tablazo, Cerros de Escazú,"
+    },
+    {
+      "canonical_name": "Valle Central Oriental",
+      "hierarchy_level": "valle",
+      "source_span": " Cerro Turrubare"
+    },
+    {
+      "canonical_name": "Valle Central Occidental",
+      "hierarchy_level": "valle",
+      "source_span": " región de Golfi"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "dras Bl"
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": " Talamanca, am"
+    },
+    {
+      "canonical_name": "Turrubares",
+      "hierarchy_level": "region_other",
+      "source_span": "n de Golfi"
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 750.0,
+    "max_m": 2350.0,
+    "outlier_min_m": 0.0,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

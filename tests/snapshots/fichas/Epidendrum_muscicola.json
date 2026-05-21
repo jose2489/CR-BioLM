@@ -1,0 +1,40 @@
+{
+  "species": "Epidendrum muscicola",
+  "habitat_raw": "Bosque muy htmedo, pluvial y nuboso, entre el musgo, 1050—2050 m; vert. Carib. y cerca de la Divisi6n Continental, Cords. de Tilaran, Central y de Talamanca. Fl. abr., jun.—ago., oct., nov. ENDEMICA. (Grayum 7059, MO) Las hojas relativamente largas, aciculares, el raquis de la infl. fractiflexo y las fls. blancas con el l6bulo medio del labelo subulado a lanceolado, la diferencian de otras spp.",
+  "vertientes": [
+    "Caribe"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "ds. de Tilaran, Centra"
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": "y de Talamanca. Fl. ab"
+    },
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": ". abr., jun."
+    }
+  ],
+  "parks": [],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 1050.0,
+    "max_m": 2050.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

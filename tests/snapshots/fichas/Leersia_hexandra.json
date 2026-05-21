@@ -1,0 +1,64 @@
+{
+  "species": "Leersia hexandra",
+  "habitat_raw": "Bosque seco, himedo y muy htimedo, 4reas alteradas, zanjas, ciénagas y sitios anegados o muy himedos, 0-50 (—1100) m; vert. Carib. Cords. de Guanacaste (Lago Cote), Central y de Talamanca, cuenca del Rio Sapoa, Lago Arenal, Llanuras de Los Guatusos y de Tortuguero, N vert. Pac., Ilanuras de Guanacaste, Pen. de Nicoya. Fl. may., jul.—",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Guanacaste",
+      "hierarchy_level": "cordillera",
+      "source_span": "rds. de Guanacaste (Lago "
+    },
+    {
+      "canonical_name": "Cordillera Central",
+      "hierarchy_level": "cordillera",
+      "source_span": " y de Talamanca, cuenc"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "enal, Llanu"
+    },
+    {
+      "canonical_name": "LLanura de los Guatusos",
+      "hierarchy_level": "llanura",
+      "source_span": "s de Los Guatusos y de T"
+    },
+    {
+      "canonical_name": "Llanuras de Guanacaste",
+      "hierarchy_level": "llanura",
+      "source_span": " Guanacaste, Pen. de N"
+    },
+    {
+      "canonical_name": "Península de Nicoya",
+      "hierarchy_level": "peninsula",
+      "source_span": "oya. Fl. may., jul."
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Tortuguero",
+      "hierarchy_level": "park",
+      "source_span": "ero, N ver"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "seco"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}

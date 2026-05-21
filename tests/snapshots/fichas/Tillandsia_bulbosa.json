@@ -1,0 +1,62 @@
+{
+  "species": "Tillandsia bulbosa",
+  "habitat_raw": "Bosque himedo, muy himedo y pluvial, areas alteradas, O— 1100 m; toda la vert. Carib., vert. Pac. Cord. de Tilaran, N Cord. de Talamanca (Fila Bustamante), desde P.N. Carara al S. Fl. feb.—jun., set.—dic. Méx.—Ecua., N Bras., Antillas. (Herrera 5112, INB) Esta sp. se reconoce facilmente por sus bracteas florales densamente lepidotas, habitat restringido a zonas bajas y su roseta pseudobulbosa, usualmente con hormigas.",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "amanca (Fila Bustamante"
+    },
+    {
+      "canonical_name": "Cordillera de Tilarán",
+      "hierarchy_level": "cordillera",
+      "source_span": "e Tilaran, N Cord. de"
+    },
+    {
+      "canonical_name": "Llanuras de Tortuguero / Santa Clara",
+      "hierarchy_level": "llanura",
+      "source_span": " toda la vert. Carib., "
+    },
+    {
+      "canonical_name": "Llanuras de San Carlos",
+      "hierarchy_level": "llanura",
+      "source_span": "t. Pac. Cord. de Tilara"
+    },
+    {
+      "canonical_name": "Península de Osa - Golfito",
+      "hierarchy_level": "peninsula",
+      "source_span": "gas"
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": " toda la vert. Carib., "
+    }
+  ],
+  "parks": [
+    {
+      "canonical_name": "Parque Nacional Carara",
+      "hierarchy_level": "park",
+      "source_span": " Fl. feb.—jun., set.—d"
+    }
+  ],
+  "cantons": [],
+  "districts": [],
+  "elevation": {
+    "min_m": 0,
+    "max_m": 1100.0,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 1.0
+  },
+  "unresolved_tokens": []
+}

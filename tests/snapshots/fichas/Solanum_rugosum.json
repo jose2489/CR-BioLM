@@ -1,0 +1,64 @@
+{
+  "species": "Solanum rugosum",
+  "habitat_raw": "Bosque húmedo y muy húmedo, bosques secundarios, bordes de bosque, charrales y orillas de la- gunas y caminos, 0-900(-1200+) m; vert. Carib, y cerca de la División Continental, todas las cords. y llanuras principales, vecindad de Puerto Limón, Baja Talamanca, vert. Pac. E Cord. de Talamanca, región de Puriscal, N Valle de General, Valle de Coto Brus. Fl. ene. feb. abr.—oct. Bel. y Guat.-Bol. y Ven., Guayanas, Bras., Antillas. (Davidse £ Herrera 31307, INB) UN",
+  "vertientes": [
+    "Caribe",
+    "Pacífico"
+  ],
+  "regions": [
+    {
+      "canonical_name": "Cordillera de Talamanca",
+      "hierarchy_level": "cordillera",
+      "source_span": "lamanca, región de Puri"
+    },
+    {
+      "canonical_name": "Valle del General",
+      "hierarchy_level": "valle",
+      "source_span": ", Valle de Coto "
+    },
+    {
+      "canonical_name": "Valle del Coto Brus",
+      "hierarchy_level": "valle",
+      "source_span": "ne. feb. "
+    },
+    {
+      "canonical_name": "Baja Talamanca",
+      "hierarchy_level": "region_other",
+      "source_span": "lamanca, vert."
+    },
+    {
+      "canonical_name": "Puriscal - Los Santos",
+      "hierarchy_level": "region_other",
+      "source_span": "e de Gen"
+    }
+  ],
+  "parks": [],
+  "cantons": [
+    {
+      "canonical_name": "Limón (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "d de Puerto Limón, Baja "
+    },
+    {
+      "canonical_name": "Puriscal (cantón)",
+      "hierarchy_level": "canton",
+      "source_span": "e de Gen"
+    }
+  ],
+  "districts": [],
+  "elevation": {
+    "min_m": null,
+    "max_m": null,
+    "outlier_min_m": null,
+    "outlier_max_m": null
+  },
+  "forest_types": [
+    "húmedo"
+  ],
+  "confidence": {
+    "overall": 1.0,
+    "geographic": 1.0,
+    "elevation": 0.0
+  },
+  "unresolved_tokens": []
+}
