@@ -17,7 +17,7 @@ from xai.shap_explainer import SHAPExplainer
 from xai.grad_cam import MultimodalGradCAM
 from utils.geoprocesamiento import extraer_altitud, generar_contexto_conservacion
 from llm.openrouter_client import OpenRouterClient
-from utils.map_gen.habitat_map import generate_habitat_map
+from utils.distribution_map import build_ficha, generate_distribution_map
 from utils.maps_checklist import Checklist
 
 
@@ -102,15 +102,29 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
             r = _row.iloc[0]
             _out_min  = r.get('elev_outlier_min_m')
             _out_max  = r.get('elev_outlier_max_m')
-            ruta_mapa_manual = generate_habitat_map(
-                species_name=especie_nombre,
-                geographic_notes=r.get('geographic_notes'),
-                elevation_min=r.get('elevation_min_m'),
-                elevation_max=r.get('elevation_max_m'),
-                presencias_gdf=presencias_cr,
+            _geo      = str(r.get('geographic_notes') or '')
+            _raw      = str(r.get('habitat_raw') or '')
+            _ficha    = build_ficha(habitat_raw=_raw, geographic_notes=_geo, species=especie_nombre)
+            import math
+            _emin, _emax = r.get('elevation_min_m'), r.get('elevation_max_m')
+            if not _ficha.elevation.has_data() and _emin and _emax:
+                try:
+                    if not (math.isnan(float(_emin)) or math.isnan(float(_emax))):
+                        from utils.distribution_map.ficha import ElevationRange
+                        _ficha = _ficha.__class__(
+                            **{**_ficha.to_dict(),
+                               "elevation": ElevationRange(
+                                   min_m=float(_emin), max_m=float(_emax),
+                                   outlier_min_m=None if (not _out_min or str(_out_min) == 'nan') else float(_out_min),
+                                   outlier_max_m=None if (not _out_max or str(_out_max) == 'nan') else float(_out_max),
+                               )}
+                        )
+                except Exception:
+                    pass
+            ruta_mapa_manual = generate_distribution_map(
+                ficha=_ficha,
                 output_path=os.path.join(out_dir, "mapa_habitat_manual.png"),
-                elev_outlier_min=None if (not _out_min or str(_out_min) == 'nan') else float(_out_min),
-                elev_outlier_max=None if (not _out_max or str(_out_max) == 'nan') else float(_out_max),
+                presencias_gdf=presencias_cr,
             )
             # Build summary text for the LLM prompt
             parts = []

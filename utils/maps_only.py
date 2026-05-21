@@ -17,9 +17,8 @@ import config
 from data.gbif_extractor import GBIFExtractor
 from data.expert_maps import ExpertMapLoader
 from utils.geoprocesamiento import extraer_altitud
-from utils.map_gen.habitat_map import generate_habitat_map
 from utils.maps_checklist import Checklist
-from utils.distribution_map import build_ficha
+from utils.distribution_map import build_ficha, generate_distribution_map
 
 
 _CATALOG_PATH = os.path.join("outputs", "picked_species_enhanced_clean.csv")
@@ -130,29 +129,44 @@ def run_maps_only(especie_nombre: str) -> bool:
                     geographic_notes = geographic_notes or "",
                     species          = especie_nombre,
                 )
+                # Supplement elevation from catalog if parser didn't extract it
+                if not ficha.elevation.has_data() and elevation_min is not None and elevation_max is not None:
+                    import math
+                    if not (math.isnan(float(elevation_min)) or math.isnan(float(elevation_max))):
+                        from utils.distribution_map.ficha import ElevationRange
+                        ficha = ficha.__class__(
+                            **{**ficha.to_dict(),
+                               "elevation": ElevationRange(
+                                   min_m=float(elevation_min),
+                                   max_m=float(elevation_max),
+                                   outlier_min_m=elev_outlier_min,
+                                   outlier_max_m=elev_outlier_max,
+                               )}
+                        )
                 ficha_path = os.path.join(out_dir, "ficha.json")
                 ficha.save(ficha_path)
                 cl.check("Ficha estructurada", ok=True, detail=ficha.summary())
             except Exception as fe:
                 cl.check("Ficha estructurada", ok=False, detail=str(fe))
+                ficha = None
 
         else:
             cl.check("Catálogo Manual cargado", ok=False,
                      detail=f"'{especie_nombre}' no en catálogo")
+            ficha = None
     except Exception as e:
         cl.check("Catálogo Manual cargado", ok=False, detail=str(e))
+        ficha = None
 
-    # 6. Habitat map
+    # 6. Distribution map (Ficha-driven renderer)
     try:
-        map_path = generate_habitat_map(
-            species_name=especie_nombre,
-            geographic_notes=geographic_notes or "",
-            elevation_min=elevation_min,
-            elevation_max=elevation_max,
-            presencias_gdf=presencias_cr,
+        if ficha is None:
+            from utils.distribution_map import build_ficha as _bf
+            ficha = _bf(habitat_raw="", geographic_notes="", species=especie_nombre)
+        map_path = generate_distribution_map(
+            ficha=ficha,
             output_path=os.path.join(out_dir, "mapa_habitat_manual.png"),
-            elev_outlier_min=elev_outlier_min,
-            elev_outlier_max=elev_outlier_max,
+            presencias_gdf=presencias_cr,
         )
         cl.check("Mapa de hábitat renderizado", ok=True, detail=str(map_path))
     except Exception as e:

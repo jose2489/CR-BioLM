@@ -22,6 +22,20 @@ class ElevationRange:
     def has_data(self) -> bool:
         return self.min_m is not None and self.max_m is not None
 
+    def label(self) -> str:
+        """Human-readable elevation string for map labels."""
+        if not self.has_data():
+            return "elevación no disponible"
+        s = f"{int(self.min_m)}–{int(self.max_m)} m"
+        if self.outlier_min_m is not None or self.outlier_max_m is not None:
+            parts = []
+            if self.outlier_min_m is not None:
+                parts.append(f"inf: {int(self.outlier_min_m)}–{int(self.min_m)} m")
+            if self.outlier_max_m is not None:
+                parts.append(f"sup: {int(self.max_m)}–{int(self.outlier_max_m)} m")
+            s += f"  (atípicos — {', '.join(parts)})"
+        return s
+
     def __repr__(self) -> str:
         if not self.has_data():
             return "ElevationRange(none)"
