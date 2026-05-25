@@ -20,6 +20,7 @@ Layers (bottom-to-top):
 """
 from __future__ import annotations
 
+import re
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -67,7 +68,43 @@ _LOADERS = {
 }
 
 
-_LOCALITY_BUFFER_M = 5_000   # 5 km radius around each named point locality
+# ---------------------------------------------------------------------------
+# Locality buffer radii (metres) by feature_type and MOBOT name patterns.
+# Buffer is the *initial* search radius; ecological filters (region, vertiente,
+# DEM elevation) do the precision work. Keep radii conservative.
+# ---------------------------------------------------------------------------
+
+_BUFFER_RADII_BY_FTYPE: dict[str, int] = {
+    "estacion_biologica": 1_500,   # well-delimited field station
+    "cerro":              2_500,   # specific summit / hill
+    "volcan":             2_500,   # specific volcanic peak
+    "cadena_menor":       3_000,   # punta geográfica, smaller ridge
+    "cuenca":             3_000,   # river drainage point
+    "isla":               3_000,   # island or coastal feature
+    "localidad_buffer":   7_000,   # "vecindad de X" already implies surroundings
+    "localidad":          4_000,   # default town / collecting site
+}
+
+# Override for names that indicate a specific point (not a town)
+_SMALL_RADIUS_NAME_PATTERNS = re.compile(
+    r"\b(estaci[oó]n|cerro|punta|finca|hacienda|rancho|parcela|laguna|boca|nacimiento)\b",
+    re.I,
+)
+_LARGE_RADIUS_NAME_PATTERNS = re.compile(
+    r"\b(vecindad|alrededores|cerca|region|comarca)\b",
+    re.I,
+)
+
+
+def _locality_radius_m(feature_type: str, mobot_name: str) -> int:
+    """Return buffer radius in metres for a given locality occurrence."""
+    base = _BUFFER_RADII_BY_FTYPE.get(feature_type, 4_000)
+    name_lc = (mobot_name or "").lower()
+    if _SMALL_RADIUS_NAME_PATTERNS.search(name_lc):
+        base = min(base, 2_000)
+    if _LARGE_RADIUS_NAME_PATTERNS.search(name_lc):
+        base = max(base, 6_000)
+    return base
 
 
 def _resolve_locality_buffers(
@@ -75,15 +112,19 @@ def _resolve_locality_buffers(
     matched_regions_gdf: gpd.GeoDataFrame | None,
 ) -> gpd.GeoDataFrame | None:
     """
-    Build 5 km radius circles around MOBOT gazetteer point localities,
-    then clip each circle to the intersection of:
-      - the botanical region polygon for the occurrence's matched region
-      - the vertiente half of Costa Rica (if occurrence has a specific vertiente)
+    Build radius-calibrated circles around MOBOT gazetteer point localities,
+    clipped to the intersection of the matched botanical region(s) and the
+    occurrence's vertiente side.
 
-    This prevents circles from bleeding outside the geographic context where
-    the species was actually recorded. Only feature_type in
-    (localidad, localidad_buffer, estacion_biologica) use MOBOT circles —
-    region_informal is already rendered as a shapefile polygon.
+    Radii by type (conservative — ecological filters do precision work):
+      estacion_biologica : 1.5 km
+      cerro / volcan     : 2.5 km
+      isla / cuenca      : 3.0 km
+      localidad_buffer   : 7.0 km  ("vecindad de X" implies surroundings)
+      localidad (default): 4.0 km
+
+    region_informal and shapefile-resolved types (cordillera, llanura, …)
+    are NOT given circles — they render as region polygons already.
     """
     from .gazetteer import _load_mobot_points
     from shapely.ops import unary_union
@@ -92,7 +133,7 @@ def _resolve_locality_buffers(
     if pts_gdf is None:
         return None
 
-    # Build the Costa-Rica-wide vertiente mask geometries (for clipping)
+    # Vertiente mask geometries in metric CRS
     regiones = load_regiones_botanicas()
     vert_geoms: dict[str, object] = {}
     for vn in ("carib", "pacifico"):
@@ -100,7 +141,7 @@ def _resolve_locality_buffers(
         if not vgdf.empty:
             vert_geoms[vn] = unary_union(vgdf.to_crs("EPSG:5367").geometry)
 
-    # Build union of matched regions in metric CRS for clipping
+    # Matched regions union for clipping
     regions_union_5367 = None
     if matched_regions_gdf is not None and not matched_regions_gdf.empty:
         regions_union_5367 = unary_union(
@@ -114,19 +155,21 @@ def _resolve_locality_buffers(
         indices = occ.get("mobot_row_indices", [])
         if not indices:
             continue
-        idx = indices[0]    # single best-match point
+        idx = indices[0]
         if idx in seen_indices:
             continue
         seen_indices.add(idx)
 
         point_row = pts_gdf.iloc[[idx]].to_crs("EPSG:5367")
-        circle = point_row.geometry.iloc[0].buffer(_LOCALITY_BUFFER_M)
+        mobot_name = occ.get("mobot_name", "") or ""
+        radius = _locality_radius_m(occ["feature_type"], mobot_name)
+        circle = point_row.geometry.iloc[0].buffer(radius)
 
-        # Clip 1: to the matched regions union (if available)
+        # Clip 1: to matched botanical regions
         if regions_union_5367 is not None:
             circle = circle.intersection(regions_union_5367)
 
-        # Clip 2: to the occurrence's vertiente half
+        # Clip 2: to occurrence's vertiente half
         occ_vert = occ.get("vertiente")
         if occ_vert and occ_vert != "ambas":
             vn = "carib" if occ_vert == "Caribe" else "pacifico"
@@ -183,28 +226,57 @@ def _resolve_to_gdf(entities: list[EntityRef]) -> gpd.GeoDataFrame | None:
 
 _CR_BOUNDS = (-86.1, 7.9, -82.4, 11.3)   # (xmin, ymin, xmax, ymax) in EPSG:4326
 
+# Minimum map window: always show at least this fraction of CR's lon/lat span.
+# Prevents maps from zooming into a tiny corner when only one small region matches.
+_CR_LON_SPAN = _CR_BOUNDS[2] - _CR_BOUNDS[0]   # ~3.7°
+_CR_LAT_SPAN = _CR_BOUNDS[3] - _CR_BOUNDS[1]   # ~3.4°
+_MIN_LON_SPAN = _CR_LON_SPAN * 0.55            # always show ≥55% of CR width
+_MIN_LAT_SPAN = _CR_LAT_SPAN * 0.55            # always show ≥55% of CR height
+
 _SCOPE_MARGIN = {
     "country":   0.03,
-    "vertiente": 0.06,
+    "vertiente": 0.04,
     "region":    0.05,
-    "park":      0.20,
-    "canton":    0.25,
-    "district":  0.30,
+    "park":      0.08,
+    "canton":    0.12,
+    "district":  0.15,
 }
 
 
 def _compute_bounds(clip_geom, scope: str) -> tuple[float, float, float, float]:
-    frac = _SCOPE_MARGIN.get(scope, 0.08)
+    frac = _SCOPE_MARGIN.get(scope, 0.06)
     xmin, ymin, xmax, ymax = clip_geom.bounds
     dx = max((xmax - xmin) * frac, 0.05)
     dy = max((ymax - ymin) * frac, 0.05)
-    # Clamp to CR extent
-    return (
-        max(xmin - dx, _CR_BOUNDS[0]),
-        max(ymin - dy, _CR_BOUNDS[1]),
-        min(xmax + dx, _CR_BOUNDS[2]),
-        min(ymax + dy, _CR_BOUNDS[3]),
-    )
+
+    out_xmin = max(xmin - dx, _CR_BOUNDS[0])
+    out_ymin = max(ymin - dy, _CR_BOUNDS[1])
+    out_xmax = min(xmax + dx, _CR_BOUNDS[2])
+    out_ymax = min(ymax + dy, _CR_BOUNDS[3])
+
+    # If the clip geometry already covers ≥70% of CR in either dimension,
+    # just show the whole country — avoids clipping corners off wide-span species.
+    lon_coverage = (xmax - xmin) / _CR_LON_SPAN
+    lat_coverage = (ymax - ymin) / _CR_LAT_SPAN
+    if lon_coverage >= 0.70 or lat_coverage >= 0.70:
+        return _CR_BOUNDS
+
+    # Enforce minimum window so the map never crops to a tiny corner.
+    # Expand symmetrically around the centre of the clip geometry.
+    cx = (xmin + xmax) / 2
+    cy = (ymin + ymax) / 2
+
+    if (out_xmax - out_xmin) < _MIN_LON_SPAN:
+        half = _MIN_LON_SPAN / 2
+        out_xmin = max(cx - half, _CR_BOUNDS[0])
+        out_xmax = min(cx + half, _CR_BOUNDS[2])
+
+    if (out_ymax - out_ymin) < _MIN_LAT_SPAN:
+        half = _MIN_LAT_SPAN / 2
+        out_ymin = max(cy - half, _CR_BOUNDS[1])
+        out_ymax = min(cy + half, _CR_BOUNDS[3])
+
+    return out_xmin, out_ymin, out_xmax, out_ymax
 
 
 # ---------------------------------------------------------------------------

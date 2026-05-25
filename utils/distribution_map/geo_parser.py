@@ -70,10 +70,12 @@ def preprocess_ocr(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 _VERT_PATTERNS = [
-    # Order matters: longer/more specific first
+    # Order matters: longer/more specific first.
+    # Optional leading qualifier (N, S, E, O, NO, SE …) before the vertiente word
+    # handles cases like "S vert. Pac." and "N vert. Carib."
     (re.compile(r"ambas\s+verts?\.?", re.I), "ambas"),
-    (re.compile(r"vert(?:iente)?\.?\s+carib(?:eña|eno|e)?\.?", re.I), "Caribe"),
-    (re.compile(r"vert(?:iente)?\.?\s+pac(?:if(?:ico|ica)?)?\.?", re.I), "Pacífico"),
+    (re.compile(r"(?:[NSEO]{1,2}\.?\s+)?vert(?:iente)?\.?\s+carib(?:eña|eno|e)?\.?", re.I), "Caribe"),
+    (re.compile(r"(?:[NSEO]{1,2}\.?\s+)?vert(?:iente)?\.?\s+pac(?:if(?:ico|ica)?)?\.?", re.I), "Pacífico"),
     (re.compile(r"vertiente\s+carib(?:eña|eno|e)?", re.I), "Caribe"),
     (re.compile(r"vertiente\s+pac(?:if(?:ico|ica)?)?", re.I), "Pacífico"),
     (re.compile(r"carib(?:eña|eno)\b", re.I), "Caribe"),
