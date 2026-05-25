@@ -15,7 +15,16 @@ from pathlib import Path
 from typing import Optional
 
 from .ficha import DistributionFicha, ElevationRange, EntityRef
-from .gazetteer import lookup, lookup_parks, fuzzy_lookup, normalize_text
+from .gazetteer import (
+    lookup, lookup_parks, fuzzy_lookup, normalize_text,
+    lookup_mobot_locality,
+)
+from .geo_parser import (
+    parse_distribution_block,
+    get_vertientes as _gp_vertientes,
+    get_all_protected_areas as _gp_protected_areas,
+    get_features_by_type as _gp_by_type,
+)
 
 # ---------------------------------------------------------------------------
 # Elevation regex (ported from extract_habitat_from_pdf.py)
@@ -128,6 +137,10 @@ def build_ficha(
     """
     Parse habitat text into a structured DistributionFicha.
 
+    Primary path: geo_parser (vertiente state machine) → entities.csv lookup
+    → MOBOT gazetteer for localidad/region_informal features.
+    Fuzzy fallback for anything not resolved by the above.
+
     Args:
         habitat_raw:       Raw habitat sentence from Manual de Plantas.
         geographic_notes:  Geographic context string (post-semicolon part).
@@ -142,10 +155,18 @@ def build_ficha(
     # ── Forest types ─────────────────────────────────────────────────────────
     forest_types = _parse_forest_types(habitat_raw)
 
-    # ── Vertientes ───────────────────────────────────────────────────────────
-    vertientes = _detect_vertientes(combined_text)
+    # ── Structured geo_parser on geographic_notes ─────────────────────────────
+    geo_text = geographic_notes.strip() if geographic_notes.strip() else combined_text
+    structured_occs = parse_distribution_block(geo_text)
 
-    # ── Gazetteer lookup ─────────────────────────────────────────────────────
+    # ── Vertientes from structured parser ─────────────────────────────────────
+    vertientes = list(dict.fromkeys(_gp_vertientes(structured_occs)))
+    if not vertientes:
+        # Fallback to regex detection on full text
+        vertientes = _detect_vertientes(combined_text)
+
+    # ── Gazetteer lookup (entities.csv) on combined text ─────────────────────
+    # This handles the canonical botanical regions, parks, etc.
     geo_matches = lookup(combined_text)
 
     def _to_entity_refs(hits: list[dict]) -> list[EntityRef]:
@@ -174,40 +195,62 @@ def build_ficha(
     cantons   = _to_entity_refs(geo_matches.get("canton", []))
     districts = _to_entity_refs(geo_matches.get("district", []))
 
-    # ── Vertientes from gazetteer (supplement regex detection) ───────────────
+    # ── Supplement vertientes from entities.csv lookup ───────────────────────
     gazetteer_verts = [
         e["canonical_name"] for e in geo_matches.get("vertiente", [])
         if e["canonical_name"] not in vertientes
     ]
     vertientes = list(dict.fromkeys(vertientes + gazetteer_verts))
 
-    # ── Unresolved-token detection ────────────────────────────────────────────
-    # Anything after the ';' that is not consumed by the gazetteer and is
-    # a multi-word geographic phrase (heuristic: contains a capital after ';')
+    # ── Enrich structured occurrences with MOBOT gazetteer row indices ───────
+    # For locality/region_informal features not resolved by entities.csv,
+    # look them up in the MOBOT gazetteer to get buffer polygons for rendering.
+    locality_occurrences: list[dict] = []
+    for occ in structured_occs:
+        occ_copy = dict(occ)
+        ftype = occ["feature_type"]
+        fname = occ["feature_name"]
+
+        if ftype in ("localidad", "localidad_buffer", "estacion_biologica"):
+            # Single-point MOBOT lookup
+            result = lookup_mobot_locality(fname)
+            if result:
+                occ_copy["mobot_row_indices"] = result["row_indices"]
+                occ_copy["mobot_name"] = result["name"]
+            else:
+                occ_copy["mobot_row_indices"] = []
+                occ_copy["mobot_name"] = None
+
+        elif ftype == "region_informal":
+            # Extract the region name after "región de " prefix
+            region_name = re.sub(
+                r"^regi[oó]n\s+de[l]?\s+", "", fname, flags=re.I
+            ).strip()
+            result = lookup_mobot_locality(region_name, region_mode=True)
+            if result:
+                occ_copy["mobot_row_indices"] = result["row_indices"]
+                occ_copy["mobot_name"] = result["name"]
+            else:
+                occ_copy["mobot_row_indices"] = []
+                occ_copy["mobot_name"] = None
+
+        else:
+            occ_copy["mobot_row_indices"] = []
+            occ_copy["mobot_name"] = None
+
+        locality_occurrences.append(occ_copy)
+
+    # ── Unresolved tokens ─────────────────────────────────────────────────────
     unresolved: list[str] = []
-    norm_combined = normalize_text(combined_text)
+    for occ in structured_occs:
+        if (occ["feature_type"] == "localidad"
+                and not any(o.get("mobot_row_indices") for o in locality_occurrences
+                            if o["raw_span"] == occ["raw_span"])):
+            name = occ["feature_name"].strip()
+            if len(name) >= 4:
+                unresolved.append(name)
 
-    # Simple heuristic: look for proper nouns in geographic_notes that didn't match
-    if geographic_notes:
-        # Split on common delimiters used in the Manual
-        tokens = re.split(r"[,;]", geographic_notes)
-        for tok in tokens:
-            tok = tok.strip()
-            if len(tok) < 4:
-                continue
-            norm_tok = normalize_text(tok)
-            # Check if any gazetteer alias fully covers this token
-            found = any(norm_tok in alias or alias in norm_tok
-                        for alias, *_ in [])  # placeholder — full check below
-            # Simple heuristic: if token starts with uppercase letter and
-            # isn't already matched, add to unresolved
-            if tok and tok[0].isupper() and norm_tok not in norm_combined[:10]:
-                # Check whether gazetteer matched anything from this token
-                token_matches = lookup(tok)
-                if not any(token_matches.values()):
-                    unresolved.append(tok)
-
-    # ── Fuzzy fallback ────────────────────────────────────────────────────────
+    # ── Fuzzy fallback for unresolved ─────────────────────────────────────────
     fuzzy_conf: dict[str, float] = {}
     if unresolved:
         fuzzy_hits = fuzzy_lookup(unresolved, cutoff=88)
@@ -238,7 +281,6 @@ def build_ficha(
     if enable_llm and unresolved:
         try:
             llm_result = _llm_resolve(unresolved, combined_text)
-            # llm_result is expected to be a dict like {"regions": [...], ...}
             for name in llm_result.get("regions", []):
                 ref = EntityRef(name, "region_other", "llm")
                 if ref not in regions:
@@ -249,25 +291,30 @@ def build_ficha(
 
     # ── Confidence summary ────────────────────────────────────────────────────
     n_matched = len(regions) + len(parks) + len(cantons) + len(districts)
+    n_locality = sum(
+        1 for o in locality_occurrences
+        if o.get("mobot_row_indices")
+    )
     confidence = {
-        "overall": 1.0 if n_matched > 0 else 0.0,
-        "geographic": min(1.0, n_matched / 3) if n_matched else 0.0,
+        "overall": 1.0 if (n_matched + n_locality) > 0 else 0.0,
+        "geographic": min(1.0, (n_matched + n_locality) / 3),
         "elevation": 1.0 if elevation.has_data() else 0.0,
         **fuzzy_conf,
     }
 
     return DistributionFicha(
-        species          = species,
-        habitat_raw      = habitat_raw,
-        vertientes       = vertientes,
-        regions          = regions,
-        parks            = parks,
-        cantons          = cantons,
-        districts        = districts,
-        elevation        = elevation,
-        forest_types     = forest_types,
-        confidence       = confidence,
-        unresolved_tokens= unresolved,
+        species               = species,
+        habitat_raw           = habitat_raw,
+        vertientes            = vertientes,
+        regions               = regions,
+        parks                 = parks,
+        cantons               = cantons,
+        districts             = districts,
+        elevation             = elevation,
+        forest_types          = forest_types,
+        locality_occurrences  = locality_occurrences,
+        confidence            = confidence,
+        unresolved_tokens     = unresolved,
     )
 
 

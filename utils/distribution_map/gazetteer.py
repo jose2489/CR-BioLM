@@ -17,6 +17,7 @@ import re
 import unicodedata
 from functools import lru_cache
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 from rapidfuzz import process as fz_process
@@ -27,6 +28,11 @@ from rapidfuzz import process as fz_process
 _GAZETTEER_DIR  = Path(__file__).parent.parent.parent / "data_raw" / "gazetteer"
 ENTITIES_CSV    = _GAZETTEER_DIR / "entities.csv"
 CORRECTIONS_CSV = _GAZETTEER_DIR / "ocr_corrections.csv"
+
+# MOBOT Gazetteer of Costa Rican Plant-Collecting Locales
+_MOBOT_GPKG = Path(
+    r"C:\Users\Jose\Documents\Tesis\raw_data\Gazetteer\cr_gazetteer.gpkg"
+)
 
 
 # ---------------------------------------------------------------------------
@@ -257,3 +263,170 @@ def fuzzy_lookup(tokens: list[str], cutoff: int = 88) -> dict[str, list[dict]]:
         result.setdefault(row["hierarchy_level"], []).append(entry)
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# MOBOT Gazetteer of Costa Rican Plant-Collecting Locales
+# ---------------------------------------------------------------------------
+
+@lru_cache(maxsize=None)
+def _load_mobot_points():
+    """Load MOBOT gazetteer points layer (cached). Returns GeoDataFrame or None."""
+    if not _MOBOT_GPKG.exists():
+        return None
+    try:
+        import geopandas as gpd
+        return gpd.read_file(str(_MOBOT_GPKG), layer="gazetteer_points")
+    except Exception as e:
+        print(f"  [WARN] Could not load MOBOT gazetteer: {e}")
+        return None
+
+
+@lru_cache(maxsize=None)
+def _load_mobot_buffers():
+    """Load MOBOT gazetteer 10km buffer polygons layer (cached)."""
+    if not _MOBOT_GPKG.exists():
+        return None
+    try:
+        import geopandas as gpd
+        return gpd.read_file(str(_MOBOT_GPKG), layer="gazetteer_buffer10km")
+    except Exception as e:
+        print(f"  [WARN] Could not load MOBOT gazetteer buffers: {e}")
+        return None
+
+
+def lookup_mobot_locality(
+    name: str,
+    cutoff: int = 82,
+    region_mode: bool = False,
+) -> Optional[dict]:
+    """
+    Look up a locality name in the MOBOT Gazetteer.
+
+    Matching strategy:
+      1. Exact normalized match
+      2. Query is substring of gazetteer name (shortest match wins)
+      3. All query words appear in gazetteer name
+      4. rapidfuzz fuzzy match at cutoff
+
+    When region_mode=True, returns a dict with row_indices (list of ALL
+    matching rows) so the caller can union multiple buffers for a region.
+
+    Returns dict with keys: name, slope, province, canton, elev_min_m,
+    elev_max_m, description, row_index (int), row_indices (list), or None.
+    """
+    pts = _load_mobot_points()
+    if pts is None:
+        return None
+
+    norm_query = normalize_text(name)
+    if len(norm_query) < 3:
+        return None
+
+    names_norm = [normalize_text(str(n)) for n in pts["name"].fillna("")]
+
+    # In region_mode, collect ALL rows where query appears in name, then return
+    # a representative dict with all indices
+    if region_mode:
+        matching_indices = [
+            i for i, nn in enumerate(names_norm)
+            if norm_query in nn or nn == norm_query
+        ]
+        if matching_indices:
+            rep = pts.iloc[matching_indices[0]]
+            result = _mobot_row_to_dict(rep, matching_indices[0])
+            result["row_indices"] = matching_indices
+            return result
+        # Fallback: fuzzy with lower threshold for region
+        if len(norm_query) >= 5:
+            match = fz_process.extractOne(norm_query, names_norm, score_cutoff=75)
+            if match is not None:
+                _, score, idx = match
+                result = _mobot_row_to_dict(pts.iloc[idx], idx)
+                result["row_indices"] = [idx]
+                return result
+        return None
+
+    # Single-point mode
+    # 1. Exact match
+    for i, nn in enumerate(names_norm):
+        if nn == norm_query:
+            r = _mobot_row_to_dict(pts.iloc[i], i)
+            r["row_indices"] = [i]
+            return r
+
+    # 2. Shortest substring match
+    best_sub: Optional[tuple[int, int]] = None
+    for i, nn in enumerate(names_norm):
+        if norm_query in nn:
+            if best_sub is None or len(nn) < best_sub[0]:
+                best_sub = (len(nn), i)
+    if best_sub is not None:
+        r = _mobot_row_to_dict(pts.iloc[best_sub[1]], best_sub[1])
+        r["row_indices"] = [best_sub[1]]
+        return r
+
+    # 3. All query words in gazetteer name
+    query_words = [w for w in norm_query.split() if len(w) > 3]
+    if query_words:
+        for i, nn in enumerate(names_norm):
+            if all(w in nn for w in query_words):
+                r = _mobot_row_to_dict(pts.iloc[i], i)
+                r["row_indices"] = [i]
+                return r
+
+    # 4. Fuzzy
+    if len(norm_query) >= 5:
+        match = fz_process.extractOne(norm_query, names_norm, score_cutoff=cutoff)
+        if match is not None:
+            _, score, idx = match
+            r = _mobot_row_to_dict(pts.iloc[idx], idx)
+            r["row_indices"] = [idx]
+            return r
+
+    return None
+
+
+def get_mobot_buffers(row_indices: list[int]):
+    """
+    Return a GeoDataFrame with 10km buffer polygons for the given row indices.
+    Returns None if no buffers found.
+    """
+    import geopandas as gpd
+    import pandas as pd
+
+    buf = _load_mobot_buffers()
+    if buf is None:
+        return None
+    valid = [i for i in row_indices if i < len(buf)]
+    if not valid:
+        return None
+    return buf.iloc[valid]
+
+
+def get_mobot_buffer(row_index: int):
+    """Return the 10km buffer polygon GeoDataFrame row for a single gazetteer entry."""
+    return get_mobot_buffers([row_index])
+
+
+def _mobot_row_to_dict(row, idx: int) -> dict:
+    return {
+        "name":        row["name"],
+        "slope":       row.get("slope", ""),
+        "province":    row.get("province", ""),
+        "canton":      row.get("canton", ""),
+        "elev_min_m":  row.get("elev_min_m"),
+        "elev_max_m":  row.get("elev_max_m"),
+        "description": row.get("description", ""),
+        "row_index":   idx,
+        "row_indices": [idx],
+    }
+
+
+def lookup_mobot_localities_batch(
+    names: list[str],
+    cutoff: int = 82,
+    region_mode: bool = False,
+) -> dict[str, Optional[dict]]:
+    """Look up multiple locality names, return {name: result_or_None}."""
+    return {name: lookup_mobot_locality(name, cutoff, region_mode) for name in names}

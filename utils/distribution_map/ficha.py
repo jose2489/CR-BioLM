@@ -89,6 +89,12 @@ class DistributionFicha:
     # Forest type descriptors from habitat_raw (e.g. "muy húmedo", "pluvial")
     forest_types: list[str] = field(default_factory=list)
 
+    # Structured occurrences from geo_parser (list of dicts, each with
+    # vertiente, qualifier, feature_type, feature_name, sub_qualifier,
+    # embedded_protected_areas, raw_span, mobot_row_indices)
+    # Used by the renderer for locality buffer overlay.
+    locality_occurrences: list[dict] = field(default_factory=list)
+
     # Parser diagnostics
     confidence: dict[str, float] = field(default_factory=dict)
     unresolved_tokens: list[str] = field(default_factory=list)
@@ -99,10 +105,15 @@ class DistributionFicha:
         """
         Return the name of the deepest non-empty entity group.
         Used by the renderer to decide clip extent.
+
+        Canton/district scope is only used when cantons are the PRIMARY
+        geographic reference (no substantial region matches). When ≥2 regions
+        are matched, canton matches are incidental (e.g. "Puriscal" triggers
+        both region and canton) and the scope stays at "park" or "region".
         """
-        if self.districts:
+        if self.districts and len(self.regions) <= 1 and not self.parks:
             return "district"
-        if self.cantons:
+        if self.cantons and len(self.regions) <= 1 and not self.parks:
             return "canton"
         if self.parks:
             return "park"
@@ -145,6 +156,8 @@ class DistributionFicha:
         data["parks"]     = [EntityRef(**e) for e in data.get("parks", [])]
         data["cantons"]   = [EntityRef(**e) for e in data.get("cantons", [])]
         data["districts"] = [EntityRef(**e) for e in data.get("districts", [])]
+        # locality_occurrences are plain dicts — keep as-is
+        data.setdefault("locality_occurrences", [])
         return cls(**data)
 
     @classmethod

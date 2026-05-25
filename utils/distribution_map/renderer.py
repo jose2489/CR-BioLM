@@ -39,7 +39,7 @@ from .geodata import (
     load_cantones, load_distritos, filter_pa_to_regions, PATHS,
 )
 from .style import REGION_COLORS, FALLBACK_REGION_COLOR, mute_color
-from .gazetteer import _load_entities, normalize_text
+from .gazetteer import _load_entities, normalize_text, get_mobot_buffers
 
 
 # ---------------------------------------------------------------------------
@@ -65,6 +65,29 @@ _LOADERS = {
     "cantones":           load_cantones,
     "distritos":          load_distritos,
 }
+
+
+def _resolve_locality_buffers(ficha: DistributionFicha) -> gpd.GeoDataFrame | None:
+    """
+    Collect MOBOT gazetteer buffer polygons for all locality/region_informal
+    occurrences in ficha.locality_occurrences.
+    Returns combined GeoDataFrame or None.
+    """
+    all_gdfs = []
+    for occ in ficha.locality_occurrences:
+        indices = occ.get("mobot_row_indices", [])
+        if not indices:
+            continue
+        buf = get_mobot_buffers(indices)
+        if buf is not None and not buf.empty:
+            all_gdfs.append(buf)
+    if not all_gdfs:
+        return None
+    combined = gpd.GeoDataFrame(
+        pd.concat(all_gdfs, ignore_index=True),
+        crs=all_gdfs[0].crs,
+    )
+    return combined
 
 
 def _resolve_to_gdf(entities: list[EntityRef]) -> gpd.GeoDataFrame | None:
@@ -230,6 +253,7 @@ def _build_right_legend(
     presencias_gdf,
     highlight_gdf: gpd.GeoDataFrame | None,
     scope: str,
+    locality_buffers_gdf: gpd.GeoDataFrame | None = None,
 ) -> list:
     patches = []
 
@@ -261,6 +285,16 @@ def _build_right_legend(
     if presencias_gdf is not None and not presencias_gdf.empty:
         patches.append(mpatches.Patch(
             color="#ff4444", label=f"Presencias GBIF (n={len(presencias_gdf)})",
+        ))
+
+    if locality_buffers_gdf is not None and not locality_buffers_gdf.empty:
+        n_loc = sum(
+            1 for o in ficha.locality_occurrences
+            if o.get("mobot_row_indices")
+        )
+        patches.append(mpatches.Patch(
+            facecolor="#a855f7", alpha=0.35, edgecolor="#d8b4fe", linewidth=0.8,
+            label=f"Localidades Gazetero MOBOT (n={n_loc})",
         ))
 
     if matched_parks_gdf is not None and not matched_parks_gdf.empty:
@@ -337,10 +371,11 @@ def generate_distribution_map(
     pa_all   = load_protected_areas()
 
     # ── Resolve entity geometries ─────────────────────────────────────────
-    matched_regions_gdf  = _resolve_to_gdf(ficha.regions)  if ficha.regions  else None
-    matched_parks_gdf    = _resolve_to_gdf(ficha.parks)    if ficha.parks    else None
-    matched_cantons_gdf  = _resolve_to_gdf(ficha.cantons)  if ficha.cantons  else None
-    matched_districts_gdf = _resolve_to_gdf(ficha.districts) if ficha.districts else None
+    matched_regions_gdf   = _resolve_to_gdf(ficha.regions)    if ficha.regions   else None
+    matched_parks_gdf     = _resolve_to_gdf(ficha.parks)      if ficha.parks     else None
+    matched_cantons_gdf   = _resolve_to_gdf(ficha.cantons)    if ficha.cantons   else None
+    matched_districts_gdf = _resolve_to_gdf(ficha.districts)  if ficha.districts else None
+    locality_buffers_gdf  = _resolve_locality_buffers(ficha)
 
     # Apply vertiente filter to botanical regions
     if matched_regions_gdf is not None and "vert_norm" in matched_regions_gdf.columns:
@@ -357,8 +392,26 @@ def generate_distribution_map(
         clip_gdf = matched_districts_gdf
     elif scope == "canton" and matched_cantons_gdf is not None:
         clip_gdf = matched_cantons_gdf
-    elif scope == "park" and matched_parks_gdf is not None:
-        clip_gdf = matched_parks_gdf
+    elif scope == "park":
+        # Clip to union of: matched regions + parks + locality buffers
+        # so all mentioned areas are visible, not just the park polygon
+        gdfs_for_clip = []
+        if matched_regions_gdf is not None and not matched_regions_gdf.empty:
+            gdfs_for_clip.append(matched_regions_gdf[["geometry"]])
+        if matched_parks_gdf is not None and not matched_parks_gdf.empty:
+            pk = matched_parks_gdf.to_crs(regiones.crs)[["geometry"]]
+            gdfs_for_clip.append(pk)
+        if locality_buffers_gdf is not None and not locality_buffers_gdf.empty:
+            lb = locality_buffers_gdf.to_crs(regiones.crs)[["geometry"]]
+            gdfs_for_clip.append(lb)
+        if gdfs_for_clip:
+            clip_gdf = gpd.GeoDataFrame(
+                pd.concat(gdfs_for_clip, ignore_index=True), crs=regiones.crs,
+            )
+        elif matched_parks_gdf is not None:
+            clip_gdf = matched_parks_gdf
+        else:
+            clip_gdf = regiones
     elif scope == "region" and matched_regions_gdf is not None:
         clip_gdf = matched_regions_gdf
     elif scope == "vertiente" and ficha.vertientes:
@@ -445,6 +498,21 @@ def generate_distribution_map(
             linewidth=1.2, alpha=0.70, zorder=6,
         )
 
+    # ── Layer 3.7: Locality buffers from MOBOT gazetteer (purple tint) ───────
+    if locality_buffers_gdf is not None and not locality_buffers_gdf.empty:
+        loc_plot = (
+            locality_buffers_gdf.to_crs(regiones.crs)
+            if locality_buffers_gdf.crs != regiones.crs else locality_buffers_gdf
+        )
+        loc_plot.plot(
+            ax=ax, facecolor="#a855f7", edgecolor="#d8b4fe",
+            linewidth=0.8, alpha=0.35, zorder=6,
+        )
+        loc_plot.plot(
+            ax=ax, facecolor="none", edgecolor="#d8b4fe",
+            linewidth=1.0, alpha=0.60, zorder=7,
+        )
+
     # ── Layer 4: Elevation mask within narrowest scope ────────────────────
     elev_mask_gdf = (
         highlight_gdf if highlight_gdf is not None
@@ -454,7 +522,7 @@ def generate_distribution_map(
     if elev_mask_gdf is None:
         elev_mask_gdf = regiones
 
-    # Merge parks into regions for elevation mask when scope is region+park
+    # Merge parks + locality buffers into regions for elevation mask
     if (scope == "park" and matched_parks_gdf is not None
             and matched_regions_gdf is not None and not matched_regions_gdf.empty):
         parks_reproj = matched_parks_gdf.to_crs(matched_regions_gdf.crs)
@@ -464,6 +532,17 @@ def generate_distribution_map(
         elev_mask_gdf = gpd.GeoDataFrame(
             pd.concat([matched_regions_gdf, stub], ignore_index=True),
             crs=matched_regions_gdf.crs,
+        )
+
+    # Also merge locality buffers into elevation mask
+    if locality_buffers_gdf is not None and not locality_buffers_gdf.empty:
+        loc_reproj = locality_buffers_gdf.to_crs(elev_mask_gdf.crs)
+        loc_stub = loc_reproj[["geometry"]].assign(
+            Nombre="", Vertiente="", vert_norm=""
+        )
+        elev_mask_gdf = gpd.GeoDataFrame(
+            pd.concat([elev_mask_gdf, loc_stub], ignore_index=True),
+            crs=elev_mask_gdf.crs,
         )
 
     dem_path = PATHS["dem"]
@@ -515,6 +594,7 @@ def generate_distribution_map(
     # ── Legends ───────────────────────────────────────────────────────────
     right_patches = _build_right_legend(
         ficha, matched_parks_gdf, pa_filtered, presencias_gdf, highlight_gdf, scope,
+        locality_buffers_gdf=locality_buffers_gdf,
     )
     left_patches = _build_left_legend(ficha, matched_regions_gdf)
 
