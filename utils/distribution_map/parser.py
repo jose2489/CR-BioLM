@@ -211,30 +211,23 @@ def build_ficha(
         ftype = occ["feature_type"]
         fname = occ["feature_name"]
 
-        if ftype in ("localidad", "localidad_buffer", "estacion_biologica"):
-            # Single-point MOBOT lookup
+        # Types that resolve to a specific named point → MOBOT circle
+        _POINT_TYPES = ("localidad", "localidad_buffer", "estacion_biologica",
+                        "isla", "cerro", "volcan", "cadena_menor", "cuenca")
+
+        if ftype in _POINT_TYPES:
+            # Single-point MOBOT lookup — one 5 km circle per named place
             result = lookup_mobot_locality(fname)
             if result:
-                occ_copy["mobot_row_indices"] = result["row_indices"]
-                occ_copy["mobot_name"] = result["name"]
-            else:
-                occ_copy["mobot_row_indices"] = []
-                occ_copy["mobot_name"] = None
-
-        elif ftype == "region_informal":
-            # Extract the region name after "región de " prefix
-            region_name = re.sub(
-                r"^regi[oó]n\s+de[l]?\s+", "", fname, flags=re.I
-            ).strip()
-            result = lookup_mobot_locality(region_name, region_mode=True)
-            if result:
-                occ_copy["mobot_row_indices"] = result["row_indices"]
+                occ_copy["mobot_row_indices"] = result["row_indices"][:1]
                 occ_copy["mobot_name"] = result["name"]
             else:
                 occ_copy["mobot_row_indices"] = []
                 occ_copy["mobot_name"] = None
 
         else:
+            # region_informal, cordillera, llanura, area_protegida, peninsula, fila, valle
+            # are resolved by entities.csv into shapefile polygons — no MOBOT circles
             occ_copy["mobot_row_indices"] = []
             occ_copy["mobot_name"] = None
 

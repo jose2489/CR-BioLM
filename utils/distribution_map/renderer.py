@@ -67,26 +67,85 @@ _LOADERS = {
 }
 
 
-def _resolve_locality_buffers(ficha: DistributionFicha) -> gpd.GeoDataFrame | None:
+_LOCALITY_BUFFER_M = 5_000   # 5 km radius around each named point locality
+
+
+def _resolve_locality_buffers(
+    ficha: DistributionFicha,
+    matched_regions_gdf: gpd.GeoDataFrame | None,
+) -> gpd.GeoDataFrame | None:
     """
-    Collect MOBOT gazetteer buffer polygons for all locality/region_informal
-    occurrences in ficha.locality_occurrences.
-    Returns combined GeoDataFrame or None.
+    Build 5 km radius circles around MOBOT gazetteer point localities,
+    then clip each circle to the intersection of:
+      - the botanical region polygon for the occurrence's matched region
+      - the vertiente half of Costa Rica (if occurrence has a specific vertiente)
+
+    This prevents circles from bleeding outside the geographic context where
+    the species was actually recorded. Only feature_type in
+    (localidad, localidad_buffer, estacion_biologica) use MOBOT circles —
+    region_informal is already rendered as a shapefile polygon.
     """
-    all_gdfs = []
+    from .gazetteer import _load_mobot_points
+    from shapely.ops import unary_union
+
+    pts_gdf = _load_mobot_points()
+    if pts_gdf is None:
+        return None
+
+    # Build the Costa-Rica-wide vertiente mask geometries (for clipping)
+    regiones = load_regiones_botanicas()
+    vert_geoms: dict[str, object] = {}
+    for vn in ("carib", "pacifico"):
+        vgdf = regiones[regiones["vert_norm"] == vn]
+        if not vgdf.empty:
+            vert_geoms[vn] = unary_union(vgdf.to_crs("EPSG:5367").geometry)
+
+    # Build union of matched regions in metric CRS for clipping
+    regions_union_5367 = None
+    if matched_regions_gdf is not None and not matched_regions_gdf.empty:
+        regions_union_5367 = unary_union(
+            matched_regions_gdf.to_crs("EPSG:5367").geometry
+        )
+
+    clipped_gdfs = []
+    seen_indices: set[int] = set()
+
     for occ in ficha.locality_occurrences:
         indices = occ.get("mobot_row_indices", [])
         if not indices:
             continue
-        buf = get_mobot_buffers(indices)
-        if buf is not None and not buf.empty:
-            all_gdfs.append(buf)
-    if not all_gdfs:
+        idx = indices[0]    # single best-match point
+        if idx in seen_indices:
+            continue
+        seen_indices.add(idx)
+
+        point_row = pts_gdf.iloc[[idx]].to_crs("EPSG:5367")
+        circle = point_row.geometry.iloc[0].buffer(_LOCALITY_BUFFER_M)
+
+        # Clip 1: to the matched regions union (if available)
+        if regions_union_5367 is not None:
+            circle = circle.intersection(regions_union_5367)
+
+        # Clip 2: to the occurrence's vertiente half
+        occ_vert = occ.get("vertiente")
+        if occ_vert and occ_vert != "ambas":
+            vn = "carib" if occ_vert == "Caribe" else "pacifico"
+            if vn in vert_geoms:
+                circle = circle.intersection(vert_geoms[vn])
+
+        if circle.is_empty:
+            continue
+
+        row_copy = point_row.copy()
+        row_copy["geometry"] = [circle]
+        clipped_gdfs.append(row_copy)
+
+    if not clipped_gdfs:
         return None
+
     combined = gpd.GeoDataFrame(
-        pd.concat(all_gdfs, ignore_index=True),
-        crs=all_gdfs[0].crs,
-    )
+        pd.concat(clipped_gdfs, ignore_index=True), crs="EPSG:5367"
+    ).to_crs("EPSG:4326")
     return combined
 
 
@@ -375,7 +434,7 @@ def generate_distribution_map(
     matched_parks_gdf     = _resolve_to_gdf(ficha.parks)      if ficha.parks     else None
     matched_cantons_gdf   = _resolve_to_gdf(ficha.cantons)    if ficha.cantons   else None
     matched_districts_gdf = _resolve_to_gdf(ficha.districts)  if ficha.districts else None
-    locality_buffers_gdf  = _resolve_locality_buffers(ficha)
+    locality_buffers_gdf  = _resolve_locality_buffers(ficha, matched_regions_gdf)
 
     # Apply vertiente filter to botanical regions
     if matched_regions_gdf is not None and "vert_norm" in matched_regions_gdf.columns:
