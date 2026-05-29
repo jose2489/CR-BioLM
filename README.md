@@ -169,34 +169,6 @@ Por cada ejecución se crea `outputs/{Especie}/run_{timestamp}/` con:
 
 ---
 
-## Estructura del Proyecto
-CR-BioLM/
-├── workflow.py              # Punto de entrada + grafo LangGraph
-├── config.py                # Configuración global (paths, seed)
-├── nodes/
-│   ├── graph_state.py       # Estado compartido del pipeline
-│   ├── config_llm.py        # Configuración del modelo LLM ← editar aquí
-│   ├── n01_load_geometry.py
-│   ├── n02_fetch_gbif.py
-│   ├── n03_load_climate.py
-│   ├── n04_load_habitat_map.py
-│   ├── n05_enrich_altitude.py
-│   ├── n06_build_matrix.py
-│   ├── n07_train_random_forest.py
-│   ├── n08_predict.py
-│   ├── n09_explain_shap.py
-│   ├── n10_explain_lime.py
-│   ├── n11_export_maps.py
-│   ├── n12_conservation_context.py
-│   └── n13_generate_report.py
-├── data/                    # Módulos de carga de datos
-├── models/                  # RandomForestSDM
-├── xai/                     # SHAP, LIME, GradCAM
-├── llm/                     # OpenRouterClient
-└── utils/                   # Visualizer, geoprocesamiento
-
----
-
 ## Cita / Referencia
 
 > Araya, J. (2026). *CR-BioLM: Pipeline multimodal de modelado de distribución de 
