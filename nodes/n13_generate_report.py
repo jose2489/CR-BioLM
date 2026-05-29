@@ -1,31 +1,58 @@
 """
 N13: GenerateReport
-Genera reporte final usando LLM vía OpenRouter.
+Genera el reporte final de perfil de especie usando un LLM vía OpenRouter.
 El modelo se configura en nodes/config_llm.py.
+
+INPUT  (state):
+    - species_name       : nombre científico de la especie
+    - rf_metrics         : dict con métricas del modelo Random Forest
+    - shap_data          : dict con resultados SHAP
+    - output_dir         : directorio de salida de la ejecución
+    - user_question      : pregunta opcional del usuario (puede ser None)
+    - info_altitud       : string con rango altitudinal (desde N05)
+    - texto_manual       : texto del Manual de Plantas (desde N04)
+    - exported_maps      : dict con rutas de mapas generados (desde N11)
+    - habitat_map_path   : ruta al mapa de hábitat manual (desde N04)
+    - habitat_rf_map_path: ruta al mapa de solapamiento RF (desde N11)
+
+OUTPUT (state):
+    - final_report_path : ruta al archivo .txt del reporte generado
+    - error_messages    : append si el LLM falla
+
+ARCHIVO: n13_generate_report.json
 """
 import os
-import json
 from graph_state import GraphState
 from llm.openrouter_client import OpenRouterClient
 from config_llm import LLM_MODEL, is_multimodal
+from node_utils import save_node_json
 import config
 
 
 def generate_report_node(state: GraphState) -> GraphState:
-    print("\n[N13:GenerateReport] Generando reporte con LLM...")
+    """
+    Nodo N13: llama al LLM para generar el perfil ecológico de la especie.
+    Si el modelo es multimodal, adjunta imágenes disponibles.
+    Si el LLM falla, registra el error y el pipeline continúa.
 
-    species_name = state['species_name']
-    rf_metrics = state['rf_metrics']
-    shap_data = state['shap_data']
-    output_dir = state['output_dir']
+    Parámetros:
+        state (GraphState): estado del pipeline.
+
+    Retorna:
+        GraphState: estado actualizado con final_report_path.
+    """
+    print("\n[N13:GenerateReport] Generando reporte con LLM...")
+    species_name  = state['species_name']
+    rf_metrics    = state['rf_metrics']
+    shap_data     = state['shap_data']
+    output_dir    = state['output_dir']
     user_question = state.get('user_question')
-    info_altitud = state.get('info_altitud', 'No disponible')
-    texto_manual = state.get('texto_manual', '')
+    info_altitud  = state.get('info_altitud', 'No disponible')
+    texto_manual  = state.get('texto_manual', '')
 
     # Resolver imágenes solo si el modelo es multimodal
     imagen_principal = None
-    habitat_rf_path = None
-
+    habitat_rf_path  = None
     if is_multimodal(LLM_MODEL):
         exported_maps = state.get('exported_maps', {})
         imagen_principal = (
@@ -44,7 +71,6 @@ def generate_report_node(state: GraphState) -> GraphState:
 
     try:
         or_client = OpenRouterClient(api_key=config.OPENROUTER_API_KEY)
-
         or_client.generate_profile(
             species_name=species_name,
             rf_metrics=rf_metrics,
@@ -62,10 +88,9 @@ def generate_report_node(state: GraphState) -> GraphState:
         final_report_path = os.path.join(
             output_dir, f"llm_profile_BIMODAL_{modelo_limpio}.txt"
         )
-
         state['final_report_path'] = final_report_path
 
-        _save_json({
+        save_node_json({
             "node": "N13_GenerateReport",
             "species_name": species_name,
             "modelo_usado": LLM_MODEL,
@@ -82,7 +107,7 @@ def generate_report_node(state: GraphState) -> GraphState:
     except Exception as e:
         print(f"[N13:ERROR] Fallo en generación de reporte: {e}")
         state['error_messages'].append(f"Reporte no disponible: {e}")
-        _save_json({
+        save_node_json({
             "node": "N13_GenerateReport",
             "modelo_usado": LLM_MODEL,
             "status": "error",
@@ -90,9 +115,3 @@ def generate_report_node(state: GraphState) -> GraphState:
         }, output_dir, "n13_generate_report.json")
 
     return state
-
-
-def _save_json(data: dict, output_dir: str, filename: str):
-    os.makedirs(output_dir, exist_ok=True)
-    with open(os.path.join(output_dir, filename), "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False, default=str)

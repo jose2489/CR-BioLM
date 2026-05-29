@@ -6,14 +6,14 @@ Modificar LLM_MODEL y LLM_IS_MULTIMODAL para cambiar el modelo usado en todo el 
 # ==========================================
 # MODELO ACTIVO
 # ==========================================
-LLM_MODEL = "openrouter/free"
+LLM_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
 
 # ==========================================
 # ¿EL MODELO SOPORTA IMÁGENES?
 # True  → adjunta imágenes al prompt (multimodal)
 # False → solo texto (monomodal)
 # ==========================================
-LLM_IS_MULTIMODAL = False
+LLM_IS_MULTIMODAL = True
 
 
 def is_multimodal(model_name: str = None) -> bool:

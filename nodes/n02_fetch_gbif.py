@@ -1,16 +1,39 @@
 """
 N02: FetchGBIF
-Extrae ocurrencias de GBIF para la especie objetivo.
+Extrae ocurrencias de GBIF para la especie objetivo en Mesoamérica y CR.
+
+INPUT  (state):
+    - species_name  : nombre científico de la especie
+    - meso_boundary : GeoDataFrame con el límite de Mesoamérica
+    - cr_boundary   : GeoDataFrame con el límite de Costa Rica
+
+OUTPUT (state):
+    - presencias_meso  : GeoDataFrame con ocurrencias limpias en Mesoamérica
+    - presencias_cr    : GeoDataFrame con ocurrencias limpias en CR
+                         (fallback a presencias_meso si CR queda vacío)
+    - should_continue  : False si no hay registros en Mesoamérica
+    - error_messages   : append en caso de error o fallback
+
+ARCHIVO: n02_fetch_gbif.json
 """
 import os
-import json
 from graph_state import GraphState
 from data.gbif_extractor import GBIFExtractor
+from node_utils import save_node_json
 
 
 def fetch_gbif_node(state: GraphState) -> GraphState:
-    print(f"\n[N02:FetchGBIF] Descargando ocurrencias para {state['species_name']}...")
+    """
+    Nodo N02: descarga y limpia ocurrencias GBIF para la especie.
 
+    Parámetros:
+        state (GraphState): estado del pipeline.
+
+    Retorna:
+        GraphState: estado actualizado con presencias_meso y presencias_cr.
+                    Detiene el pipeline si no hay registros en Mesoamérica.
+    """
+    print(f"\n[N02:FetchGBIF] Descargando ocurrencias para {state['species_name']}...")
     extractor = GBIFExtractor()
     species_name = state['species_name']
     meso_bounds = state['meso_boundary']
@@ -23,12 +46,11 @@ def fetch_gbif_node(state: GraphState) -> GraphState:
     if presencias_meso is not None and not presencias_meso.empty:
         presencias_cr = extractor.clean_spatial_outliers(presencias_meso, cr_bounds)
 
-    # Validación crítica
     if presencias_meso is None or presencias_meso.empty:
         print(f"[N02:ERROR] No hay registros para {species_name} en Mesoamérica.")
         state['error_messages'].append("Sin registros GBIF en Mesoamérica")
         state['should_continue'] = False
-        _save_json({
+        save_node_json({
             "node": "N02_FetchGBIF",
             "species_name": species_name,
             "presencias_meso": 0,
@@ -46,8 +68,7 @@ def fetch_gbif_node(state: GraphState) -> GraphState:
     state['presencias_meso'] = presencias_meso
     state['presencias_cr'] = presencias_cr
 
-    # Salida JSON
-    _save_json({
+    save_node_json({
         "node": "N02_FetchGBIF",
         "species_name": species_name,
         "presencias_meso": len(presencias_meso),
@@ -58,9 +79,3 @@ def fetch_gbif_node(state: GraphState) -> GraphState:
 
     print(f"[N02:✓] Mesoamérica: {len(presencias_meso)} | CR: {len(presencias_cr)}")
     return state
-
-
-def _save_json(data: dict, output_dir: str, filename: str):
-    os.makedirs(output_dir, exist_ok=True)
-    with open(os.path.join(output_dir, filename), "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)

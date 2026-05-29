@@ -3,6 +3,7 @@ import base64
 import requests
 # IMPORTANTE: Asegúrate de importar la función traducir_variable desde tu archivo de templates
 from .prompt_templates import BIMODAL_PROMPT, traducir_variable
+from config_llm import is_multimodal
 
 class OpenRouterClient:
     def __init__(self, api_key, model="openrouter/free"):
@@ -72,7 +73,7 @@ class OpenRouterClient:
         pregunta_texto = user_question if user_question else "Analiza el hábitat ideal de esta especie."
 
         # Detectar si es modelo de solo texto
-        is_text = "" in modelo_a_usar.lower()
+        is_text = not is_multimodal(modelo_a_usar)
 
         if is_text:
             # PROMPT OPTIMIZADO PARA SOLO TEXTO
@@ -152,7 +153,7 @@ class OpenRouterClient:
         # ==========================================================
 
         # Detectar si el modelo no soporta imágenes
-        is_text = "" in modelo_a_usar.lower()
+        is_text = not is_multimodal(modelo_a_usar)
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -173,6 +174,9 @@ class OpenRouterClient:
             }
         else:
             # Modelos visuales: Con imágenes
+            print(f"[DEBUG] API Key present: {bool(self.api_key)}")
+            print(f"[DEBUG] Model: {modelo_a_usar}")
+            print(f"[DEBUG] Is multimodal: {not is_text}")
             print("[INFO] Modelo visual detectado - incluyendo imágenes")
             imagen_base64 = self._codificar_imagen(image_path)
             content_parts = [
@@ -188,6 +192,7 @@ class OpenRouterClient:
                 })
                 print(f"[INFO] Segunda imagen (Manual) adjunta: {manual_image_path}")
             
+            # Build payload (no respuesta reference here)
             payload = {
                 "model": modelo_a_usar,
                 "messages": [
@@ -202,12 +207,16 @@ class OpenRouterClient:
         # ==========================================================
         try:
             print(f"[LLM] Solicitando análisis a la API de OpenRouter...")
-            respuesta = requests.post(self.url, headers=headers, json=payload)
+            # Add timeout to avoid hanging and catch connection errors
+            respuesta = requests.post(self.url, headers=headers, json=payload, timeout=60)
+            
+            print(f"[DEBUG] Status code: {respuesta.status_code}")
+            print(f"[DEBUG] Respuesta raw: {respuesta.text[:500]}")
             
             if respuesta.status_code == 200:
                 perfil_texto = respuesta.json()['choices'][0]['message']['content']
                 
-                # Creado de metadatos (Notar que ahora usa {modelo_a_usar} en lugar de {self.model})
+                # Creado de metadatos
                 encabezado_metadatos = f"""================================================================================
 METADATOS DEL EXPERIMENTO (Arquitectura CR-BioLM Multimodal)
 ================================================================================
@@ -227,16 +236,31 @@ FUENTES DE DATOS Y VARIABLES ESPACIALES INTEGRADAS:
                 modelo_limpio = modelo_a_usar.replace('/', '_').replace('-', '_').replace(':', '_')
                 ruta_salida_txt = os.path.join(output_dir, f"llm_profile_BIMODAL_{modelo_limpio}.txt")
                 
+                if perfil_texto is None:
+                    perfil_texto = "[El modelo no generó respuesta para esta consulta]"
+
                 with open(ruta_salida_txt, "w", encoding="utf-8") as file:
                     file.write(encabezado_metadatos)
                     file.write(perfil_texto)
-                    
                 print(f"[EXITO] Perfil Multimodal guardado en: {ruta_salida_txt}")
                 return True
             else:
                 print(f"[ERROR] Falló la API de OpenRouter: {respuesta.text}")
+                # Save error to file
+                error_path = os.path.join(output_dir, "llm_api_error.txt")
+                with open(error_path, "w", encoding="utf-8") as f:
+                    f.write(f"Status: {respuesta.status_code}\n\n{respuesta.text}")
                 return False
                 
+        except requests.exceptions.RequestException as e:
+            print(f"[ERROR] Falló la conexión a OpenRouter: {e}")
+            # Save connection error
+            error_path = os.path.join(output_dir, "llm_api_error.txt")
+            with open(error_path, "w", encoding="utf-8") as f:
+                f.write(f"Connection error: {str(e)}")
+            return False
         except Exception as e:
             print(f"[ERROR] Falló la inferencia multimodal: {e}")
+            import traceback
+            traceback.print_exc()
             return False

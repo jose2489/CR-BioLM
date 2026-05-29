@@ -1,25 +1,43 @@
 """
 N08: Predict
-Genera predicciones usando el modelo Random Forest entrenado.
+Genera predicciones de presencia/ausencia y probabilidades
+usando el modelo Random Forest entrenado.
+
+INPUT  (state):
+    - rf_model : instancia entrenada de RandomForestSDM
+    - X_test   : DataFrame con features de prueba
+
+OUTPUT (state):
+    - predictions   : array con clases predichas (0/1)
+    - probabilities : array con probabilidad de presencia por muestra
+
+ARCHIVO: n08_predict.json
 """
-import os
-import json
 from graph_state import GraphState
+from node_utils import save_node_json
 
 
 def predict_node(state: GraphState) -> GraphState:
+    """
+    Nodo N08: genera predicciones y probabilidades sobre el set de prueba.
+
+    Parámetros:
+        state (GraphState): estado del pipeline.
+
+    Retorna:
+        GraphState: estado actualizado con predictions y probabilities.
+    """
     print("\n[N08:Predict] Generando predicciones...")
-
     rf_model = state['rf_model']
-    X_test = state['X_test']
+    X_test   = state['X_test']
 
-    predictions = rf_model.model.predict(X_test)
+    predictions   = rf_model.model.predict(X_test)
     probabilities = rf_model.model.predict_proba(X_test)[:, 1]
 
-    state['predictions'] = predictions
+    state['predictions']   = predictions
     state['probabilities'] = probabilities
 
-    _save_json({
+    save_node_json({
         "node": "N08_Predict",
         "num_muestras": len(predictions),
         "presencias_predichas": int((predictions == 1).sum()),
@@ -32,9 +50,3 @@ def predict_node(state: GraphState) -> GraphState:
 
     print(f"[N08:✓] Predicciones generadas: {len(predictions)} muestras")
     return state
-
-
-def _save_json(data: dict, output_dir: str, filename: str):
-    os.makedirs(output_dir, exist_ok=True)
-    with open(os.path.join(output_dir, filename), "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)

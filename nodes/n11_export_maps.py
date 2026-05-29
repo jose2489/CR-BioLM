@@ -1,22 +1,49 @@
 """
 N11: ExportMaps
-Genera y exporta visualizaciones espaciales.
+Genera y exporta visualizaciones espaciales: overview mesoamericano,
+matriz de confusión, mapa de hábitat manual y solapamiento RF.
+
+INPUT  (state):
+    - species_name    : nombre científico de la especie
+    - meso_boundary   : GeoDataFrame con el límite de Mesoamérica
+    - presencias_meso : GeoDataFrame con ocurrencias en Mesoamérica
+    - presencias_cr   : GeoDataFrame con ocurrencias en CR
+    - rf_metrics      : dict con confusion_matrix
+    - output_dir      : directorio de salida de la ejecución
+    - habitat_map_path: ruta al mapa manual (opcional, desde N04)
+
+OUTPUT (state):
+    - exported_maps      : dict {nombre_mapa: ruta_png} con los mapas generados
+    - habitat_rf_map_path: ruta al mapa de solapamiento RF, si existe en disco
+
+ARCHIVO: n11_export_maps.json
 """
 import os
-import json
 from graph_state import GraphState
 from utils.visualizer import Visualizer
+from node_utils import save_node_json
 
 
 def export_maps_node(state: GraphState) -> GraphState:
-    print("\n[N11:ExportMaps] Exportando visualizaciones...")
+    """
+    Nodo N11: genera mapas de distribución, confusión y hábitat.
+    Cada mapa se intenta de forma independiente; los fallos no detienen
+    el pipeline.
 
-    species_name = state['species_name']
-    meso_boundary = state['meso_boundary']
+    Parámetros:
+        state (GraphState): estado del pipeline.
+
+    Retorna:
+        GraphState: estado actualizado con exported_maps
+                    y habitat_rf_map_path.
+    """
+    print("\n[N11:ExportMaps] Exportando visualizaciones...")
+    species_name    = state['species_name']
+    meso_boundary   = state['meso_boundary']
     presencias_meso = state['presencias_meso']
-    presencias_cr = state['presencias_cr']
-    rf_metrics = state['rf_metrics']
-    output_dir = state['output_dir']
+    presencias_cr   = state['presencias_cr']
+    rf_metrics      = state['rf_metrics']
+    output_dir      = state['output_dir']
 
     vis = Visualizer()
     exported_maps = {}
@@ -46,11 +73,11 @@ def export_maps_node(state: GraphState) -> GraphState:
     except Exception as e:
         print(f"[N11:WARN] Matriz de confusión falló: {e}")
 
-    # Mapa 3: Hábitat Manual (si existe)
+    # Mapa 3: Hábitat Manual (si existe desde N04)
     if state.get('habitat_map_path'):
         exported_maps['habitat_manual'] = state.get('habitat_map_path')
 
-    # Mapa 4: Solapamiento RF (si existe en disco)
+    # Mapa 4: Solapamiento RF (si fue generado en disco por otro proceso)
     habitat_rf_path = os.path.join(output_dir, "mapa_solapamiento_espacial.png")
     if os.path.exists(habitat_rf_path):
         exported_maps['habitat_rf'] = habitat_rf_path
@@ -58,8 +85,8 @@ def export_maps_node(state: GraphState) -> GraphState:
 
     state['exported_maps'] = exported_maps
 
-    _save_json({
-        "node": "N1_ExportMaps",
+    save_node_json({
+        "node": "N11_ExportMaps",
         "mapas_generados": len([v for v in exported_maps.values() if v]),
         "mapas": exported_maps,
         "status": "ok"
@@ -67,9 +94,3 @@ def export_maps_node(state: GraphState) -> GraphState:
 
     print(f"[N11:✓] Mapas exportados: {len([v for v in exported_maps.values() if v])}")
     return state
-
-
-def _save_json(data: dict, output_dir: str, filename: str):
-    os.makedirs(output_dir, exist_ok=True)
-    with open(os.path.join(output_dir, filename), "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False, default=str)

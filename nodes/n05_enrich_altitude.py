@@ -1,18 +1,38 @@
 """
 N05: EnrichAltitude
-Agrega columna de altitud a las presencias de Costa Rica.
+Agrega columna de altitud a las presencias de Costa Rica
+extrayendo valores desde un DEM raster.
+
+INPUT  (state):
+    - presencias_cr : GeoDataFrame con ocurrencias en CR
+
+OUTPUT (state):
+    - presencias_cr  : GeoDataFrame enriquecido con columna de altitud
+    - info_altitud   : string descriptivo del rango altitudinal detectado
+    - error_messages : append si las estadísticas de altitud fallan
+
+ARCHIVO: n05_enrich_altitude.json
 """
 import os
-import json
 from graph_state import GraphState
 from utils.geoprocesamiento import extraer_altitud
+from node_utils import save_node_json
 
 DEM_PATH = os.path.join("data_raw", "topography", "altitud_cr.tif")
 
 
 def enrich_altitude_node(state: GraphState) -> GraphState:
-    print("\n[N05:EnrichAltitude] Enriqueciendo presencias con altitud...")
+    """
+    Nodo N05: enriquece presencias_cr con datos de altitud desde un DEM.
 
+    Parámetros:
+        state (GraphState): estado del pipeline.
+
+    Retorna:
+        GraphState: estado actualizado con presencias_cr (con altitud)
+                    e info_altitud con el rango detectado.
+    """
+    print("\n[N05:EnrichAltitude] Enriqueciendo presencias con altitud...")
     presencias_cr = state['presencias_cr']
     presencias_cr = extraer_altitud(presencias_cr, DEM_PATH)
 
@@ -36,7 +56,7 @@ def enrich_altitude_node(state: GraphState) -> GraphState:
     state['presencias_cr'] = presencias_cr
     state['info_altitud'] = info_altitud
 
-    _save_json({
+    save_node_json({
         "node": "N05_EnrichAltitude",
         "altitud_min_msnm": alt_min,
         "altitud_max_msnm": alt_max,
@@ -47,9 +67,3 @@ def enrich_altitude_node(state: GraphState) -> GraphState:
     }, state['output_dir'], "n05_enrich_altitude.json")
 
     return state
-
-
-def _save_json(data: dict, output_dir: str, filename: str):
-    os.makedirs(output_dir, exist_ok=True)
-    with open(os.path.join(output_dir, filename), "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
