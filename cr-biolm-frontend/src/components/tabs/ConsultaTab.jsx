@@ -1,12 +1,13 @@
 import InputPanel from "../../components/InputPanel";
 import StatusConsole from "../../components/StatusConsole";
+
 /**
  * Tab de consulta: formulario de entrada y estado del pipeline en ejecución.
  *
  * Props:
- *   startJob  {function} - inicia un job con (species, question)
- *   status    {string}   - estado actual del job ('running', 'done', 'error', null)
- *   results   {object}   - resultados del pipeline (null si no hay)
+ *   startJob      {function} - inicia un job con (species, question)
+ *   status        {string}   - estado actual del job ('running', 'done', 'error', null)
+ *   results       {object}   - resultados del pipeline (null si no hay)
  *   onViewResults {function} - navega a la tab de resultados
  */
 export default function ConsultaTab({ startJob, status, results, onViewResults }) {
@@ -30,6 +31,18 @@ export default function ConsultaTab({ startJob, status, results, onViewResults }
         <InputPanel startJob={startJob} />
       </div>
 
+      {/* Error — siempre arriba de la consola */}
+      {results && !results.success && (
+        <div style={{
+          marginTop: "1rem", background: "#1f0f0f",
+          border: "1px solid #5a2020", borderRadius: 6,
+          padding: "1rem 1.25rem", color: "#d08080", fontSize: "0.875rem",
+        }}>
+          {results.error}
+        </div>
+      )}
+
+      {/* Consola — pipeline corriendo */}
       {status === "running" && (
         <div style={{ marginTop: "1.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
@@ -46,22 +59,14 @@ export default function ConsultaTab({ startJob, status, results, onViewResults }
         </div>
       )}
 
+      {/* Consola — pipeline terminado con error */}
       {status === "done" && !results?.success && (
         <div style={{ marginTop: "1rem" }}>
           <StatusConsole />
         </div>
       )}
 
-      {results && !results.success && (
-        <div style={{
-          marginTop: "1rem", background: "#1f0f0f",
-          border: "1px solid #5a2020", borderRadius: 6,
-          padding: "1rem 1.25rem", color: "#d08080", fontSize: "0.875rem",
-        }}>
-          {results.error}
-        </div>
-      )}
-
+      {/* Éxito */}
       {results?.success && (
         <div style={{
           marginTop: "1rem", background: "#0f1f0f",
