@@ -7,6 +7,7 @@ from job_store import add_log, set_done
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(BASE_DIR)
+sys.path.append(os.path.join(BASE_DIR, "nodes"))  # para graph_state, config_llm, node_utils
 
 from workflow import ejecutar_pipeline
 import config
@@ -80,7 +81,12 @@ def run_pipeline(job_id, species, question):
         n13_path = os.path.join(output_dir, "n13_generate_report.json")
         if os.path.exists(n13_path):
             with open(n13_path, encoding="utf-8") as f:
-                llm_model = json.load(f).get("modelo_usado")
+                n13_data = json.load(f)
+                llm_model = n13_data.get("modelo_usado")
+                # Advertir si N13 terminó con error
+                if n13_data.get("status") == "error":
+                    add_log(job_id, f"[WARN] El reporte LLM no se generó correctamente: "
+                                    f"{n13_data.get('error', 'sin detalle')}")
 
         result = {
             "success": True,

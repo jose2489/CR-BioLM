@@ -1,0 +1,61 @@
+Especie,Modelo,Pregunta,Precision_Biologica,Coherencia_Espacial,Causalidad_Matematica,Promedio_Total
+Sorocea trophoides,llama-3.3-70b-versatile,Describe el nicho ecológico de la especie y menciona cuál es su principal limitante ambiental.,5,4,5,4.67
+Sorocea trophoides,qwen/qwen3-32b,Describe el nicho ecológico de la especie y menciona cuál es su principal limitante ambiental.,5,4,5,4.67
+Sorocea trophoides,moonshotai/kimi-k2-instruct-0905,Describe el nicho ecológico de la especie y menciona cuál es su principal limitante ambiental.,5,5,5,5.0
+Sorocea trophoides,Baseline Dual (Visión OpenRouter + Texto Groq),Describe el nicho ecológico de la especie y menciona cuál es su principal limitante ambiental.,4,5,3,4.0
+Arachnothryx buddleioides,llama-3.3-70b-versatile,"Basado en el modelo espacial, ¿cuál ecosistema o zona de vida es el refugio óptimo para su supervivencia?",4,5,4,4.33
+Arachnothryx buddleioides,qwen/qwen3-32b,"Basado en el modelo espacial, ¿cuál ecosistema o zona de vida es el refugio óptimo para su supervivencia?",5,5,5,5.0
+Arachnothryx buddleioides,moonshotai/kimi-k2-instruct-0905,"Basado en el modelo espacial, ¿cuál ecosistema o zona de vida es el refugio óptimo para su supervivencia?",5,5,5,5.0
+Arachnothryx buddleioides,Baseline Dual (Visión OpenRouter + Texto Groq),"Basado en el modelo espacial, ¿cuál ecosistema o zona de vida es el refugio óptimo para su supervivencia?",4,5,2,3.67
+Pleuropetalum sprucei,llama-3.3-70b-versatile,¿Qué variables bioclimáticas restringen más la distribución espacial de esta planta?,4,4,5,4.33
+Pleuropetalum sprucei,qwen/qwen3-32b,¿Qué variables bioclimáticas restringen más la distribución espacial de esta planta?,5,4,5,4.67
+Pleuropetalum sprucei,moonshotai/kimi-k2-instruct-0905,¿Qué variables bioclimáticas restringen más la distribución espacial de esta planta?,5,4,5,4.67
+Pleuropetalum sprucei,Baseline Dual (Visión OpenRouter + Texto Groq),¿Qué variables bioclimáticas restringen más la distribución espacial de esta planta?,4,5,3,4.0
+Bertiera bracteosa,llama-3.3-70b-versatile,¿Cómo afecta el estrés climático a la idoneidad del hábitat de esta especie en el mapa?,5,4,4,4.33
+Bertiera bracteosa,qwen/qwen3-32b,¿Cómo afecta el estrés climático a la idoneidad del hábitat de esta especie en el mapa?,5,5,5,5.0
+Bertiera bracteosa,moonshotai/kimi-k2-instruct-0905,¿Cómo afecta el estrés climático a la idoneidad del hábitat de esta especie en el mapa?,5,5,5,5.0
+Bertiera bracteosa,Baseline Dual (Visión OpenRouter + Texto Groq),¿Cómo afecta el estrés climático a la idoneidad del hábitat de esta especie en el mapa?,4,5,2,3.67
+Faramea multiflora,llama-3.3-70b-versatile,¿Cuál es el Clima y Zona Biológica más importante para esta especie?,5,5,5,5.0
+Faramea multiflora,qwen/qwen3-32b,¿Cuál es el Clima y Zona Biológica más importante para esta especie?,5,5,4,4.67
+Faramea multiflora,moonshotai/kimi-k2-instruct-0905,¿Cuál es el Clima y Zona Biológica más importante para esta especie?,5,5,4,4.67
+Faramea multiflora,Baseline Dual (Visión OpenRouter + Texto Groq),¿Cuál es el Clima y Zona Biológica más importante para esta especie?,4,5,3,4.0
+Bomarea hirsuta,llama-3.3-70b-versatile,"Basado en el modelo espacial, ¿cuál ecosistema o zona de vida es el refugio óptimo para su supervivencia?",4,4,5,4.33
+Bomarea hirsuta,qwen/qwen3-32b,"Basado en el modelo espacial, ¿cuál ecosistema o zona de vida es el refugio óptimo para su supervivencia?",5,5,5,5.0
+Bomarea hirsuta,moonshotai/kimi-k2-instruct-0905,"Basado en el modelo espacial, ¿cuál ecosistema o zona de vida es el refugio óptimo para su supervivencia?",5,5,4,4.67
+Bomarea hirsuta,Baseline Dual (Visión OpenRouter + Texto Groq),"Basado en el modelo espacial, ¿cuál ecosistema o zona de vida es el refugio óptimo para su supervivencia?",4,5,3,4.0
+Ichnanthus pallens,llama-3.3-70b-versatile,Describe el nicho ecológico de la especie y menciona cuál es su principal limitante ambiental.,4,3,4,3.67
+Ichnanthus pallens,qwen/qwen3-32b,Describe el nicho ecológico de la especie y menciona cuál es su principal limitante ambiental.,4,3,5,4.0
+Ichnanthus pallens,moonshotai/kimi-k2-instruct-0905,Describe el nicho ecológico de la especie y menciona cuál es su principal limitante ambiental.,5,4,5,4.67
+Ichnanthus pallens,Baseline Dual (Visión OpenRouter + Texto Groq),Describe el nicho ecológico de la especie y menciona cuál es su principal limitante ambiental.,4,5,3,4.0
+Vittaria graminifolia,llama-3.3-70b-versatile,¿En qué condiciones geográficas de temperatura o precipitación prospera mejor esta especie según los datos?,4,5,4,4.33
+Vittaria graminifolia,qwen/qwen3-32b,¿En qué condiciones geográficas de temperatura o precipitación prospera mejor esta especie según los datos?,5,4,5,4.67
+Vittaria graminifolia,moonshotai/kimi-k2-instruct-0905,¿En qué condiciones geográficas de temperatura o precipitación prospera mejor esta especie según los datos?,5,5,5,5.0
+Vittaria graminifolia,Baseline Dual (Visión OpenRouter + Texto Groq),¿En qué condiciones geográficas de temperatura o precipitación prospera mejor esta especie según los datos?,4,5,3,4.0
+Urera simplex,llama-3.3-70b-versatile,¿Cómo afecta el estrés climático a la idoneidad del hábitat de esta especie en el mapa?,4,4,5,4.33
+Urera simplex,qwen/qwen3-32b,¿Cómo afecta el estrés climático a la idoneidad del hábitat de esta especie en el mapa?,5,4,5,4.67
+Urera simplex,moonshotai/kimi-k2-instruct-0905,¿Cómo afecta el estrés climático a la idoneidad del hábitat de esta especie en el mapa?,5,4,5,4.67
+Urera simplex,Baseline Dual (Visión OpenRouter + Texto Groq),¿Cómo afecta el estrés climático a la idoneidad del hábitat de esta especie en el mapa?,4,5,2,3.67
+Struthanthus quercicola,llama-3.3-70b-versatile,¿Qué variables bioclimáticas restringen más la distribución espacial de esta planta?,5,4,5,4.67
+Struthanthus quercicola,qwen/qwen3-32b,¿Qué variables bioclimáticas restringen más la distribución espacial de esta planta?,5,5,5,5.0
+Struthanthus quercicola,moonshotai/kimi-k2-instruct-0905,¿Qué variables bioclimáticas restringen más la distribución espacial de esta planta?,5,4,5,4.67
+Struthanthus quercicola,Baseline Dual (Visión OpenRouter + Texto Groq),¿Qué variables bioclimáticas restringen más la distribución espacial de esta planta?,4,5,3,4.0
+Scleria gaertneri,llama-3.3-70b-versatile,Analiza el factor limitante principal descubierto por la IA y cómo impacta su distribución en Costa Rica.,5,4,5,4.67
+Scleria gaertneri,qwen/qwen3-32b,Analiza el factor limitante principal descubierto por la IA y cómo impacta su distribución en Costa Rica.,4,4,3,3.67
+Scleria gaertneri,moonshotai/kimi-k2-instruct-0905,Analiza el factor limitante principal descubierto por la IA y cómo impacta su distribución en Costa Rica.,5,5,5,5.0
+Scleria gaertneri,Baseline Dual (Visión OpenRouter + Texto Groq),Analiza el factor limitante principal descubierto por la IA y cómo impacta su distribución en Costa Rica.,4,5,2,3.67
+Ageratina anisochroma,llama-3.3-70b-versatile,¿Qué variables bioclimáticas restringen más la distribución espacial de esta planta?,5,5,5,5.0
+Ageratina anisochroma,qwen/qwen3-32b,¿Qué variables bioclimáticas restringen más la distribución espacial de esta planta?,5,4,5,4.67
+Ageratina anisochroma,moonshotai/kimi-k2-instruct-0905,¿Qué variables bioclimáticas restringen más la distribución espacial de esta planta?,5,5,5,5.0
+Ageratina anisochroma,Baseline Dual (Visión OpenRouter + Texto Groq),¿Qué variables bioclimáticas restringen más la distribución espacial de esta planta?,4,5,3,4.0
+Miconia affinis,llama-3.3-70b-versatile,¿Cómo afecta el estrés climático a la idoneidad del hábitat de esta especie en el mapa?,5,4,4,4.33
+Miconia affinis,qwen/qwen3-32b,¿Cómo afecta el estrés climático a la idoneidad del hábitat de esta especie en el mapa?,5,4,5,4.67
+Miconia affinis,moonshotai/kimi-k2-instruct-0905,¿Cómo afecta el estrés climático a la idoneidad del hábitat de esta especie en el mapa?,5,5,5,5.0
+Miconia affinis,Baseline Dual (Visión OpenRouter + Texto Groq),¿Cómo afecta el estrés climático a la idoneidad del hábitat de esta especie en el mapa?,4,5,2,3.67
+Myrsine coriacea,llama-3.3-70b-versatile,Describe el nicho ecológico de la especie y menciona cuál es su principal limitante ambiental.,5,4,5,4.67
+Myrsine coriacea,qwen/qwen3-32b,Describe el nicho ecológico de la especie y menciona cuál es su principal limitante ambiental.,5,4,5,4.67
+Myrsine coriacea,moonshotai/kimi-k2-instruct-0905,Describe el nicho ecológico de la especie y menciona cuál es su principal limitante ambiental.,5,5,4,4.67
+Myrsine coriacea,Baseline Dual (Visión OpenRouter + Texto Groq),Describe el nicho ecológico de la especie y menciona cuál es su principal limitante ambiental.,4,5,2,3.67
+Randia grandifolia,llama-3.3-70b-versatile,¿En qué condiciones geográficas de temperatura o precipitación prospera mejor esta especie según los datos?,4,3,4,3.67
+Randia grandifolia,qwen/qwen3-32b,¿En qué condiciones geográficas de temperatura o precipitación prospera mejor esta especie según los datos?,5,4,5,4.67
+Randia grandifolia,moonshotai/kimi-k2-instruct-0905,¿En qué condiciones geográficas de temperatura o precipitación prospera mejor esta especie según los datos?,5,5,5,5.0
+Randia grandifolia,Baseline Dual (Visión OpenRouter + Texto Groq),¿En qué condiciones geográficas de temperatura o precipitación prospera mejor esta especie según los datos?,4,5,3,4.0

@@ -15,15 +15,11 @@ OUTPUT (state):
 
 ARCHIVO: n06_build_matrix.json
 """
-import os
 from graph_state import GraphState
 from data.geoprocessor import Geoprocessor
 from sklearn.model_selection import train_test_split
 from node_utils import save_node_json
 import config
-
-NUM_PSEUDOAUSENCIAS = 1500
-TEST_SIZE = 0.2
 
 
 def build_matrix_node(state: GraphState) -> GraphState:
@@ -40,8 +36,8 @@ def build_matrix_node(state: GraphState) -> GraphState:
     """
     print("\n[N06:BuildMatrix] Construyendo matriz ambiental...")
     presencias_meso = state['presencias_meso']
-    meso_bounds = state['meso_boundary']
-    raster_paths = state['climate_rasters']
+    meso_bounds     = state['meso_boundary']
+    raster_paths    = state['climate_rasters']
 
     geo = Geoprocessor()
     matriz_final = geo.build_environmental_matrix(
@@ -50,7 +46,7 @@ def build_matrix_node(state: GraphState) -> GraphState:
         raster_paths,
         ecoregions_gdf=None,
         use_extent_background=True,
-        num_pseudoausencias=NUM_PSEUDOAUSENCIAS
+        num_pseudoausencias=config.NUM_PSEUDOAUSENCIAS
     )
 
     X = matriz_final.drop(columns=['clase', 'lon', 'lat'])
@@ -58,16 +54,16 @@ def build_matrix_node(state: GraphState) -> GraphState:
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y,
-        test_size=TEST_SIZE,
+        test_size=config.TEST_SIZE,
         random_state=config.SEED,
         stratify=y
     )
 
     state['environmental_matrix'] = matriz_final
     state['X_train'] = X_train
-    state['X_test'] = X_test
+    state['X_test']  = X_test
     state['y_train'] = y_train
-    state['y_test'] = y_test
+    state['y_test']  = y_test
 
     save_node_json({
         "node": "N06_BuildMatrix",
@@ -80,8 +76,8 @@ def build_matrix_node(state: GraphState) -> GraphState:
         "ausencias_train": int((y_train == 0).sum()),
         "presencias_test": int(y_test.sum()),
         "ausencias_test": int((y_test == 0).sum()),
-        "num_pseudoausencias": NUM_PSEUDOAUSENCIAS,
-        "test_split": TEST_SIZE,
+        "num_pseudoausencias": config.NUM_PSEUDOAUSENCIAS,
+        "test_split": config.TEST_SIZE,
         "seed": config.SEED,
         "status": "ok"
     }, state['output_dir'], "n06_build_matrix.json")

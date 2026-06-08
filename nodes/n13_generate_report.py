@@ -16,7 +16,8 @@ INPUT  (state):
     - habitat_rf_map_path: ruta al mapa de solapamiento RF (desde N11)
 
 OUTPUT (state):
-    - final_report_path : ruta al archivo .txt del reporte generado
+    - final_report_path : ruta al archivo .txt del reporte generado,
+                          o None si el LLM falló
     - error_messages    : append si el LLM falla
 
 ARCHIVO: n13_generate_report.json
@@ -33,13 +34,14 @@ def generate_report_node(state: GraphState) -> GraphState:
     """
     Nodo N13: llama al LLM para generar el perfil ecológico de la especie.
     Si el modelo es multimodal, adjunta imágenes disponibles.
-    Si el LLM falla, registra el error y el pipeline continúa.
+    Si generate_profile retorna False o lanza excepción, registra el error
+    con status 'error' y no asigna final_report_path.
 
     Parámetros:
         state (GraphState): estado del pipeline.
 
     Retorna:
-        GraphState: estado actualizado con final_report_path.
+        GraphState: estado actualizado con final_report_path (o None si falló).
     """
     print("\n[N13:GenerateReport] Generando reporte con LLM...")
     species_name  = state['species_name']
@@ -71,7 +73,7 @@ def generate_report_node(state: GraphState) -> GraphState:
 
     try:
         or_client = OpenRouterClient(api_key=config.OPENROUTER_API_KEY)
-        or_client.generate_profile(
+        exito = or_client.generate_profile(
             species_name=species_name,
             rf_metrics=rf_metrics,
             shap_dict=shap_data,
@@ -84,10 +86,24 @@ def generate_report_node(state: GraphState) -> GraphState:
             texto_manual=texto_manual
         )
 
+        # generate_profile retorna False ante cualquier fallo interno
+        if not exito:
+            raise RuntimeError(
+                "generate_profile retornó False. "
+                "Revisar llm_api_error.txt en el directorio de salida."
+            )
+
         modelo_limpio = LLM_MODEL.replace('/', '_').replace('-', '_').replace(':', '_')
         final_report_path = os.path.join(
             output_dir, f"llm_profile_BIMODAL_{modelo_limpio}.txt"
         )
+
+        # Verificar que el archivo fue realmente creado
+        if not os.path.exists(final_report_path):
+            raise RuntimeError(
+                f"generate_profile reportó éxito pero el archivo no existe: {final_report_path}"
+            )
+
         state['final_report_path'] = final_report_path
 
         save_node_json({
@@ -107,6 +123,7 @@ def generate_report_node(state: GraphState) -> GraphState:
     except Exception as e:
         print(f"[N13:ERROR] Fallo en generación de reporte: {e}")
         state['error_messages'].append(f"Reporte no disponible: {e}")
+        state['final_report_path'] = None
         save_node_json({
             "node": "N13_GenerateReport",
             "modelo_usado": LLM_MODEL,

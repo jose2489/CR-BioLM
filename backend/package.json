@@ -1,8 +1,0 @@
-{
-  "devDependencies": {
-    "@vitejs/plugin-react": "^6.0.2"
-  },
-  "dependencies": {
-    "uvicorn": "^0.0.1-security"
-  }
-}
