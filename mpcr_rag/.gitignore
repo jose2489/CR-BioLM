@@ -1,0 +1,4 @@
+# Generated/regenerable artifacts — rebuilt by build_catalog.py / config.py
+data/
+__pycache__/
+*.pyc

@@ -1,0 +1,5 @@
+# MPCR-RAG subproject deps (on top of CR-BioLM's map pipeline + geo stack).
+pymupdf>=1.24        # PDF text/layout-block extraction (import name: fitz)
+pinecone>=5.0        # serverless vector index + hosted e5 inference
+python-dotenv>=1.0   # load PINECONE_API_KEY / OpenRouter keys from .env
+# LLM enrichment reuses CR-BioLM's existing OpenRouter client (see ../llm/).
