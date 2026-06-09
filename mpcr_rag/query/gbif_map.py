@@ -63,6 +63,10 @@ def resolve_taxon(species: str) -> tuple[int | None, str | None, bool]:
         return None, None, False
     if "usage" not in nb:
         return None, None, False
+    # Require an EXACT backbone match — rejects fuzzy/higher-rank hits and unnamed
+    # morphospecies ("Genus sp. 4"), which otherwise resolve to bogus taxa.
+    if nb.get("diagnostics", {}).get("matchType") != "EXACT":
+        return None, None, False
     if nb.get("synonym") and "acceptedUsage" in nb:
         acc = nb["acceptedUsage"]
         return int(acc["key"]), acc.get("canonicalName"), True

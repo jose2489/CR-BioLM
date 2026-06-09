@@ -49,6 +49,15 @@ def analyse(species: str, conn) -> dict | None:
     below = (alt < xlo).mean()
     above = (alt > xhi).mean()
 
+    # Robust comparison (Booth et al. 2014, Diversity & Distributions; Alhajeri &
+    # Fourcade 2019, J. Biogeography): compare the GBIF CENTRE/core to the Manual
+    # range, not the outlier-sensitive extremes. median_in = the GBIF median falls
+    # inside the Manual range; core_overlap = the GBIF Q05–Q95 core overlaps it.
+    med = float(alt.median())
+    q05, q95 = float(alt.quantile(0.05)), float(alt.quantile(0.95))
+    median_in = bool(xlo <= med <= xhi)
+    core_overlap = bool(max(q05, xlo) <= min(q95, xhi))
+
     # vertiente agreement (points joined to a region carrying a Vertiente)
     vkeys = [_norm(v)[:4] for v in f.vertientes]
     vv = pts["Vertiente"].dropna()
@@ -57,36 +66,84 @@ def analyse(species: str, conn) -> dict | None:
 
     return {
         "species": species, "family": f.family, "n": n,
-        "manual": f"{emin}-{emax}", "in_core": in_core, "in_ext": in_ext,
-        "below": below, "above": above, "vmatch": vmatch,
-        "elev_p5_p95": (int(alt.quantile(.05)), int(alt.quantile(.95))),
+        "manual": f"{emin}-{emax}", "manual_ext": f"{xlo}-{xhi}",
+        "in_core": in_core, "in_ext": in_ext, "below": below, "above": above,
+        "vmatch": vmatch, "median": med, "q05": q05, "q95": q95,
+        "median_in": median_in, "core_overlap": core_overlap,
+        "gbif_core": (int(q05), int(q95)),
     }
 
 
-def main() -> None:
+def sample_from_catalog(conn, n: int) -> list[str]:
+    """A reproducible spread of species (with a stated elevation) across families."""
+    from ..schema import Ficha
+    rows = [Ficha.from_json(r["ficha_json"])
+            for r in conn.execute("SELECT ficha_json FROM fichas")]
+    rows = [f for f in rows if f.elev_min is not None]
+    rows.sort(key=lambda f: (f.family, f.species))
+    step = max(1, len(rows) // n)
+    return [f.species for f in rows[::step]][:n]
+
+
+def main(n: int = 1) -> None:
+    import csv
     conn = local_store.connect(config.SQLITE_PATH)
-    rows = [r for s in SAMPLE if (r := analyse(s, conn))]
+    sample = sample_from_catalog(conn, n) if n > len(SAMPLE) else SAMPLE
+
+    rows, seen = [], set()
+    for i, sp in enumerate(sample, 1):
+        key, accepted, syn = gbif_map.resolve_taxon(sp)
+        if key is None or key in seen:             # no EXACT match, or dup taxon
+            continue
+        seen.add(key)
+        r = analyse(sp, conn)
+        if r:
+            r["synonym"], r["accepted"] = syn, accepted
+            rows.append(r)
+        if i % 25 == 0:
+            print(f"  ...{i}/{len(sample)} procesadas", flush=True)
+
     used = [r for r in rows if r.get("n", 0) >= 10]
 
-    print(f"\n{'species':26} {'fam':14} {'n':>4} {'manual':>9} "
-          f"{'core%':>6} {'ext%':>6} {'<':>5} {'>':>5} {'vert%':>6} {'GBIF p5-p95':>12}")
-    for r in sorted(used, key=lambda x: -x["in_ext"]):
-        vm = f"{r['vmatch']*100:.0f}" if r["vmatch"] is not None else "-"
-        print(f"{r['species']:26} {r['family'][:14]:14} {r['n']:4} {r['manual']:>9} "
-              f"{r['in_core']*100:5.0f} {r['in_ext']*100:5.0f} {r['below']*100:4.0f} "
-              f"{r['above']*100:4.0f} {vm:>5} {str(r['elev_p5_p95']):>12}")
+    out = config.DATA_DIR / "eval"
+    out.mkdir(exist_ok=True)
+    with open(out / "manual_vs_gbif.csv", "w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=["species", "accepted", "synonym", "family",
+            "n", "manual", "manual_ext", "in_core", "in_ext", "vmatch",
+            "median", "q05", "q95", "median_in", "core_overlap"])
+        w.writeheader()
+        for r in rows:
+            w.writerow({k: r.get(k) for k in w.fieldnames})
+    print(f"CSV → {out/'manual_vs_gbif.csv'}  ({len(rows)} spp con GBIF, "
+          f"{len(used)} con n>=10)\n", flush=True)
+    syn_rate = sum(1 for r in rows if r.get("synonym")) / max(1, len(rows))
+    print(f"sinonimia Manual↔GBIF: {syn_rate*100:.0f}% de las especies", flush=True)
 
-    if used:
-        mc = sum(r["in_core"] for r in used) / len(used)
-        me = sum(r["in_ext"] for r in used) / len(used)
-        vm = [r["vmatch"] for r in used if r["vmatch"] is not None]
-        print(f"\nAGREGADO (n>=10, {len(used)} spp): "
-              f"in_core={mc*100:.0f}%  in_ext={me*100:.0f}%  "
-              f"vert_match={sum(vm)/len(vm)*100:.0f}%")
-        disc = [r for r in used if r["in_ext"] < 0.7]
-        print(f"discrepancias (>30% fuera del rango extendido): "
-              f"{[r['species'] for r in disc]}")
+    if not used:
+        return
+    # ROBUST validation/discrepancy (median + Q05–Q95 core vs Manual range).
+    med_in = sum(r["median_in"] for r in used) / len(used)
+    core_ov = sum(r["core_overlap"] for r in used) / len(used)
+    mc = sum(r["in_core"] for r in used) / len(used)
+    vm = [r["vmatch"] for r in used if r["vmatch"] is not None]
+    print(f"\nAGREGADO ROBUSTO (n>=10, {len(used)} spp):")
+    print(f"  mediana GBIF dentro del rango Manual : {med_in*100:.0f}%   (validación)")
+    print(f"  core Q05–Q95 solapa el rango Manual  : {core_ov*100:.0f}%")
+    print(f"  ocurrencias en rango núcleo          : {mc*100:.0f}%   (nivel punto)")
+    print(f"  concordancia de vertiente            : {sum(vm)/len(vm)*100:.0f}%")
+
+    cand = [r for r in used if not r["median_in"]]      # robust discrepancy criterion
+    cand.sort(key=lambda r: abs(r["median"]))
+    print(f"\nCANDIDATOS REALES (mediana GBIF fuera del rango Manual, "
+          f"{len(cand)} spp):")
+    print(f"  {'species':26} {'fam':12} {'n':>4} {'manual':>9} {'GBIF core':>11} "
+          f"{'med':>6} {'vert%':>5}")
+    for r in cand:
+        vmt = f"{r['vmatch']*100:.0f}" if r["vmatch"] is not None else "-"
+        print(f"  {r['species'][:26]:26} {r['family'][:12]:12} {r['n']:4} "
+              f"{r['manual_ext']:>9} {str(r['gbif_core']):>11} {r['median']:6.0f} {vmt:>5}")
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    main(int(sys.argv[1]) if len(sys.argv) > 1 else 1)
