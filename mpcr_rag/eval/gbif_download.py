@@ -15,6 +15,8 @@ import os
 
 from pygbif import occurrences
 
+from .. import config  # noqa: F401  (imported for its side effect: loads .env)
+
 # Predicate matching the analysis: CR vascular plants, georeferenced, clean flags.
 # taxonKey 7707728 = Tracheophyta. Our extra coordinate cleaning is applied locally.
 _QUERY = [
