@@ -2,3 +2,6 @@
 data/
 __pycache__/
 *.pyc
+
+# Paper draft — private, local only (not for GitHub)
+paper/
