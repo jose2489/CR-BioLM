@@ -334,11 +334,20 @@ def parse_geographic_notes(habitat_raw: str) -> str:
     if not m_elev:
         return ""
     after_elev = habitat_raw[m_elev.end():].strip().lstrip(";").strip()
-    # Cut off at specimen reference (opening parenthesis with collector names)
-    cut = re.split(r'\s*\(', after_elev)[0]
-    # Cut off at FR. / Fr. (phenology)
-    cut = re.split(r'\bFr\.\b|\bFl\.\b', cut)[0]
-    return cut.strip().rstrip(";,").strip()
+    # Cut off at phenology markers (Fl. / Fr.) — must be preceded by punctuation
+    # to avoid cutting "fila" or "florida" mid-word
+    cut = re.split(r'(?<=[\.;,\s])\s*(?:Fl|Fr)\.\s', after_elev)[0]
+    # Cut off at collector specimen reference: parenthesis containing a
+    # collector name pattern (uppercase initial + lowercase word + digits/period)
+    # e.g. "(K. Flores et al. 52, INB)" or "(Hammel 123)"
+    # Do NOT cut at geographic sub-qualifiers like "(R.N.A. Cabo Blanco)"
+    cut = re.sub(
+        r'\s*\([A-ZÁÉÍÓÚ][a-záéíóú\.]+\s+(?:et\s+al\.\s+)?\d.*',
+        '', cut
+    )
+    # Also cut at bare country-code blocks like "Nic.—Pan." at end
+    cut = re.split(r'\s+(?:Nic|Pan|Mex|Guat|Col|Ven|Bra|CR)\.\s*[—–]', cut)[0]
+    return cut.strip().rstrip(";,. ").strip()
 
 
 # ---------------------------------------------------------------------------

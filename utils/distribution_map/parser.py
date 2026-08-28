@@ -17,7 +17,6 @@ from typing import Optional
 from .ficha import DistributionFicha, ElevationRange, EntityRef
 from .gazetteer import (
     lookup, lookup_parks, fuzzy_lookup, normalize_text,
-    lookup_mobot_locality,
 )
 from .geo_parser import (
     parse_distribution_block,
@@ -32,14 +31,15 @@ from .geo_parser import (
 _RE_ELEV_RANGE = re.compile(
     r"""
     (?:\(([—–\-]?\s*\d{1,4})\s*[—–\-]\s*\))?   # leading outlier: (X–)
-    (\d{3,4})\s*[—–\-]\s*(\d{3,4})               # main range: X–Y
-    (?:\s*\([—–\-]?\s*(\d{3,4})\s*\))?           # trailing outlier: (–Z)
+    (\d{1,4})\s*[—–\-]\s*(\d{1,4})\+?            # main range: X–Y  (trailing + ignored)
+    -?-?                                           # optional trailing -- (e.g. 200--)
+    (?:\s*\([—–\-]?\s*(\d{1,4})\+?\s*\))?        # trailing outlier: (–Z) or (-Z)
     \s*m\b
     """,
     re.VERBOSE | re.IGNORECASE,
 )
-_RE_ELEV_SINGLE = re.compile(r"\b(\d{3,4})\s*m\b")
-_RE_ELEV_APPROX = re.compile(r"ca\.?\s*(\d{3,4})\s*m\b", re.IGNORECASE)
+_RE_ELEV_SINGLE = re.compile(r"\b(\d{2,4})\+?\s*m\b")
+_RE_ELEV_APPROX = re.compile(r"ca\.?\s*(\d{1,4})\s*m\b", re.IGNORECASE)
 
 # ---------------------------------------------------------------------------
 # Vertiente detection (simple, robust enough for normalized text)
@@ -51,16 +51,22 @@ _RE_AMBAS    = re.compile(r"ambas\s*vert", re.IGNORECASE)
 # ---------------------------------------------------------------------------
 # Forest-type keywords in habitat_raw (before the semicolon separator)
 # ---------------------------------------------------------------------------
-_FOREST_TYPE_PATTERNS: list[tuple[re.Pattern, str]] = [
-    (re.compile(r"bosque\s+muy\s+h[úu]medo", re.I), "muy húmedo"),
-    (re.compile(r"bosque\s+h[úu]medo",       re.I), "húmedo"),
-    (re.compile(r"bosque\s+pluvial",          re.I), "pluvial"),
-    (re.compile(r"bosque\s+nuboso",           re.I), "nuboso"),
-    (re.compile(r"bosque\s+seco",             re.I), "seco"),
-    (re.compile(r"bosque\s+de\s+roble",       re.I), "roble"),
-    (re.compile(r"p[áa]ramo",                 re.I), "páramo"),
-    (re.compile(r"manglar",                   re.I), "manglar"),
-    (re.compile(r"matorral",                  re.I), "matorral"),
+# The Manual compresses forest types into a list sharing one "Bosque":
+#   "Bosque húmedo, muy húmedo y pluvial, <elev>"
+# so qualifiers are matched WITHOUT requiring a "bosque" prefix on each. Order
+# matters: "muy húmedo" is matched (and its span reserved) before "húmedo" so the
+# inner "húmedo" is not double-counted.
+_FOREST_QUALIFIERS: list[tuple[re.Pattern, str]] = [
+    (re.compile(r"muy\s+h[úu]medo",          re.I), "muy húmedo"),
+    (re.compile(r"h[úu]medo",                re.I), "húmedo"),
+    (re.compile(r"pluvial",                  re.I), "pluvial"),
+    (re.compile(r"nuboso",                   re.I), "nuboso"),
+    (re.compile(r"seco",                     re.I), "seco"),
+    (re.compile(r"de\s+roble|robledal|roble", re.I), "roble"),
+    (re.compile(r"p[áa]ramo",                re.I), "páramo"),
+    (re.compile(r"manglar",                  re.I), "manglar"),
+    (re.compile(r"matorral",                 re.I), "matorral"),
+    (re.compile(r"premontano",               re.I), "premontano"),
 ]
 
 
@@ -96,15 +102,30 @@ def _parse_elevation(text: str) -> ElevationRange:
 
 
 def _parse_forest_types(habitat_raw: str) -> list[str]:
-    """Extract forest-type descriptors from the pre-semicolon habitat sentence."""
-    # Only look in the first part (before the geographic notes start)
-    pre_semi = habitat_raw.split(";")[0] if ";" in habitat_raw else habitat_raw
-    found = []
-    seen: set[str] = set()
-    for pat, label in _FOREST_TYPE_PATTERNS:
-        if pat.search(pre_semi) and label not in seen:
-            found.append(label)
-            seen.add(label)
+    """Extract every forest-type descriptor from the compressed habitat clause.
+
+    e.g. "Bosque húmedo, muy húmedo y pluvial, 600–1900 m" → [húmedo, muy húmedo, pluvial].
+    """
+    # Isolate the forest clause: from "Bosque" up to the elevation (first number).
+    seg = habitat_raw
+    mb = re.search(r"bosque\b", seg, re.I)
+    if mb:
+        rest = seg[mb.end():]
+        me = re.search(r"\(?\s*\d", rest)      # elevation start, e.g. "(0–)600" or "600"
+        seg = rest[:me.start()] if me else rest
+    else:
+        seg = seg.split(";")[0]
+
+    found: list[str] = []
+    used = [False] * len(seg)
+    for pat, label in _FOREST_QUALIFIERS:
+        for m in pat.finditer(seg):
+            if any(used[m.start():m.end()]):    # already inside a longer match
+                continue
+            for i in range(m.start(), m.end()):
+                used[i] = True
+            if label not in found:
+                found.append(label)
     return found
 
 
@@ -202,43 +223,49 @@ def build_ficha(
     ]
     vertientes = list(dict.fromkeys(vertientes + gazetteer_verts))
 
-    # ── Enrich structured occurrences with MOBOT gazetteer row indices ───────
-    # For locality/region_informal features not resolved by entities.csv,
-    # look them up in the MOBOT gazetteer to get buffer polygons for rendering.
-    locality_occurrences: list[dict] = []
+    # ── Per-occurrence lookup for geo_parser cordillera/region occurrences ───
+    # When a plural "Cords. de X y Y" is expanded by geo_parser, the combined-text
+    # scan may only consume "Cords. de X" and miss "Y" (orphaned without prefix).
+    # Re-scan each individual occurrence name to catch these.
+    _REGION_OCC_TYPES = frozenset({"cordillera", "llanura", "valle", "fila",
+                                    "peninsula", "region_other", "region_informal"})
+    existing_region_names = {r.canonical_name for r in regions}
     for occ in structured_occs:
-        occ_copy = dict(occ)
-        ftype = occ["feature_type"]
-        fname = occ["feature_name"]
+        if occ["feature_type"] not in _REGION_OCC_TYPES:
+            continue
+        # Skip occurrences with a directional qualifier — the combined-text
+        # scan already handled them (e.g. "S Fila Costeña" → Fila Costeña Sur).
+        if occ.get("qualifier"):
+            continue
+        fname = occ["feature_name"].strip()
+        occ_hits = lookup(fname)
+        for level in ("cordillera", "llanura", "valle", "fila", "peninsula", "region_other"):
+            for h in occ_hits.get(level, []):
+                if h["canonical_name"] not in existing_region_names:
+                    existing_region_names.add(h["canonical_name"])
+                    regions.append(EntityRef(
+                        canonical_name  = h["canonical_name"],
+                        hierarchy_level = h["hierarchy_level"],
+                        source_span     = fname,
+                    ))
 
-        # Types that resolve to a specific named point → MOBOT circle
-        _POINT_TYPES = ("localidad", "localidad_buffer", "estacion_biologica",
-                        "isla", "cerro", "volcan", "cadena_menor", "cuenca")
+    # Pass occurrences through unchanged — rendering uses shapefile polygons only
+    locality_occurrences: list[dict] = list(structured_occs)
 
-        if ftype in _POINT_TYPES:
-            # Single-point MOBOT lookup — one 5 km circle per named place
-            result = lookup_mobot_locality(fname)
-            if result:
-                occ_copy["mobot_row_indices"] = result["row_indices"][:1]
-                occ_copy["mobot_name"] = result["name"]
-            else:
-                occ_copy["mobot_row_indices"] = []
-                occ_copy["mobot_name"] = None
-
-        else:
-            # region_informal, cordillera, llanura, area_protegida, peninsula, fila, valle
-            # are resolved by entities.csv into shapefile polygons — no MOBOT circles
-            occ_copy["mobot_row_indices"] = []
-            occ_copy["mobot_name"] = None
-
-        locality_occurrences.append(occ_copy)
+    # ── Promote embedded protected areas to parks list ────────────────────────
+    # e.g. "S Pen. de Nicoya (R.N.A. Cabo Blanco)" → add Cabo Blanco to parks
+    for occ in locality_occurrences:
+        for ep_name in occ.get("embedded_protected_areas", []):
+            ep_hits = lookup(ep_name)
+            ep_refs = _to_entity_refs(ep_hits.get("park", []))
+            for ref in ep_refs:
+                if ref not in parks:
+                    parks.append(ref)
 
     # ── Unresolved tokens ─────────────────────────────────────────────────────
     unresolved: list[str] = []
     for occ in structured_occs:
-        if (occ["feature_type"] == "localidad"
-                and not any(o.get("mobot_row_indices") for o in locality_occurrences
-                            if o["raw_span"] == occ["raw_span"])):
+        if occ["feature_type"] == "localidad":
             name = occ["feature_name"].strip()
             if len(name) >= 4:
                 unresolved.append(name)
@@ -284,13 +311,9 @@ def build_ficha(
 
     # ── Confidence summary ────────────────────────────────────────────────────
     n_matched = len(regions) + len(parks) + len(cantons) + len(districts)
-    n_locality = sum(
-        1 for o in locality_occurrences
-        if o.get("mobot_row_indices")
-    )
     confidence = {
-        "overall": 1.0 if (n_matched + n_locality) > 0 else 0.0,
-        "geographic": min(1.0, (n_matched + n_locality) / 3),
+        "overall": 1.0 if n_matched > 0 else 0.0,
+        "geographic": min(1.0, n_matched / 3),
         "elevation": 1.0 if elevation.has_data() else 0.0,
         **fuzzy_conf,
     }
