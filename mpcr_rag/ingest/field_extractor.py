@@ -15,12 +15,59 @@ Run as a module for a regression-style readout over the first corpus PDF:
 """
 from __future__ import annotations
 
+import json
 import re
 
 from utils.distribution_map.parser import build_ficha
 
+from .. import config
 from ..schema import Ficha, RawFicha
 from .ficha_segmenter import segment
+
+# --- family (genus-resolved, NOT file-derived) ----------------------------- #
+# Several source PDFs (esp. Vol VI, split by fixed page ranges rather than by
+# family, and the Vol II/III "FamilyA_FamilyB" monocot bundles) span MULTIPLE
+# families per file; the filename only names the first (or first+last) one, so
+# every species after a family transition inherited the wrong label. genus is
+# extracted from the actual species binomial (reliable), so resolving family
+# from genus via the GBIF backbone is the authoritative fix — confirmed the
+# underlying text extraction (distribution paragraph, hence habit/elevation/
+# region) is unaffected; only this per-file family tag was wrong.
+_GENUS_FAMILY_CACHE_PATH = config.DATA_DIR / "genus_family_gbif.json"
+_GENUS_FAMILY: dict[str, str | None] | None = None
+
+
+def _load_genus_family_cache() -> dict[str, str | None]:
+    global _GENUS_FAMILY
+    if _GENUS_FAMILY is None:
+        if _GENUS_FAMILY_CACHE_PATH.exists():
+            _GENUS_FAMILY = json.loads(_GENUS_FAMILY_CACHE_PATH.read_text(encoding="utf-8"))
+        else:
+            _GENUS_FAMILY = {}
+    return _GENUS_FAMILY
+
+
+def _resolve_family(genus: str, fallback: str) -> str:
+    """GBIF-backbone family for `genus`, cached; falls back to the file-derived
+    label only when GBIF has no exact genus match (rare: ~3% of genera)."""
+    if not genus:
+        return fallback
+    cache = _load_genus_family_cache()
+    if genus in cache:
+        return cache[genus] or fallback
+    from pygbif import species as gbif_species
+    try:
+        r = gbif_species.name_backbone(scientificName=genus, taxonRank="genus", kingdom="Plantae")
+        mt = r.get("matchType") or r.get("diagnostics", {}).get("matchType")
+        fam = None
+        if mt == "EXACT":
+            fam = {c["rank"]: c["name"] for c in r.get("classification", [])}.get("FAMILY")
+    except Exception:
+        fam = None
+    cache[genus] = fam
+    _GENUS_FAMILY_CACHE_PATH.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
+    return fam or fallback
+
 
 # --- phenology ------------------------------------------------------------- #
 _MONTHS = {
@@ -99,7 +146,7 @@ def _extract_habits(raw: RawFicha) -> list[str]:
     return h
 
 
-def _split_distribution(paragraph: str) -> tuple[str, str]:
+def split_distribution(paragraph: str) -> tuple[str, str]:
     """Split on the elevation's ``m;`` boundary into (habitat_raw, geographic_notes).
 
     ``geographic_notes`` is trimmed before the phenology/range/voucher tail so the
@@ -136,7 +183,7 @@ def _months(marker: str, text: str) -> list[int]:
 def extract(raw: RawFicha) -> Ficha:
     """Build a fully-extracted Ficha from a RawFicha (deterministic fields only)."""
     par = raw.distribution_paragraph or ""
-    habitat_raw, geo_notes = _split_distribution(par)
+    habitat_raw, geo_notes = split_distribution(par)
 
     df = build_ficha(habitat_raw=habitat_raw, geographic_notes=geo_notes,
                      species=raw.species)
@@ -146,7 +193,7 @@ def extract(raw: RawFicha) -> Ficha:
         species=raw.species,
         authority=raw.authority,
         genus=raw.genus,
-        family=raw.family,
+        family=_resolve_family(raw.genus, raw.family),
         volume=raw.volume,
         pages=str(raw.page),
         elev_min=int(elev.min_m) if elev.min_m is not None else None,
