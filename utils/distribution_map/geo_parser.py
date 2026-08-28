@@ -71,11 +71,11 @@ def preprocess_ocr(text: str) -> str:
 
 _VERT_PATTERNS = [
     # Order matters: longer/more specific first.
-    # Optional leading qualifier (N, S, E, O, NO, SE …) before the vertiente word
-    # handles cases like "S vert. Pac." and "N vert. Carib."
+    # Optional leading qualifier (N, S, E, O, NO, SE, centro …) before the vertiente word
+    # handles cases like "S vert. Pac.", "N vert. Carib.", "centro vert. Pac."
     (re.compile(r"ambas\s+verts?\.?", re.I), "ambas"),
-    (re.compile(r"(?:[NSEO]{1,2}\.?\s+)?vert(?:iente)?\.?\s+carib(?:eña|eno|e)?\.?", re.I), "Caribe"),
-    (re.compile(r"(?:[NSEO]{1,2}\.?\s+)?vert(?:iente)?\.?\s+pac(?:if(?:ico|ica)?)?\.?", re.I), "Pacífico"),
+    (re.compile(r"(?:(?:[NSEO]{1,2}|centro|central)\.?\s+)?vert(?:iente)?\.?\s+carib(?:eña|eno|e)?\.?", re.I), "Caribe"),
+    (re.compile(r"(?:(?:[NSEO]{1,2}|centro|central)\.?\s+)?vert(?:iente)?\.?\s+pac(?:if(?:ico|ica)?)?\.?", re.I), "Pacífico"),
     (re.compile(r"vertiente\s+carib(?:eña|eno|e)?", re.I), "Caribe"),
     (re.compile(r"vertiente\s+pac(?:if(?:ico|ica)?)?", re.I), "Pacífico"),
     (re.compile(r"carib(?:eña|eno)\b", re.I), "Caribe"),
@@ -116,14 +116,15 @@ _QUALIFIER_MAP = {
 
 _PA_ABBREV_PAT = re.compile(
     r"\b(?:"
-    r"P\.?N\.?\s+\w[\w\s\.]*|"      # P.N. Name
-    r"R\.?B\.?\s+\w[\w\s\.]*|"      # R.B. Name
-    r"Z\.?P\.?\s+\w[\w\s\.]*|"      # Z.P. Name
-    r"A\.?N\.?\s+\w[\w\s\.]*|"      # A.N. Name
-    r"R\.?F\.?\s+\w[\w\s\.]*|"      # R.F. Name
-    r"R\.?N\.?\s+\w[\w\s\.]*|"      # R.N. Name
+    r"P\.?N\.?\s+\w[\w\s\.]*|"           # P.N. Name
+    r"R\.?B\.?\s+\w[\w\s\.]*|"           # R.B. Name
+    r"Z\.?P\.?\s+\w[\w\s\.]*|"           # Z.P. Name
+    r"A\.?N\.?\s+\w[\w\s\.]*|"           # A.N. Name
+    r"R\.?F\.?\s+\w[\w\s\.]*|"           # R.F. Name
+    r"R\.?N\.?A\.?\s+\w[\w\s\.]*|"       # R.N.A. Name (Reserva Natural Absoluta)
+    r"R\.?N\.?\s+\w[\w\s\.]*|"           # R.N. Name
     r"Parque\s+(?:Nacional|Internacional)\s+\w[\w\s]*|"
-    r"Reserva\s+(?:Biológica|Forestal|Natural)\s+\w[\w\s]*|"
+    r"Reserva\s+(?:Biológica|Forestal|Natural\s+Absoluta|Natural)\s+\w[\w\s]*|"
     r"Zona\s+Protectora\s+\w[\w\s]*"
     r")",
     re.I,
@@ -179,6 +180,30 @@ _FEATURE_CLASSIFIERS: list[tuple[re.Pattern, str]] = [
     (re.compile(r"\br[íi]o\s+", re.I), "cuenca"),
 ]
 
+_GAZETTEER_TYPE_MAP = {
+    "cordillera":   "cordillera",
+    "llanura":      "llanura",
+    "valle":        "valle",
+    "fila":         "fila",
+    "peninsula":    "peninsula",
+    "region_other": "region_informal",
+    "park":         "area_protegida",
+    "canton":       "localidad",
+    "district":     "localidad",
+    "vertiente":    "localidad",
+}
+
+
+_TODAS_CORDS = re.compile(
+    r"todas\s+las\s+cords?\.?\s+principales?|todas\s+las\s+cordilleras?\s+principales?",
+    re.I,
+)
+_TODA_VERT = re.compile(
+    r"toda\s+la\s+vert(?:iente)?\.?\s+(?:carib|pac)",
+    re.I,
+)
+
+
 def _classify_feature(fragment: str) -> tuple[str, str, str]:
     """
     Returns (feature_type, prefix_consumed, rest_of_fragment).
@@ -186,11 +211,33 @@ def _classify_feature(fragment: str) -> tuple[str, str, str]:
     prefix_consumed is the matched prefix text (e.g. "Cord. de ").
     rest_of_fragment is what remains after the prefix.
     """
+    # Special whole-phrase aliases that must be matched before any prefix classifier
+    m = _TODAS_CORDS.match(fragment)
+    if m:
+        return "cordillera", m.group(0), fragment[m.end():]
+
     for pat, ftype in _FEATURE_CLASSIFIERS:
         m = pat.match(fragment)
         if m:
             return ftype, m.group(0), fragment[m.end():]
-    # No prefix matched — treat as generic locality
+
+    # No prefix matched — try a direct gazetteer lookup on the name fragment
+    # (handles proper names without geographic prefixes, e.g. "Baja Talamanca")
+    # Import lazily to avoid circular dependency
+    try:
+        from .gazetteer import lookup as _gaz_lookup
+        # Take up to the first delimiter character to extract the candidate name
+        candidate = re.split(r'[,;(]', fragment)[0].strip().rstrip('.')
+        if len(candidate) >= 4:
+            hits = _gaz_lookup(candidate)
+            for level, level_hits in hits.items():
+                if level_hits:
+                    ftype = _GAZETTEER_TYPE_MAP.get(level, "localidad")
+                    if ftype != "localidad":
+                        return ftype, "", fragment
+    except Exception:
+        pass
+
     return "localidad", "", fragment
 
 
@@ -455,10 +502,30 @@ def _parse_clause_features(
     # Plural expansion
     names = _expand_plural_names(name_chunk, feature_type)
 
+    # Special case: _TODAS_CORDS / _TODA_VERT consumed the whole fragment as
+    # "prefix", leaving name_chunk empty.  Emit the matched phrase itself so
+    # the gazetteer can resolve it via the "todas las cords. principales" alias.
+    if not names and prefix and _TODAS_CORDS.match(prefix.strip()):
+        _add_occurrence(
+            out, vertiente, qualifier, feature_type,
+            prefix.strip(), None, [],
+            raw_span=prefix.strip(),
+        )
+        cont = remainder_after.lstrip(",; ").strip()
+        if cont:
+            _parse_clause_features(cont, vertiente, out)
+        return
+
     for i, name in enumerate(names):
         name = name.strip().rstrip(".")
         if not name:
             continue
+        # When the prefix already ends with "de" or "del", strip a leading
+        # "de"/"del" from the individual name to avoid "de de Talamanca".
+        if prefix:
+            norm_prefix = prefix.strip().lower()
+            if norm_prefix.endswith(" de") or norm_prefix.endswith(" del"):
+                name = re.sub(r"^de[l]?\s+", "", name, flags=re.I)
         # Sub-qualifier and embedded PAs attach to the last name in the list
         # (matching Manual style "Cord. de X, Y y Z (P.N. XYZ)")
         sq = sub_qual if i == len(names) - 1 else None
@@ -514,6 +581,23 @@ def _extract_name_chunk(text: str, feature_type: str) -> tuple[str, str]:
     if sent_end:
         stop_pos = min(stop_pos, sent_end.start() + 1)
 
+    # Stop at any comma-separated token that is a known non-localidad gazetteer entity
+    # (e.g. "Baja Talamanca" after "vecindad de Puerto Limón, ...")
+    # This prevents proper names from being swallowed into prior feature's name list.
+    try:
+        from .gazetteer import lookup as _gaz_lookup
+        for cm in re.finditer(r",\s*([A-ZÁÉÍÓÚ][^,;(]+?)(?=[,;(]|$)", text[:stop_pos]):
+            candidate = cm.group(1).strip().rstrip(".")
+            if len(candidate) >= 4:
+                hits = _gaz_lookup(candidate)
+                for level, level_hits in hits.items():
+                    mapped = _GAZETTEER_TYPE_MAP.get(level, "localidad")
+                    if mapped != "localidad" and level_hits and cm.start() > 0:
+                        stop_pos = min(stop_pos, cm.start())
+                        break
+    except Exception:
+        pass
+
     name_chunk = text[:stop_pos].strip().rstrip(",;")
     remainder = text[stop_pos:].strip()
     return name_chunk, remainder
@@ -556,9 +640,13 @@ def get_vertientes(occurrences: list[dict]) -> list[str]:
     result = []
     for o in occurrences:
         v = o.get("vertiente")
-        if v and v not in seen:
-            seen.add(v)
-            result.append(v)
+        if not v:
+            continue
+        candidates = ["Caribe", "Pacífico"] if v == "ambas" else [v]
+        for c in candidates:
+            if c not in seen:
+                seen.add(c)
+                result.append(c)
     return result
 
 
