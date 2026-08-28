@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "mpcr": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "mpcr_rag.mcp.server"],
+      "cwd": "${workspaceFolder}",
+      "env": {}
+    }
+  }
+}
