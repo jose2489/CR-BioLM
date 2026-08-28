@@ -12,7 +12,9 @@ region/vertiente spatial join. GBIF points are cached per species on disk
 """
 from __future__ import annotations
 
+import json
 import unicodedata
+import zipfile
 from pathlib import Path
 
 import geopandas as gpd
@@ -21,6 +23,8 @@ import pandas as pd
 from pygbif import occurrences, species as gbif_species
 
 import config as cr_config                       # repo-root config (DEM, shapefiles)
+from utils.distribution_map.parser import build_ficha
+from utils.distribution_map.renderer import generate_distribution_map
 from utils.geoprocesamiento import extraer_altitud
 
 # Costa Rica bounding box (padded) — for lat/lon-swap and gross-error detection.
@@ -35,7 +39,17 @@ _CACHE.mkdir(exist_ok=True)
 _MAPS = config.DATA_DIR / "maps"
 _MAPS.mkdir(exist_ok=True)
 
+# Frozen, citable GBIF download snapshot (CR Tracheophyta, hasCoordinate=true,
+# hasGeospatialIssue=false) — DOI 10.15468/dl.8yhee8, see mpcr_rag/paper/README.md.
+# Used as the source for occurrence COUNTS (ranking many candidates), instead of
+# hitting the live occurrence-search API once per candidate.
+_SNAPSHOT_DIR = config.DATA_DIR / "gbif_snapshot"
+_SNAPSHOT_DIR.mkdir(exist_ok=True)
+_SNAPSHOT_KEY = "0048944-260519110011954"
+_SNAPSHOT_COUNTS_CACHE = _SNAPSHOT_DIR / "species_counts.json"
+
 _REGIONS_4326: gpd.GeoDataFrame | None = None
+_SPECIES_COUNTS: dict[str, int] | None = None
 
 
 def _regions() -> gpd.GeoDataFrame:
@@ -116,6 +130,45 @@ def _fetch_clean(species: str) -> gpd.GeoDataFrame:
         return gpd.GeoDataFrame(columns=cols, geometry=[], crs="EPSG:4326")
     return gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.lon, df.lat),
                             crs="EPSG:4326")
+
+
+def _load_snapshot_counts() -> dict[str, int]:
+    """Lazily fetch (once) and cache the frozen download's per-species occurrence
+    counts. The zip (~155 MB, 1.01M CR Tracheophyta records) is downloaded once and
+    kept under data/gbif_snapshot/ (gitignored); only the small aggregated JSON
+    (species -> count) is reloaded on subsequent runs."""
+    global _SPECIES_COUNTS
+    if _SPECIES_COUNTS is not None:
+        return _SPECIES_COUNTS
+    if _SNAPSHOT_COUNTS_CACHE.exists():
+        _SPECIES_COUNTS = json.loads(_SNAPSHOT_COUNTS_CACHE.read_text(encoding="utf-8"))
+        return _SPECIES_COUNTS
+
+    zip_path = _SNAPSHOT_DIR / f"{_SNAPSHOT_KEY}.zip"
+    if not zip_path.exists():
+        occurrences.download_get(_SNAPSHOT_KEY, path=str(_SNAPSHOT_DIR))
+
+    with zipfile.ZipFile(zip_path) as zf:
+        csv_name = next(n for n in zf.namelist() if n.endswith(".csv"))
+        with zf.open(csv_name) as fh:
+            df = pd.read_csv(fh, sep="\t", usecols=["species"], dtype=str, on_bad_lines="skip")
+    counts = df["species"].value_counts().to_dict()
+    _SNAPSHOT_COUNTS_CACHE.write_text(json.dumps(counts, ensure_ascii=False), encoding="utf-8")
+    _SPECIES_COUNTS = counts
+    return counts
+
+
+def count_only(species: str) -> int:
+    """CR occurrence count from the frozen, citable GBIF download snapshot (DOI
+    10.15468/dl.8yhee8) — for ranking many candidates cheaply (the superlative
+    'gbif_count' selector). Same cleaning level as the live API would give
+    (hasCoordinate/hasGeospatialIssue flags only, no extra local cleaning) — just a
+    local lookup instead of one occurrence-search call per candidate, and pinned to
+    a reproducible snapshot instead of a live, growing database.
+    """
+    _key, accepted, _syn = resolve_taxon(species)
+    name = accepted or species
+    return int(_load_snapshot_counts().get(name, 0))
 
 
 def get_points(species: str) -> gpd.GeoDataFrame:
@@ -206,6 +259,27 @@ def most_likely_map(species_scores: list[tuple[Ficha, float]], *, query_text: st
     fig.savefig(out_path, dpi=140, bbox_inches="tight")
     plt.close(fig)
     return out_path, n_pts
+
+
+def single_species_map(f: Ficha, *, out_path: Path | None = None) -> tuple[Path, int]:
+    """Render the validated Manual-grounded distribution map for ONE named species.
+
+    Re-derives the rich DistributionFicha (regions w/ hierarchy, parks, elevation
+    range) from the same distribution paragraph stored at ingestion — no LLM, no
+    re-ingest — and renders it with renderer.generate_distribution_map (the
+    pipeline validated against Armando's expert maps), with GBIF points overlaid
+    as the confirmatory layer. This is the Pattern-A map; Pattern B's multi-species
+    "most likely" evidence map (above) is a deliberately different, GBIF-only view.
+    """
+    from ..ingest.field_extractor import split_distribution
+
+    habitat_raw, geo_notes = split_distribution(f.distribution_paragraph)
+    df = build_ficha(habitat_raw=habitat_raw, geographic_notes=geo_notes, species=f.species)
+    pts = get_points(f.species)
+
+    out_path = out_path or (_MAPS / f"manual_{f.vector_id}.png")
+    generate_distribution_map(df, out_path, presencias_gdf=pts if not pts.empty else None)
+    return out_path, len(pts)
 
 
 if __name__ == "__main__":

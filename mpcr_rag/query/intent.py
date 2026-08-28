@@ -24,6 +24,12 @@ _MONTHS = {"enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio":
            "julio": 7, "agosto": 8, "septiembre": 9, "octubre": 10,
            "noviembre": 11, "diciembre": 12}
 
+# Selection criteria available for "superlative" questions (pick ONE species from
+# the filtered set). elev_max/elev_min/n_regions are deterministic Ficha fields —
+# fully grounded in the Manual. gbif_count is an explicit PROXY (collection effort,
+# not abundance) for "más común/abundante", since the Manual has no abundance field.
+_SELECTOR_CRITERIA = {"elev_max", "elev_min", "n_regions", "gbif_count"}
+
 
 def load_vocab(conn=None) -> dict:
     """Distinct controlled values present in the catalog."""
@@ -54,8 +60,18 @@ Rica en un filtro estructurado JSON. Usa ÚNICAMENTE valores de las listas permi
 endemic=true si la pregunta dice "endémica(s)/endémico(s)/solo de Costa Rica/exclusivas de CR".
 flowering_month = número de mes si dice "florece(n) en <mes>" (enero=1 … diciembre=12).
 vertiente: "del Caribe/caribeña/atlántica" -> Caribe; "del Pacífico/pacífica" -> Pacífico.
-semantic_text = la parte descriptiva libre que NO es un campo (hábitat, olor, usos),
-o "" si todo quedó en campos. Responde SOLO el JSON."""
+
+intent_type="superlative" SOLO cuando la pregunta pide UNA ÚNICA especie que cumple una
+condición extrema ("más común/abundante", "mayor/menor elevación", "distribución más
+amplia/restringida", "la única que..."). En ese caso fija:
+- selector_criterion: "elev_max" (crece a mayor altitud) | "elev_min" (menor altitud) |
+  "n_regions" (aparece en más/menos regiones del Manual, proxy de amplitud de distribución) |
+  "gbif_count" (más registros GBIF — el ÚNICO proxy disponible para "más común/abundante",
+  porque el Manual no registra abundancia; NUNCA lo presentes como abundancia real).
+- selector_direction: "max" si pide el extremo alto ("mayor", "más amplia", "más común"),
+  "min" si pide el extremo bajo ("menor", "más restringida").
+Si la pregunta pide una LISTA de especies (no una sola), intent_type="list" y
+selector_criterion=null. Responde SOLO el JSON."""
 
 
 def parse_intent(question: str, vocab: dict | None = None) -> dict:
@@ -70,6 +86,9 @@ def parse_intent(question: str, vocab: dict | None = None) -> dict:
         "family": f"una de {vocab['families']} o null",
         "elev_lo": "int o null", "elev_hi": "int o null",
         "flowering_month": "1-12 o null", "endemic": "true/false/null",
+        "intent_type": "'list' o 'superlative'",
+        "selector_criterion": f"uno de {sorted(_SELECTOR_CRITERIA)} o null",
+        "selector_direction": "'max' o 'min' o null",
         "semantic_text": "string",
     }
     prompt = (f"Listas permitidas y formato:\n{json.dumps(schema, ensure_ascii=False)}\n\n"
@@ -105,8 +124,15 @@ def _validate(d: dict, vocab: dict) -> dict:
         "flowering_month": d.get("flowering_month")
             if isinstance(d.get("flowering_month"), int) else None,
         "endemic": d.get("endemic") if isinstance(d.get("endemic"), bool) else None,
+        "intent_type": "superlative" if d.get("intent_type") == "superlative" else "list",
+        "selector_criterion": pick("selector_criterion", _SELECTOR_CRITERIA),
+        "selector_direction": d.get("selector_direction") if d.get("selector_direction") in ("max", "min") else "max",
         "semantic_text": d.get("semantic_text") or "",
     }
+    if out["intent_type"] != "superlative" or not out["selector_criterion"]:
+        out["intent_type"] = "list"
+        out["selector_criterion"] = None
+        out["selector_direction"] = None
     return out
 
 
@@ -118,8 +144,10 @@ def ask(question: str, *, top_k: int = 15, conn=None, index=None):
     conn = conn or local_store.connect(config.SQLITE_PATH)
     index = index or pc.ensure_index()
     intent = parse_intent(question)
+    # Drop the intent-routing fields (handled by answer.py); keep only metadata filters.
+    _routing = {"intent_type", "selector_criterion", "selector_direction", "semantic_text"}
     constraints = {k: v for k, v in intent.items()
-                   if k != "semantic_text" and v is not None}
+                   if k not in _routing and v is not None}
     query_text = intent["semantic_text"] or question
     results = R.pattern_b(query_text, top_k=top_k, conn=conn, index=index, **constraints)
     return intent, results

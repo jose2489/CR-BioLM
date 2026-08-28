@@ -107,6 +107,52 @@ def relevance(f: Ficha, constraints: dict, semantic: float) -> float:
     return semantic
 
 
+def filter_all(
+    conn=None,
+    *,
+    habit: str | None = None,
+    elev_lo: int | None = None,
+    elev_hi: int | None = None,
+    vertiente: str | None = None,
+    region: str | None = None,
+    forest_type: str | None = None,
+    family: str | None = None,
+    flowering_month: int | None = None,
+    endemic: bool | None = None,
+) -> list[Ficha]:
+    """Exhaustive structured-only candidate set: no Pinecone, no top_k cap, no
+    semantic rank. For deterministic superlative selection ("la especie MÁS X"),
+    where the answer must come from the FULL filtered population, not a
+    semantically-ranked top-k slice."""
+    conn = conn or local_store.connect(config.SQLITE_PATH)
+    rows = [Ficha.from_json(r["ficha_json"]) for r in conn.execute("SELECT ficha_json FROM fichas")]
+
+    out: list[Ficha] = []
+    for f in rows:
+        if habit and habit not in f.habits:
+            continue
+        if vertiente and vertiente not in f.vertientes:
+            continue
+        if region and region not in f.regions:
+            continue
+        if forest_type and forest_type not in f.forest_types:
+            continue
+        if family and family != f.family:
+            continue
+        if flowering_month is not None and flowering_month not in f.flowering_months:
+            continue
+        if endemic is not None and f.endemic_cr != endemic:
+            continue
+        if elev_lo is not None or elev_hi is not None:
+            elo, ehi = _eff_bounds(f)
+            eff_lo = elo if elev_lo is None else elev_lo
+            eff_hi = ehi if elev_hi is None else elev_hi
+            if elo is None or ehi is None or min(eff_hi, ehi) - max(eff_lo, elo) <= 0:
+                continue
+        out.append(f)
+    return out
+
+
 def pattern_b(
     query_text: str,
     *,
