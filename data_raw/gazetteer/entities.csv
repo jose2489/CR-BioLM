@@ -3,7 +3,7 @@ Caribe,vert. carib|vert carib|vertiente carib|vert. caribena|caribena|caribeña|
 Pacífico,vert. pac|vert pac|vertiente pac|vertiente pacifico|pacifico|pacifica|vert. pacifico,vertiente,,,,,,"Vertiente del Pacífico"
 Cordillera de Guanacaste,cord. de guanacaste|cords. de guanacaste|cord. guanacaste|cords. guanacaste|cord guanacaste|cords guanacaste|cordillera de guanacaste|cord. de guanacas|cords. de guanacas|cordillera de guanacas|todas las cords. principales|todas las cordilleras principales,cordillera,regiones_botanicas,Nombre,Cordillera de Guanacaste,ambas,,
 Cordillera de Tilarán,cord. de tilaran|cords. de tilaran|cord. tilaran|cords. tilaran|cord tilaran|cords tilaran|cordillera de tilaran|cordillera tilaran|lago arenal|todas las cords. principales|todas las cordilleras principales,cordillera,regiones_botanicas,Nombre,Cordillera de Tilarán,ambas,,Lago Arenal se ubica en la Cordillera de Tilarán
-Cordillera Central,cord. central|cords. central|cordillera central|central y de talamanca|tilaran central|todas las cords. principales|todas las cordilleras principales,cordillera,regiones_botanicas,Nombre,Cordillera Central,ambas,,Compound aliases capture "Central y de Talamanca" list form
+Cordillera Central,cord. central|cords. central|cord. de central|cords. de central|cordillera central|central y de talamanca|tilaran central|todas las cords. principales|todas las cordilleras principales,cordillera,regiones_botanicas,Nombre,Cordillera Central,ambas,,Compound aliases capture "Central y de Talamanca" list form
 Cordillera de Talamanca,cord. de talamanca|cords. de talamanca|cord. talamanca|cords. talamanca|cord talamanca|cords talamanca|cordillera de talamanca|cordillera talamanca|de talamanca|todas las cords. principales|todas las cordilleras principales,cordillera,regiones_botanicas,Nombre,Cordillera de Talamanca,ambas,,
 Llanuras de Tortuguero / Santa Clara,llanura de tortuguero|llanuras de tortuguero|llanura tortuguero|llanuras tortuguero|santa clara|llanura de santa clara|llanuras de santa clara|toda la vert. carib|toda la vertiente carib,llanura,regiones_botanicas,Nombre,Llanuras de Tortuguero / Santa Clara,carib,,
 Llanuras de San Carlos,llanura de san carlos|llanuras de san carlos|toda la vert. carib|toda la vertiente carib,llanura,regiones_botanicas,Nombre,Llanuras de San Carlos,carib,,
@@ -11,7 +11,7 @@ LLanura de los Guatusos,llanura de los guatusos|llanuras de los guatusos|guatuso
 Llanuras de Guanacaste,llanura de guanacaste|llanuras de guanacaste|llanuras guanacaste,llanura,regiones_botanicas,Nombre,Llanuras de Guanacaste,pacifico,,
 Llanuras del Diquís,llanura del diquis|llanuras del diquis|diquis|llanuras diquis,llanura,regiones_botanicas,Nombre,Llanuras del Diquís,pacifico,,
 Valle Central Oriental,valle central oriental|cerros de escazu|cerros de escazú,valle,regiones_botanicas,Nombre,Valle Central Oriental,ambas,,Includes Cerros de Escazú
-Valle Central Occidental,valle central occidental|tablazo|cerro caraigres|montes del aguacate|cerro turrubares,valle,regiones_botanicas,Nombre,Valle Central Occidental,ambas,,Includes Tablazo and Cerro Caraigres
+Valle Central Occidental,valle central occidental|tablazo|montes del aguacate|turrubares y caraigres|cerros turrubares y caraigres,valle,regiones_botanicas,Nombre,Valle Central Occidental,ambas,,Includes Tablazo; cerros individually resolve via MOBOT
 Valle Central,valle central,valle,regiones_botanicas,Nombre,Valle Central Oriental,ambas,,Generic; maps both halves (see next row too)
 Valle Central (Occidental),valle central,valle,regiones_botanicas,Nombre,Valle Central Occidental,ambas,,Second row so both Oriental and Occidental are matched
 Valle del General,valle del general|valle de general|valles de general|valle general,valle,regiones_botanicas,Nombre,Valle del General,pacifico,,
@@ -39,6 +39,7 @@ Parque Nacional Guanacaste,parque nacional guanacaste|p.n. guanacaste|pn guanaca
 Parque Nacional Manuel Antonio,parque nacional manuel antonio|p.n. manuel antonio|pn manuel antonio|manuel antonio,park,protected_areas,nombre_asp,Manuel Antonio,pacifico,,P.N. Manuel Antonio — Pacific coast park
 Parque Internacional La Amistad,la amistad|parque la amistad|p.n. la amistad|amistad,park,protected_areas,nombre_asp,La Amistad,ambas,,La Amistad International Park
 Parque Nacional Corcovado,parque nacional corcovado|p.n. corcovado|corcovado,park,protected_areas,nombre_asp,Corcovado,pacifico,,P.N. Corcovado — Osa Peninsula
+Reserva Natural Absoluta Cabo Blanco,r.n.a. cabo blanco|rna cabo blanco|reserva cabo blanco|cabo blanco|r.n.a cabo blanco,park,protected_areas,nombre_asp,Cabo Blanco,pacifico,,RNA Cabo Blanco — extreme S tip of Nicoya Peninsula
 Puriscal (cantón),puriscal,canton,cantones,CANTÓN,Puriscal,pacifico,San José,Canton Puriscal — subregion of Puriscal-Los Santos
 Tarrazú (cantón),tarrazu,canton,cantones,CANTÓN,Tarrazú,pacifico,San José,Canton Tarrazú
 Acosta (cantón),acosta,canton,cantones,CANTÓN,Acosta,pacifico,San José,Canton Acosta
