@@ -34,13 +34,13 @@ from shapely.geometry import mapping
 from shapely.ops import unary_union
 from pathlib import Path
 
+from shapely.geometry import box
 from .ficha import DistributionFicha, EntityRef
 from .geodata import (
     load_regiones_botanicas, load_protected_areas,
-    load_cantones, load_distritos, filter_pa_to_regions, PATHS,
+    load_cantones, load_distritos, load_provincias, filter_pa_to_regions, PATHS,
 )
-from .style import REGION_COLORS, FALLBACK_REGION_COLOR, mute_color
-from .gazetteer import _load_entities, normalize_text, get_mobot_buffers
+from .gazetteer import _load_entities, normalize_text, lookup
 
 
 # ---------------------------------------------------------------------------
@@ -67,129 +67,6 @@ _LOADERS = {
     "distritos":          load_distritos,
 }
 
-
-# ---------------------------------------------------------------------------
-# Locality buffer radii (metres) by feature_type and MOBOT name patterns.
-# Buffer is the *initial* search radius; ecological filters (region, vertiente,
-# DEM elevation) do the precision work. Keep radii conservative.
-# ---------------------------------------------------------------------------
-
-_BUFFER_RADII_BY_FTYPE: dict[str, int] = {
-    "estacion_biologica": 1_500,   # well-delimited field station
-    "cerro":              2_500,   # specific summit / hill
-    "volcan":             2_500,   # specific volcanic peak
-    "cadena_menor":       3_000,   # punta geográfica, smaller ridge
-    "cuenca":             3_000,   # river drainage point
-    "isla":               3_000,   # island or coastal feature
-    "localidad_buffer":   7_000,   # "vecindad de X" already implies surroundings
-    "localidad":          4_000,   # default town / collecting site
-}
-
-# Override for names that indicate a specific point (not a town)
-_SMALL_RADIUS_NAME_PATTERNS = re.compile(
-    r"\b(estaci[oó]n|cerro|punta|finca|hacienda|rancho|parcela|laguna|boca|nacimiento)\b",
-    re.I,
-)
-_LARGE_RADIUS_NAME_PATTERNS = re.compile(
-    r"\b(vecindad|alrededores|cerca|region|comarca)\b",
-    re.I,
-)
-
-
-def _locality_radius_m(feature_type: str, mobot_name: str) -> int:
-    """Return buffer radius in metres for a given locality occurrence."""
-    base = _BUFFER_RADII_BY_FTYPE.get(feature_type, 4_000)
-    name_lc = (mobot_name or "").lower()
-    if _SMALL_RADIUS_NAME_PATTERNS.search(name_lc):
-        base = min(base, 2_000)
-    if _LARGE_RADIUS_NAME_PATTERNS.search(name_lc):
-        base = max(base, 6_000)
-    return base
-
-
-def _resolve_locality_buffers(
-    ficha: DistributionFicha,
-    matched_regions_gdf: gpd.GeoDataFrame | None,
-) -> gpd.GeoDataFrame | None:
-    """
-    Build radius-calibrated circles around MOBOT gazetteer point localities,
-    clipped to the intersection of the matched botanical region(s) and the
-    occurrence's vertiente side.
-
-    Radii by type (conservative — ecological filters do precision work):
-      estacion_biologica : 1.5 km
-      cerro / volcan     : 2.5 km
-      isla / cuenca      : 3.0 km
-      localidad_buffer   : 7.0 km  ("vecindad de X" implies surroundings)
-      localidad (default): 4.0 km
-
-    region_informal and shapefile-resolved types (cordillera, llanura, …)
-    are NOT given circles — they render as region polygons already.
-    """
-    from .gazetteer import _load_mobot_points
-    from shapely.ops import unary_union
-
-    pts_gdf = _load_mobot_points()
-    if pts_gdf is None:
-        return None
-
-    # Vertiente mask geometries in metric CRS
-    regiones = load_regiones_botanicas()
-    vert_geoms: dict[str, object] = {}
-    for vn in ("carib", "pacifico"):
-        vgdf = regiones[regiones["vert_norm"] == vn]
-        if not vgdf.empty:
-            vert_geoms[vn] = unary_union(vgdf.to_crs("EPSG:5367").geometry)
-
-    # Matched regions union for clipping
-    regions_union_5367 = None
-    if matched_regions_gdf is not None and not matched_regions_gdf.empty:
-        regions_union_5367 = unary_union(
-            matched_regions_gdf.to_crs("EPSG:5367").geometry
-        )
-
-    clipped_gdfs = []
-    seen_indices: set[int] = set()
-
-    for occ in ficha.locality_occurrences:
-        indices = occ.get("mobot_row_indices", [])
-        if not indices:
-            continue
-        idx = indices[0]
-        if idx in seen_indices:
-            continue
-        seen_indices.add(idx)
-
-        point_row = pts_gdf.iloc[[idx]].to_crs("EPSG:5367")
-        mobot_name = occ.get("mobot_name", "") or ""
-        radius = _locality_radius_m(occ["feature_type"], mobot_name)
-        circle = point_row.geometry.iloc[0].buffer(radius)
-
-        # Clip 1: to matched botanical regions
-        if regions_union_5367 is not None:
-            circle = circle.intersection(regions_union_5367)
-
-        # Clip 2: to occurrence's vertiente half
-        occ_vert = occ.get("vertiente")
-        if occ_vert and occ_vert != "ambas":
-            vn = "carib" if occ_vert == "Caribe" else "pacifico"
-            if vn in vert_geoms:
-                circle = circle.intersection(vert_geoms[vn])
-
-        if circle.is_empty:
-            continue
-
-        row_copy = point_row.copy()
-        row_copy["geometry"] = [circle]
-        clipped_gdfs.append(row_copy)
-
-    if not clipped_gdfs:
-        return None
-
-    combined = gpd.GeoDataFrame(
-        pd.concat(clipped_gdfs, ignore_index=True), crs="EPSG:5367"
-    ).to_crs("EPSG:4326")
-    return combined
 
 
 def _resolve_to_gdf(entities: list[EntityRef]) -> gpd.GeoDataFrame | None:
@@ -220,6 +97,147 @@ def _resolve_to_gdf(entities: list[EntityRef]) -> gpd.GeoDataFrame | None:
     return combined
 
 
+# Qualifier map: single-letter → fraction of bounding box to keep
+# N → top half (ymin..ymax), S → bottom half (ymin..ymid), etc.
+_QUALIFIER_HALF: dict[str, str] = {
+    "N": "north",
+    "S": "south",
+    "E": "east",
+    "O": "west",
+    "W": "west",
+}
+
+_REGION_SHAPEFILE_TYPES = frozenset({
+    "cordillera", "llanura", "valle", "fila", "peninsula",
+    "region_other", "region_informal",
+})
+
+
+def _clip_geom_to_half(geom, qualifier: str):
+    """Clip a shapely geometry to the N/S/E/W half of its own bounding box."""
+    side = _QUALIFIER_HALF.get(qualifier.upper())
+    if side is None:
+        return geom
+    xmin, ymin, xmax, ymax = geom.bounds
+    xmid = (xmin + xmax) / 2
+    ymid = (ymin + ymax) / 2
+    if side == "north":
+        clip = box(xmin, ymid, xmax, ymax)
+    elif side == "south":
+        clip = box(xmin, ymin, xmax, ymid)
+    elif side == "east":
+        clip = box(xmid, ymin, xmax, ymax)
+    else:  # west
+        clip = box(xmin, ymin, xmid, ymax)
+    result = geom.intersection(clip)
+    return result if not result.is_empty else geom
+
+
+def _resolve_regions_with_qualifiers(
+    ficha: DistributionFicha,
+) -> gpd.GeoDataFrame | None:
+    """
+    Resolve matched botanical regions, applying N/S/E/O half-clipping when
+    a geo_parser occurrence carries a direction qualifier (e.g. 'S Pen. de Nicoya').
+
+    Two special rules:
+    - When a qualified occurrence also has embedded_protected_areas, the region
+      polygon is suppressed entirely — the park polygon already shows the exact
+      location, so drawing the half-peninsula too is misleading.
+    - The half-clip is further intersected with the Costa Rica land boundary
+      (union of all regiones_botanicas) to avoid spilling into the ocean.
+
+    Returns a GeoDataFrame in the same CRS as regiones_botanicas.
+    If no locality_occurrences carry qualifiers, falls back to _resolve_to_gdf().
+    """
+    # Build a mapping: canonical_name → (qualifier, has_embedded_pa)
+    qualifier_by_canonical: dict[str, str] = {}
+    suppress_canonical: set[str] = set()
+
+    # Only suppress when the region is a "pinpoint-able" feature where the park
+    # polygon provides more precision than showing the half-region.
+    # Broad features (llanura, cordillera) should still show — the park is an
+    # additional highlight inside them, not a replacement.
+    _SUPPRESSABLE_TYPES = frozenset({"peninsula", "fila", "valle", "region_other"})
+
+    for occ in ficha.locality_occurrences:
+        q = occ.get("qualifier")
+        if not q:
+            continue
+        ftype = occ.get("feature_type", "")
+        if ftype not in _REGION_SHAPEFILE_TYPES:
+            continue
+        fname = occ.get("feature_name", "")
+        if not fname:
+            continue
+        has_ep = bool(occ.get("embedded_protected_areas"))
+        hits = lookup(fname)
+        for level_hits in hits.values():
+            for h in level_hits:
+                cn = h["canonical_name"]
+                if cn not in qualifier_by_canonical:
+                    qualifier_by_canonical[cn] = q
+                if has_ep and ftype in _SUPPRESSABLE_TYPES:
+                    suppress_canonical.add(cn)
+
+    # No qualifiers found → plain resolution
+    if not qualifier_by_canonical:
+        return _resolve_to_gdf(ficha.regions)
+
+    # Land boundary mask (CR-only, metric) to prevent ocean spill
+    regiones = load_regiones_botanicas()
+    land_metric = unary_union(regiones.to_crs("EPSG:5367").geometry)
+
+    # Resolve each entity, applying clip or suppression
+    gdfs = []
+    for entity in ficha.regions:
+        # Skip regions where the park polygon already gives precise location
+        if entity.canonical_name in suppress_canonical:
+            continue
+
+        target = _entity_target(entity.canonical_name)
+        if target is None:
+            continue
+        ts, ta, tv = target
+        loader = _LOADERS.get(ts)
+        if loader is None:
+            continue
+        source = loader()
+        if ta not in source.columns:
+            continue
+        norm_tv = normalize_text(tv)
+        mask = source[ta].apply(normalize_text) == norm_tv
+        hit = source[mask].copy()
+        if hit.empty:
+            continue
+
+        qualifier = qualifier_by_canonical.get(entity.canonical_name)
+        if qualifier:
+            hit_metric = hit.to_crs("EPSG:5367")
+            clipped_geoms = []
+            for g in hit_metric.geometry:
+                # Ensure validity before clipping (avoids TopologyException)
+                if not g.is_valid:
+                    g = g.buffer(0)
+                half = _clip_geom_to_half(g, qualifier)
+                try:
+                    land_fixed = land_metric if land_metric.is_valid else land_metric.buffer(0)
+                    land_clipped = half.intersection(land_fixed)
+                    clipped_geoms.append(land_clipped if not land_clipped.is_empty else half)
+                except Exception:
+                    clipped_geoms.append(half)
+            hit_metric = hit_metric.copy()
+            hit_metric["geometry"] = clipped_geoms
+            hit = hit_metric.to_crs(source.crs)
+
+        gdfs.append(hit)
+
+    if not gdfs:
+        return None
+    combined = gpd.GeoDataFrame(pd.concat(gdfs, ignore_index=True), crs=gdfs[0].crs)
+    return combined
+
+
 # ---------------------------------------------------------------------------
 # Map bounds
 # ---------------------------------------------------------------------------
@@ -244,39 +262,33 @@ _SCOPE_MARGIN = {
 
 
 def _compute_bounds(clip_geom, scope: str) -> tuple[float, float, float, float]:
-    frac = _SCOPE_MARGIN.get(scope, 0.06)
-    xmin, ymin, xmax, ymax = clip_geom.bounds
-    dx = max((xmax - xmin) * frac, 0.05)
-    dy = max((ymax - ymin) * frac, 0.05)
+    return _CR_BOUNDS
 
-    out_xmin = max(xmin - dx, _CR_BOUNDS[0])
-    out_ymin = max(ymin - dy, _CR_BOUNDS[1])
-    out_xmax = min(xmax + dx, _CR_BOUNDS[2])
-    out_ymax = min(ymax + dy, _CR_BOUNDS[3])
 
-    # If the clip geometry already covers ≥70% of CR in either dimension,
-    # just show the whole country — avoids clipping corners off wide-span species.
-    lon_coverage = (xmax - xmin) / _CR_LON_SPAN
-    lat_coverage = (ymax - ymin) / _CR_LAT_SPAN
-    if lon_coverage >= 0.70 or lat_coverage >= 0.70:
-        return _CR_BOUNDS
+# ---------------------------------------------------------------------------
+# Elevation helpers
+# ---------------------------------------------------------------------------
 
-    # Enforce minimum window so the map never crops to a tiny corner.
-    # Expand symmetrically around the centre of the clip geometry.
-    cx = (xmin + xmax) / 2
-    cy = (ymin + ymax) / 2
-
-    if (out_xmax - out_xmin) < _MIN_LON_SPAN:
-        half = _MIN_LON_SPAN / 2
-        out_xmin = max(cx - half, _CR_BOUNDS[0])
-        out_xmax = min(cx + half, _CR_BOUNDS[2])
-
-    if (out_ymax - out_ymin) < _MIN_LAT_SPAN:
-        half = _MIN_LAT_SPAN / 2
-        out_ymin = max(cy - half, _CR_BOUNDS[1])
-        out_ymax = min(cy + half, _CR_BOUNDS[3])
-
-    return out_xmin, out_ymin, out_xmax, out_ymax
+def _park_overlaps_elevation_range(
+    park_gdf: gpd.GeoDataFrame,
+    dem_path: Path,
+    elev_min: float,
+    elev_max: float,
+) -> bool:
+    """Return True if any DEM pixel within the park polygon falls in [elev_min, elev_max]."""
+    try:
+        with rasterio.open(dem_path) as src:
+            dem_nodata = src.nodata if src.nodata is not None else -9999
+            proj = park_gdf.to_crs(src.crs) if park_gdf.crs != src.crs else park_gdf
+            geoms = [mapping(g) for g in proj.geometry if g is not None and g.is_valid]
+            if not geoms:
+                return False
+            out_arr, _ = rio_mask(src, geoms, crop=True, nodata=dem_nodata)
+            elev = out_arr[0].astype(float)
+            elev[elev == dem_nodata] = np.nan
+            return bool((~np.isnan(elev) & (elev >= elev_min) & (elev <= elev_max)).any())
+    except Exception:
+        return True   # on error, render rather than silently drop
 
 
 # ---------------------------------------------------------------------------
@@ -384,14 +396,15 @@ def _build_right_legend(
     presencias_gdf,
     highlight_gdf: gpd.GeoDataFrame | None,
     scope: str,
-    locality_buffers_gdf: gpd.GeoDataFrame | None = None,
+    gbif_inferred_gdf=None,
 ) -> list:
     patches = []
 
     if scope not in ("country", "vertiente"):
         patches.append(mpatches.Patch(color="#2e3440", label="Fuera del rango geográfico"))
         patches.append(mpatches.Patch(
-            facecolor="#4a5568", label="Zona geográfica — fuera del rango altitudinal",
+            facecolor="none", edgecolor="#e2e8f0", linewidth=1.0,
+            label="Zona geográfica (rango altitudinal en cyan)",
         ))
 
     if ficha.elevation.has_data():
@@ -418,20 +431,18 @@ def _build_right_legend(
             color="#ff4444", label=f"Presencias GBIF (n={len(presencias_gdf)})",
         ))
 
-    if locality_buffers_gdf is not None and not locality_buffers_gdf.empty:
-        n_loc = sum(
-            1 for o in ficha.locality_occurrences
-            if o.get("mobot_row_indices")
-        )
+    if gbif_inferred_gdf is not None and not gbif_inferred_gdf.empty:
+        n_inferred = len(gbif_inferred_gdf)
         patches.append(mpatches.Patch(
-            facecolor="#a855f7", alpha=0.35, edgecolor="#d8b4fe", linewidth=0.8,
-            label=f"Localidades Gazetero MOBOT (n={n_loc})",
+            facecolor="none", edgecolor="#fb923c", linewidth=1.0,
+            linestyle="--",
+            label=f"Región inferida por GBIF (n={n_inferred})",
         ))
 
     if matched_parks_gdf is not None and not matched_parks_gdf.empty:
         n_parks = len(ficha.parks)
         patches.append(mpatches.Patch(
-            facecolor="#f97316", alpha=0.75, edgecolor="#fed7aa", linewidth=0.8,
+            facecolor="none", edgecolor="#f97316", linewidth=1.0,
             label=f"Parques mencionados (n={n_parks})",
         ))
 
@@ -441,13 +452,13 @@ def _build_right_legend(
         else:
             label = f"Distrito(s) mencionado(s) (n={len(ficha.districts)})"
         patches.append(mpatches.Patch(
-            facecolor="#818cf8", alpha=0.70, edgecolor="#c7d2fe", linewidth=0.8,
+            facecolor="none", edgecolor="#818cf8", linewidth=1.0,
             label=label,
         ))
 
     if pa_filtered is not None and not pa_filtered.empty:
         patches.append(mpatches.Patch(
-            facecolor="#f59e0b", alpha=0.6, edgecolor="#fbbf24", linewidth=0.8,
+            facecolor="none", edgecolor="#fbbf24", linewidth=0.8,
             label=f"Áreas Protegidas (n={len(pa_filtered)})",
         ))
     return patches
@@ -471,13 +482,65 @@ def _build_left_legend(
     if ficha.regions:
         shown = sorted({r.canonical_name for r in ficha.regions})[:8]
         for name in shown:
-            rc = REGION_COLORS.get(name, FALLBACK_REGION_COLOR)
-            muted = mute_color(rc, saturation=0.75, lightness=0.55)
-            patches.append(mpatches.Patch(color=muted, label=f"  {name}"))
+            patches.append(mpatches.Patch(
+                facecolor="none", edgecolor="#e2e8f0", linewidth=1.0,
+                label=f"  {name}",
+            ))
         extra = len(set(r.canonical_name for r in ficha.regions)) - 8
         if extra > 0:
-            patches.append(mpatches.Patch(color="#374151", label=f"  ... (+{extra} más)"))
+            patches.append(mpatches.Patch(
+                facecolor="none", edgecolor="#6b7280", linewidth=0.8,
+                label=f"  ... (+{extra} más)",
+            ))
     return patches
+
+
+# ---------------------------------------------------------------------------
+# GBIF cluster flip
+# ---------------------------------------------------------------------------
+
+_GBIF_CLUSTER_MIN = 5   # minimum GBIF points in a region to flip it
+
+
+def _gbif_inferred_regions(
+    presencias_gdf,
+    matched_regions_gdf: gpd.GeoDataFrame | None,
+    regiones: gpd.GeoDataFrame,
+) -> gpd.GeoDataFrame | None:
+    """
+    Find botanical regions that contain ≥ _GBIF_CLUSTER_MIN GBIF occurrence
+    points but were NOT already matched by the Manual text.
+
+    Returns a GeoDataFrame of those extra regions (same CRS as regiones),
+    or None if none qualify.
+    """
+    if presencias_gdf is None or presencias_gdf.empty:
+        return None
+
+    # Reproject GBIF points to match regiones CRS
+    pts = presencias_gdf.to_crs(regiones.crs) if presencias_gdf.crs != regiones.crs else presencias_gdf
+
+    # Spatial join: which botanical region does each point fall in?
+    joined = gpd.sjoin(pts[["geometry"]], regiones[["geometry", "Nombre"]], how="left", predicate="within")
+
+    # Count points per region name
+    counts = joined.groupby("Nombre").size()
+    qualifying = counts[counts >= _GBIF_CLUSTER_MIN].index.tolist()
+
+    if not qualifying:
+        return None
+
+    # Remove any already matched by the Manual
+    already_matched: set[str] = set()
+    if matched_regions_gdf is not None and not matched_regions_gdf.empty:
+        already_matched = set(matched_regions_gdf["Nombre"].dropna().tolist())
+
+    new_names = [n for n in qualifying if n not in already_matched]
+    if not new_names:
+        return None
+
+    result = regiones[regiones["Nombre"].isin(new_names)].copy()
+    return result if not result.empty else None
 
 
 # ---------------------------------------------------------------------------
@@ -502,11 +565,32 @@ def generate_distribution_map(
     pa_all   = load_protected_areas()
 
     # ── Resolve entity geometries ─────────────────────────────────────────
-    matched_regions_gdf   = _resolve_to_gdf(ficha.regions)    if ficha.regions   else None
+    matched_regions_gdf   = _resolve_regions_with_qualifiers(ficha) if ficha.regions else None
     matched_parks_gdf     = _resolve_to_gdf(ficha.parks)      if ficha.parks     else None
     matched_cantons_gdf   = _resolve_to_gdf(ficha.cantons)    if ficha.cantons   else None
     matched_districts_gdf = _resolve_to_gdf(ficha.districts)  if ficha.districts else None
-    locality_buffers_gdf  = _resolve_locality_buffers(ficha, matched_regions_gdf)
+
+    # GBIF cluster flip: regions not in manual text but with ≥5 occurrence points
+    gbif_inferred_gdf = _gbif_inferred_regions(presencias_gdf, matched_regions_gdf, regiones)
+
+    # Clip park polygons to CR land boundary — removes marine-area extensions
+    # (e.g. Cabo Blanco RNA has a 824 km² ocean polygon in the shapefile)
+    if matched_parks_gdf is not None and not matched_parks_gdf.empty:
+        land_union = unary_union(
+            [g if g.is_valid else g.buffer(0) for g in regiones.geometry]
+        )
+        parks_metric = matched_parks_gdf.to_crs("EPSG:5367")
+        land_metric  = unary_union(
+            [g if g.is_valid else g.buffer(0)
+             for g in regiones.to_crs("EPSG:5367").geometry]
+        )
+        clipped = parks_metric.geometry.apply(
+            lambda g: (g if g.is_valid else g.buffer(0)).intersection(land_metric)
+        )
+        parks_metric = parks_metric.copy()
+        parks_metric["geometry"] = clipped
+        matched_parks_gdf = parks_metric.to_crs(matched_parks_gdf.crs)
+        matched_parks_gdf = matched_parks_gdf[~matched_parks_gdf.geometry.is_empty]
 
     # Apply vertiente filter to botanical regions
     if matched_regions_gdf is not None and "vert_norm" in matched_regions_gdf.columns:
@@ -524,17 +608,13 @@ def generate_distribution_map(
     elif scope == "canton" and matched_cantons_gdf is not None:
         clip_gdf = matched_cantons_gdf
     elif scope == "park":
-        # Clip to union of: matched regions + parks + locality buffers
-        # so all mentioned areas are visible, not just the park polygon
+        # Clip to union of: matched regions + parks
         gdfs_for_clip = []
         if matched_regions_gdf is not None and not matched_regions_gdf.empty:
             gdfs_for_clip.append(matched_regions_gdf[["geometry"]])
         if matched_parks_gdf is not None and not matched_parks_gdf.empty:
             pk = matched_parks_gdf.to_crs(regiones.crs)[["geometry"]]
             gdfs_for_clip.append(pk)
-        if locality_buffers_gdf is not None and not locality_buffers_gdf.empty:
-            lb = locality_buffers_gdf.to_crs(regiones.crs)[["geometry"]]
-            gdfs_for_clip.append(lb)
         if gdfs_for_clip:
             clip_gdf = gpd.GeoDataFrame(
                 pd.concat(gdfs_for_clip, ignore_index=True), crs=regiones.crs,
@@ -557,7 +637,9 @@ def generate_distribution_map(
     # Ensure clip_gdf is in the same CRS as regiones for extent calculation
     if clip_gdf.crs != regiones.crs:
         clip_gdf = clip_gdf.to_crs(regiones.crs)
-    clip_geom = unary_union(clip_gdf.geometry)
+    # Make geometries valid before union (avoids TopologyException on bad shapefiles)
+    valid_geoms = [g if g.is_valid else g.buffer(0) for g in clip_gdf.geometry]
+    clip_geom = unary_union(valid_geoms)
 
     # ── Figure setup ──────────────────────────────────────────────────────
     xmin, ymin, xmax, ymax = _compute_bounds(clip_geom, scope)
@@ -573,6 +655,17 @@ def generate_distribution_map(
     ax.set_ylim(ymin, ymax)
     plt.subplots_adjust(bottom=0.09)
 
+    # ── Layer 0: CR country base fill ─────────────────────────────────────
+    # The botanical-regions shapefile covers only ~93% of CR, leaving gaps that
+    # appear as pure black background. Drawing the province polygons first
+    # fills those gaps with the same dark-gray tone as unmatched regions.
+    provincias_gdf = load_provincias()
+    if provincias_gdf.crs != regiones.crs:
+        provincias_gdf = provincias_gdf.to_crs(regiones.crs)
+    provincias_gdf.plot(
+        ax=ax, color="#2e3440", edgecolor="none", alpha=0.7, zorder=0,
+    )
+
     # ── Layer 1: Unmatched regions (context) ──────────────────────────────
     if matched_regions_gdf is not None and not matched_regions_gdf.empty:
         matched_idx = set(matched_regions_gdf.index.tolist())
@@ -586,27 +679,56 @@ def generate_distribution_map(
             linewidth=0.4, alpha=0.7, zorder=1,
         )
 
-    # ── Layer 2: Matched botanical regions (muted color) ──────────────────
+    # ── Layer 2: Matched botanical regions — outline only ────────────────
+    # The DEM elevation mask (Layer 4) provides the colored fill;
+    # a bright outline here marks the boundary without adding visual noise.
     if matched_regions_gdf is not None and not matched_regions_gdf.empty:
-        for _, row in matched_regions_gdf.iterrows():
-            base = REGION_COLORS.get(row.get("Nombre", ""), FALLBACK_REGION_COLOR)
-            gpd.GeoDataFrame([row], crs=regiones.crs).plot(
-                ax=ax,
-                color=mute_color(base, saturation=0.75, lightness=0.55),
-                edgecolor=mute_color(base, saturation=0.90, lightness=0.75),
-                linewidth=0.6, alpha=0.90, zorder=2,
-            )
+        matched_regions_gdf.plot(
+            ax=ax,
+            facecolor="none",
+            edgecolor="#e2e8f0",
+            linewidth=0.9, alpha=0.85, zorder=2,
+        )
 
-    # ── Layer 3: Named parks (orange) ─────────────────────────────────────
+    # ── Layer 2.5: GBIF-inferred regions — dashed amber outline ─────────
+    # Regions not mentioned in the Manual but supported by ≥5 GBIF points.
+    # DEM mask is applied to these too (Layer 4); outline distinguishes them
+    # from Manual-matched regions.
+    if gbif_inferred_gdf is not None and not gbif_inferred_gdf.empty:
+        gbif_plot = gbif_inferred_gdf.to_crs(regiones.crs) if gbif_inferred_gdf.crs != regiones.crs else gbif_inferred_gdf
+        gbif_plot.plot(
+            ax=ax,
+            facecolor="none",
+            edgecolor="#fb923c",
+            linewidth=1.1, alpha=0.80, zorder=3,
+            linestyle="--",
+        )
+
+    # ── Layer 3: Named parks — only if they overlap the elevation sweet spot ──
+    # Filter out parks where no DEM pixel falls in the species elevation range;
+    # those add visual noise without informational value.
     if matched_parks_gdf is not None and not matched_parks_gdf.empty:
-        parks_plot = (
-            matched_parks_gdf.to_crs(regiones.crs)
-            if matched_parks_gdf.crs != regiones.crs else matched_parks_gdf
-        )
-        parks_plot.plot(
-            ax=ax, facecolor="#f97316", edgecolor="#fed7aa",
-            linewidth=1.0, alpha=0.75, zorder=6,
-        )
+        dem_path_check = PATHS["dem"]
+        if ficha.elevation.has_data() and dem_path_check.exists():
+            keep_rows = []
+            for i, row in matched_parks_gdf.iterrows():
+                single = gpd.GeoDataFrame([row], crs=matched_parks_gdf.crs)
+                if _park_overlaps_elevation_range(
+                    single, dem_path_check,
+                    ficha.elevation.min_m, ficha.elevation.max_m,
+                ):
+                    keep_rows.append(i)
+            matched_parks_gdf = matched_parks_gdf.loc[keep_rows]
+
+        if not matched_parks_gdf.empty:
+            parks_plot = (
+                matched_parks_gdf.to_crs(regiones.crs)
+                if matched_parks_gdf.crs != regiones.crs else matched_parks_gdf
+            )
+            parks_plot.plot(
+                ax=ax, facecolor="none", edgecolor="#f97316",
+                linewidth=1.2, alpha=0.85, zorder=6,
+            )
 
     # ── Layer 3.5: Canton / district highlight (indigo) ───────────────────
     highlight_gdf = None
@@ -616,8 +738,8 @@ def generate_distribution_map(
             if matched_cantons_gdf.crs != regiones.crs else matched_cantons_gdf
         )
         highlight_gdf.plot(
-            ax=ax, facecolor="#818cf8", edgecolor="#c7d2fe",
-            linewidth=1.2, alpha=0.70, zorder=6,
+            ax=ax, facecolor="none", edgecolor="#818cf8",
+            linewidth=1.2, alpha=0.85, zorder=6,
         )
     elif scope == "district" and matched_districts_gdf is not None:
         highlight_gdf = (
@@ -625,23 +747,8 @@ def generate_distribution_map(
             if matched_districts_gdf.crs != regiones.crs else matched_districts_gdf
         )
         highlight_gdf.plot(
-            ax=ax, facecolor="#818cf8", edgecolor="#c7d2fe",
-            linewidth=1.2, alpha=0.70, zorder=6,
-        )
-
-    # ── Layer 3.7: Locality buffers from MOBOT gazetteer (purple tint) ───────
-    if locality_buffers_gdf is not None and not locality_buffers_gdf.empty:
-        loc_plot = (
-            locality_buffers_gdf.to_crs(regiones.crs)
-            if locality_buffers_gdf.crs != regiones.crs else locality_buffers_gdf
-        )
-        loc_plot.plot(
-            ax=ax, facecolor="#a855f7", edgecolor="#d8b4fe",
-            linewidth=0.8, alpha=0.35, zorder=6,
-        )
-        loc_plot.plot(
-            ax=ax, facecolor="none", edgecolor="#d8b4fe",
-            linewidth=1.0, alpha=0.60, zorder=7,
+            ax=ax, facecolor="none", edgecolor="#818cf8",
+            linewidth=1.2, alpha=0.85, zorder=6,
         )
 
     # ── Layer 4: Elevation mask within narrowest scope ────────────────────
@@ -665,14 +772,14 @@ def generate_distribution_map(
             crs=matched_regions_gdf.crs,
         )
 
-    # Also merge locality buffers into elevation mask
-    if locality_buffers_gdf is not None and not locality_buffers_gdf.empty:
-        loc_reproj = locality_buffers_gdf.to_crs(elev_mask_gdf.crs)
-        loc_stub = loc_reproj[["geometry"]].assign(
+    # Merge GBIF-inferred regions into elevation mask
+    if gbif_inferred_gdf is not None and not gbif_inferred_gdf.empty:
+        gbif_reproj = gbif_inferred_gdf.to_crs(elev_mask_gdf.crs)
+        gbif_stub = gbif_reproj[["geometry"]].assign(
             Nombre="", Vertiente="", vert_norm=""
         )
         elev_mask_gdf = gpd.GeoDataFrame(
-            pd.concat([elev_mask_gdf, loc_stub], ignore_index=True),
+            pd.concat([elev_mask_gdf, gbif_stub], ignore_index=True),
             crs=elev_mask_gdf.crs,
         )
 
@@ -692,14 +799,22 @@ def generate_distribution_map(
                 main_min=elev_min, main_max=elev_max,
             )
 
-    # ── Layer 5: Protected areas clipped to matched regions ───────────────
+    # ── Layer 5: Protected areas clipped to matched regions, filtered by elevation ──
     pa_filtered = None
     if matched_regions_gdf is not None and not matched_regions_gdf.empty:
         pa_filtered = filter_pa_to_regions(pa_all, matched_regions_gdf)
         if pa_filtered is not None and not pa_filtered.empty:
-            pa_filtered.plot(
-                ax=ax, facecolor="#f59e0b", edgecolor="none", alpha=0.15, zorder=7,
-            )
+            # Drop PAs with no pixels in the species elevation range
+            if ficha.elevation.has_data() and dem_path.exists():
+                keep = [
+                    i for i, row in pa_filtered.iterrows()
+                    if _park_overlaps_elevation_range(
+                        gpd.GeoDataFrame([row], crs=pa_filtered.crs),
+                        dem_path, ficha.elevation.min_m, ficha.elevation.max_m,
+                    )
+                ]
+                pa_filtered = pa_filtered.loc[keep]
+        if pa_filtered is not None and not pa_filtered.empty:
             pa_filtered.plot(
                 ax=ax, facecolor="none", edgecolor="#fbbf24",
                 linewidth=0.7, alpha=0.60, zorder=8,
@@ -725,7 +840,7 @@ def generate_distribution_map(
     # ── Legends ───────────────────────────────────────────────────────────
     right_patches = _build_right_legend(
         ficha, matched_parks_gdf, pa_filtered, presencias_gdf, highlight_gdf, scope,
-        locality_buffers_gdf=locality_buffers_gdf,
+        gbif_inferred_gdf=gbif_inferred_gdf,
     )
     left_patches = _build_left_legend(ficha, matched_regions_gdf)
 
