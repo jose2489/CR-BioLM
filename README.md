@@ -1,157 +1,132 @@
-# CR-BioLM: Pipeline Multimodal de Modelado de Distribución de Especies para Costa Rica
+# CR-BioLM
 
-CR-BioLM es una arquitectura modular de investigación que integra **registros de presencia GBIF**, **variables bioclimáticas WorldClim**, **mapas de hábitat botánico** basados en el *Manual de Plantas de Costa Rica* (Hammel et al.) y **modelos de lenguaje multimodal (LLM)** para generar análisis ecológicos automáticos de plantas de Costa Rica.
-
-El sistema entrena un modelo Random Forest por especie, lo explica con SHAP y LIME, genera dos mapas complementarios, y consulta a uno o más LLMs (GPT-4o, Claude) con ambas imágenes y métricas para producir una respuesta ecológica estructurada.
-
----
-
-## Arquitectura General
-
-```
-GBIF (Mesoamérica) ──► Random Forest ──► SHAP / LIME ──────────────────────────┐
-WorldClim (19 bio) ──►                                                          │
-                                                                                ▼
-Manual de Plantas CR ──► Mapa de Hábitat Botánico ──►  LLM Multimodal (OpenRouter)
-Unidades Fitogeográficas    (3 capas: gris/muted/cyan)   GPT-4o + Claude Opus
-DEM (altitud) ──────────►  + puntos GBIF en CR                                  │
-                                                                                ▼
-                                                              Perfil Ecológico (.txt)
-```
+Research pipeline for plant distribution modeling in Costa Rica, built on the
+*Manual de Plantas de Costa Rica* (Hammel et al.). Two subsystems, two papers,
+one shared geospatial core.
 
 ---
 
-## Prerequisitos
+## Subsystems
 
-- Python 3.10 o superior
-- Una clave de API de **OpenRouter** (`OPENROUTER_API_KEY`)
-- Archivos de datos geoespaciales en `data_raw/` (ver abajo)
+| Subsystem | Directory | Paper | Status |
+|---|---|---|---|
+| **MPCR-RAG** — catalog + geospatial RAG | `mpcr_rag/` | BIP conference (Paper 1) | drafted |
+| **SDM Multimodal** — Random Forest + LLM | `main.py`, `models/`, `llm/`, `xai/`, `experiment/` | Biodiversity informatics journal (Paper 2) | in progress |
 
-No se requiere R ni ninguna otra dependencia externa.
+**Shared core:** `utils/distribution_map/` — the Manual text parser, geographic
+entity resolver, and map renderer. Both subsystems consume it; neither owns it.
 
-## Instalación
+**Dependency rule:** `mpcr_rag/` may import from `utils/distribution_map/` and
+root `config` only. It must not import from `models/`, `llm/`, `xai/`, or
+`experiment/`. This keeps the subsystem liftable to its own repo later.
+
+---
+
+## MPCR-RAG (Subsystem A)
+
+Segments Manual PDFs into per-species *fichas*, extracts structured geospatial
+fields, indexes in Pinecone + SQLite, and answers natural-language questions with
+a grounded text answer and a distribution map.
+
+```
+ingest/  →  store/  →  query/
+  segmenter → extractor → index      # ingest pipeline
+  retriever → intent → answer        # query pipeline
+  mcp/                               # MCP tool layer (in progress)
+```
+
+**Setup:**
+```bash
+pip install -r mpcr_rag/requirements.txt
+# .env: PINECONE_API_KEY=... OPENROUTER_API_KEY=...
+```
+
+**Query examples:**
+```bash
+python -m mpcr_rag.query.answer "arbustos endémicos sobre 2000 m en Talamanca"
+python -m mpcr_rag.query.intent  "¿cuál arbusto crece a mayor elevación en la Península de Nicoya?"
+```
+
+See `mpcr_rag/DEMO.md` for the full demo script.
+
+---
+
+## SDM Multimodal (Subsystem B)
+
+Trains a Random Forest per species on GBIF occurrences + WorldClim bioclimatic
+variables, explains it with SHAP/LIME, generates two maps, and queries a
+multimodal LLM with the images and metrics to produce a structured ecological
+profile.
 
 ```bash
-git clone https://github.com/jose2489/CR-BioLM
-cd CR-BioLM
-pip install -r requirements.txt
-```
-
-Crea un archivo `.env` con tu clave de OpenRouter:
-```
-OPENROUTER_API_KEY=tu_llave_aqui
-```
-
-### Datos geoespaciales requeridos (`data_raw/`)
-
-Los archivos geoespaciales no se distribuyen públicamente en este repositorio debido a su tamaño y licencias. Para obtenerlos, contacta al autor en jose2489@gmail.com.
-
-| Archivo | Descripción |
-|---|---|
-| `altitud_cr.tif` | DEM de Costa Rica (Int16, EPSG:4326) |
-| `unidades_fitogeograficas_cr/` | Shapefile Unidades Fitogeográficas (Hammel 2014) |
-| `wc2.1_30s_bio_*.tif` | Variables bioclimáticas WorldClim (19 capas) |
-| `ASP_2023/` | Shapefile de Áreas Silvestres Protegidas de CR |
-
----
-
-## Uso
-
-### Especie individual
-
-```bash
+# Single species
 python main.py -s "Quercus costaricensis"
-```
 
-### Con pregunta libre para el LLM
-
-```bash
+# With a free-text question
 python main.py -s "Quercus costaricensis" -q "¿Cómo le afecta el cambio climático?"
-```
 
-### Con pregunta del banco por perfil de usuario
+# Persona-based question bank
+python main.py -s "Peltogyne purpurea" --persona botanico
 
-```bash
-# Perfil turista (preguntas de experiencia y lugar)
-python main.py -s "Guzmania nicaraguensis" --persona turista
-
-# Perfil botánico (variables climáticas, nicho, coherencia con el Manual)
-python main.py -s "Guzmania nicaraguensis" --persona botanico
-
-# Perfil municipalidad (impacto territorial, cantón y proyecto específicos)
-python main.py -s "Cecropia obtusifolia" --persona municipalidad --canton "Sarapiquí" --proyecto "proyecto hidroeléctrico"
-
-# Municipalidad con cantón/proyecto aleatorio
-python main.py -s "Cecropia obtusifolia" --persona municipalidad
-```
-
-### Modo batch (múltiples especies)
-
-```bash
-# Pregunta fija para todas
-python main.py -f lista_especies.txt -q "¿Cuál es el rango altitudinal óptimo?"
-
-# Pregunta aleatoria del banco por especie (ideal para evaluación)
+# Batch
 python main.py -f lista_especies.txt --persona botanico
 ```
 
-El archivo de lista es un `.txt` con un nombre científico por línea.
+Outputs land in `outputs/{Especie}/run_{timestamp}/`: habitat map, GBIF map,
+SHAP summary, LIME local explanation, confusion matrix, LLM profile.
 
 ---
 
-## Salidas por Especie
+## Data (not in this repo)
 
-Por cada ejecución se crea `outputs/{Especie}/run_{timestamp}/` con:
+Geospatial assets are gitignored (`data_raw/`) due to size and licensing.
+Contact jose2489@gmail.com to obtain the bundle.
 
-| Archivo | Descripción |
-|---|---|
-| `mapa_habitat_manual.png` | Mapa de hábitat botánico (gris / muted / cyan + GBIF) |
-| `mapa_distribucion_mesoamerica.png` | Distribución regional Mesoamericana (entrenamiento RF) |
-| `shap_summary.png` | Importancia global de variables (SHAP) |
-| `lime_local_explanation.png` | Explicabilidad local para un punto de alta idoneidad |
-| `matriz_confusion.png` | Evaluación del modelo Random Forest |
-| `{Especie}_ficha_MdP.txt` | Ficha de referencia del Manual de Plantas (para evaluación) |
-| `llm_profile_BIMODAL_openai_gpt_4o.txt` | Análisis ecológico GPT-4o (Razonamiento + Respuesta) |
-| `llm_profile_BIMODAL_anthropic_claude_opus_4_5.txt` | Análisis ecológico Claude Opus |
-
-### Formato de respuesta LLM
-
-Cada perfil sigue la estructura:
-```
-## Razonamiento
-• Máximo 5 viñetas cruzando las tres fuentes (mapa botánico, modelo climático, GBIF)
-
-## Respuesta
-3-4 oraciones directas respondiendo la pregunta con zonas geográficas concretas.
-```
-
----
-
-## Banco de Preguntas (`utils/question_bank.py`)
-
-28 preguntas organizadas en 3 perfiles:
-
-| Perfil | Foco | Ejemplos |
+| Asset | Size | Notes |
 |---|---|---|
-| `turista` | Lugar, experiencia, floración | "¿Puedo verla en Braulio Carrillo?" |
-| `botanico` | Nicho climático, variables, coherencia Manual vs modelo | "¿Cuál es la variable más limitante?" |
-| `municipalidad` | Impacto territorial, EIA, corredores biológicos | "¿Hay impacto si se aprueba un {proyecto} en {canton}?" |
+| `data_raw/topography/altitud_cr.tif` | 313 KB | DEM, EPSG:4326, Int16 |
+| `data_raw/regiones_botanicas/Jose_regiones_botanicas_con_vertiente.shp` | — | Author's own work; credited on every map |
+| `data_raw/vectors/areas_protegidas_v2.shp` | — | SINAC protected areas |
+| `data_raw/Cartografia/` (cantones, distritos, provincias) | — | IGN cartography |
+| `wc2.1_30s_bio_*.tif` (19 layers) | ~51 MB | WorldClim, SDM side only |
+| `data_raw/ecoregions/` | ~251 MB | SDM side only |
+| Manual de Plantas PDFs | — | Source corpus; not redistributable |
 
-Las preguntas de municipalidad aceptan `--canton` y `--proyecto` como parámetros; si se omiten, se eligen aleatoriamente de las listas incluidas (82 cantones, 10 tipos de proyecto).
-
----
-
-## Catálogo de Especies (`outputs/picked_species_enhanced_clean.csv`)
-
-Contiene ~100 especies seleccionadas del *Manual de Plantas de Costa Rica* con:
-- Nombre científico, familia, volumen
-- Hábitat, tipo de ecosistema
-- Rango altitudinal (min/max)
-- Notas geográficas (para traducción al shapefile de Unidades Fitogeográficas)
-- Número de ocurrencias GBIF disponibles
+Only `data_raw/gazetteer/entities.csv` and `data_raw/gazetteer/ocr_corrections.csv`
+are force-tracked in git — they are the hand-curated lookup tables that the map
+pipeline depends on.
 
 ---
 
-## Cita / Referencia
+## Requirements
 
-> Araya, J. (2026). *CR-BioLM: Pipeline multimodal de modelado de distribución de especies de plantas de Costa Rica usando Machine Learning e Inteligencia Artificial Generativa*. Tesis de Maestría.
+```bash
+pip install -r requirements.txt          # Subsystem B (SDM)
+pip install -r mpcr_rag/requirements.txt # Subsystem A (RAG)
+```
+
+`.env` at repo root:
+```
+OPENROUTER_API_KEY=...
+PINECONE_API_KEY=...        # MPCR-RAG only
+GBIF_USER=...               # optional, for GBIF download
+GBIF_PWD=...
+GBIF_EMAIL=...
+```
+
+Python 3.10+. No R required.
+
+---
+
+## Architecture
+
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the five core products,
+the `DistributionFicha` JSON contract, and the adapter layer design.
+
+---
+
+## Citation
+
+> Araya, J. (2026). *CR-BioLM: Pipeline multimodal de modelado de distribución
+> de especies de plantas de Costa Rica usando Machine Learning e Inteligencia
+> Artificial Generativa*. Tesis de Maestría.
