@@ -53,3 +53,19 @@ def crear_directorio_ejecucion(especie_nombre):
 # Configuracion global de modelos permitidos o por defecto
 DEFAULT_LLM = "llama-3.3-70b-versatile"
 DEFAULT_COUNTRY = "Costa Rica"
+
+# Modelos multimodales (VLM) usados en el experimento.
+# Formato de spec: "<proveedor>:<modelo>"  — ver llm/providers.py
+#   openrouter:<modelo>  API remota (requiere OPENROUTER_API_KEY)
+#   ollama:<modelo>      modelo local de pesos abiertos (sin llave, sin costo)
+# El brazo local da reproducibilidad sin llave de API e inmunidad a la
+# descontinuacion de modelos propietarios.
+# Sobre-escribible: CRBIOLM_MULTIMODAL_MODELS="spec1,spec2"
+MULTIMODAL_MODELS = [
+    s.strip() for s in os.getenv(
+        "CRBIOLM_MULTIMODAL_MODELS",
+        "openrouter:openai/gpt-4o,"
+        "openrouter:anthropic/claude-sonnet-4-5,"
+        "ollama:qwen3-vl:8b-instruct",
+    ).split(",") if s.strip()
+]

@@ -226,14 +226,18 @@ def main():
         "notes":         args.notes,
         "started_at":    datetime.datetime.now().isoformat(),
         "species_file":  args.species_file or "catalogo_completo",
-        "models":        ["openai/gpt-4o", "anthropic/claude-sonnet-4-5"],
+        # Leido de config para que los metadatos del run no puedan divergir de los
+        # modelos que realmente se ejecutaron (specs "<proveedor>:<modelo>").
+        "models":        list(config.MULTIMODAL_MODELS),
     }
     if not args.dry_run:
         save_meta(exp_dir, meta)
 
     print(f"\n{'='*60}")
     print(f"[EXPERIMENTO] {exp_id}")
-    print(f"[EXPERIMENTO] {total} especies × {len(TIERS)} tiers (T0/T1/T3) × 2 modelos")
+    print(f"[EXPERIMENTO] {total} especies × {len(TIERS)} tiers (T0/T1/T3) "
+          f"× {len(config.MULTIMODAL_MODELS)} modelos "
+          f"({', '.join(config.MULTIMODAL_MODELS)})")
     print(f"[EXPERIMENTO] Persona: {args.persona} | Seed: {args.seed} | Resume: {args.resume}")
     print(f"[EXPERIMENTO] Directorio: {exp_dir}")
     if args.notes:

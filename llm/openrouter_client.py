@@ -5,6 +5,7 @@ import requests
 from PIL import Image
 # IMPORTANTE: Asegúrate de importar la función traducir_variable desde tu archivo de templates
 from .prompt_templates import PROMPT_T0, PROMPT_T1, PROMPT_T3, _REGLA_STRICTA, traducir_variable, get_effective_prompts
+from . import providers as _providers
 
 # T2 removed — ficha leakage fix (texto_manual reached ground truth used in evaluation)
 # Base fallback — actual prompts loaded at call time via get_effective_prompts()
@@ -13,13 +14,25 @@ TIER_PROMPTS = {"T0": PROMPT_T0, "T1": PROMPT_T1, "T3": PROMPT_T3}
 MAX_IMG_PX = 1024  # max pixels on the longest edge before base64 encoding
 
 class OpenRouterClient:
-    def __init__(self, api_key, model="openai/gpt-4o"):
-        """
-        Cliente para comunicarse con OpenRouter soportando modelos multimodales.
-        """
+    """Cliente multimodal para cualquier endpoint compatible con OpenAI.
+
+    A pesar del nombre (conservado para no romper los call sites existentes), el
+    cliente resuelve el proveedor a partir del *model spec* mediante
+    ``llm.providers``: acepta tanto modelos alojados en OpenRouter como modelos
+    locales servidos por Ollama, con el MISMO payload (texto + ``image_url`` en
+    base64).
+
+        "openrouter:openai/gpt-4o"
+        "ollama:qwen3-vl:8b-instruct"
+        "openai/gpt-4o"                  -> OpenRouter (compatibilidad)
+    """
+
+    def __init__(self, api_key=None, model="openai/gpt-4o"):
         self.api_key = api_key
         self.model = model
-        self.url = "https://openrouter.ai/api/v1/chat/completions"
+        # Conservado por compatibilidad; la URL real se resuelve por spec en cada
+        # llamada (ver llm/providers.py).
+        self.url = _providers.resolve(model, api_key=api_key).url
 
     def _codificar_imagen(self, ruta_imagen, max_px=MAX_IMG_PX):
         """Redimensiona la imagen a max_px en el lado más largo, luego convierte a Base64."""
@@ -37,8 +50,15 @@ class OpenRouterClient:
                          manual_image_path=None, texto_manual="", tier="T3"):
         """Orquesta la extracción de datos, inyección de prompt, inferencia y guardado."""
         
-        modelo_a_usar = model_override if model_override else self.model
-        print(f"[INFO] Preparando síntesis bimodal para OpenRouter ({modelo_a_usar})...")
+        spec = model_override if model_override else self.model
+        ok, _motivo = _providers.is_configured(spec, api_key=self.api_key)
+        if not ok:
+            print(f"[ERROR] Proveedor no configurado para '{spec}': {_motivo}")
+            return False
+        prov = _providers.resolve(spec, api_key=self.api_key)
+        modelo_a_usar = prov.model
+        print(f"[INFO] Preparando síntesis bimodal — proveedor={prov.name} | "
+              f"modelo={prov.model} | {'LOCAL' if prov.is_local else 'API remota'}")
 
         # ==========================================================
         # 1. EXTRACCIÓN Y TRADUCCIÓN DE VARIABLES DESDE SHAP
@@ -109,6 +129,19 @@ class OpenRouterClient:
             print(f"[ERROR] Falta una llave en el prompt {tier}: {e}. Revisa llm/prompt_templates.py")
             return False
 
+        # El prompt T3 describe TRES fuentes, incluida la "Imagen 2" (mapa RF). Si esa
+        # imagen no se adjunta, el modelo igual la da por vista y alucina una
+        # comparación entre mapas (observado con qwen3-vl, 2026-09-01). Avisarlo de
+        # forma explícita en vez de dejar que el prompt prometa algo que no llega.
+        _tiene_img2 = bool(manual_image_path and os.path.isfile(str(manual_image_path)))
+        if tier == "T3" and not _tiene_img2:
+            prompt_listo += (
+                "\n\nAVISO IMPORTANTE: la Imagen 2 (mapa predictivo climático RF) NO se "
+                "adjuntó en esta llamada. Solo recibes la Imagen 1. NO afirmes nada sobre "
+                "la Imagen 2 ni la compares con la Imagen 1; indica explícitamente que no "
+                "está disponible."
+            )
+
         # ==========================================================
         # 3. CODIFICAR IMAGEN(ES) Y ARMAR PAYLOAD PARA LA API
         # T0 es texto únicamente — no se envían imágenes
@@ -134,13 +167,10 @@ class OpenRouterClient:
                 })
                 print(f"[INFO] Segunda imagen (Manual) adjunta: {manual_image_path}")
 
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
-        }
+        headers = prov.headers()
 
         payload = {
-            "model": modelo_a_usar,
+            "model": prov.model,
             "max_tokens": 4096,
             "messages": [
                 {
@@ -154,8 +184,11 @@ class OpenRouterClient:
         # 4. EJECUTAR LLAMADA A OPENROUTER Y GUARDAR RESULTADOS
         # ==========================================================
         try:
-            print(f"[LLM] Solicitando análisis a la API de OpenRouter...")
-            respuesta = requests.post(self.url, headers=headers, json=payload)
+            print(f"[LLM] Solicitando análisis a {prov.name} ({prov.url})...")
+            # Los modelos locales son bastante más lentos (~18 s en caliente, ~47 s en
+            # frío por la carga del modelo), de ahí el timeout más generoso.
+            respuesta = requests.post(prov.url, headers=headers, json=payload,
+                                      timeout=600 if prov.is_local else 180)
             
             if respuesta.status_code == 200:
                 perfil_texto = respuesta.json()['choices'][0]['message']['content']
@@ -166,7 +199,7 @@ class OpenRouterClient:
                 else:
                     _img1_label = {
                         "T1": "Distribución GBIF Mesoamérica (puntos de presencia)",
-                        "T3": "Mapa de hábitat predicho (Manual + Hammel + DEM + GBIF)",
+                        "T3": "Mapa de hábitat predicho (Manual + Regiones Botánicas + DEM + GBIF)",
                     }.get(tier, "Imagen 1")
                     _img2_line = ""
                     if tier == "T3" and manual_image_path:
@@ -184,6 +217,7 @@ class OpenRouterClient:
 METADATOS DEL EXPERIMENTO (Arquitectura CR-BioLM — Tier {tier})
 ================================================================================
 Modelo LLM       : {modelo_a_usar} ({_modalidad})
+Proveedor        : {prov.name} ({'local, pesos abiertos' if prov.is_local else 'API remota'})
 Especie          : {species_name}
 Pregunta Usuario : {pregunta_texto}
 
@@ -193,7 +227,9 @@ FUENTES DE DATOS PROPORCIONADAS:
 
 [ANÁLISIS HÍBRIDO GENERADO POR IA]
 """
-                modelo_limpio = modelo_a_usar.replace('/', '_').replace('-', '_').replace(':', '_')
+                # Incluye el proveedor en el nombre para que un mismo modelo servido
+                # local y vía API no se pisen entre sí.
+                modelo_limpio = _providers.slug(prov.spec)
                 ruta_salida_txt = os.path.join(output_dir, f"llm_profile_BIMODAL_{modelo_limpio}.txt")
                 
                 with open(ruta_salida_txt, "w", encoding="utf-8") as file:
