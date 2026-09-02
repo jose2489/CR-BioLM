@@ -65,13 +65,22 @@ FUENTE 1 — MODELO CLIMÁTICO (datos cuantitativos)
 - Variables secundarias: {secundaria_1}, {secundaria_2}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-FUENTE 2 — MAPA DE HÁBITAT PREDICHO (Manual + Hammel + DEM) (Imagen 1)
+FUENTE 2 — MAPA DE HÁBITAT PREDICHO (Manual + Regiones Botánicas + DEM) (Imagen 1)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Generado cruzando el Manual de Plantas de Costa Rica con las Unidades Fitogeográficas (Hammel 2014) y DEM.
-- CYAN brillante = hábitat óptimo (región correcta + elevación dentro del rango del Manual)
-- Color apagado/muted = región correcta pero fuera del rango altitudinal
-- Gris oscuro = fuera del rango geográfico del Manual
-- Puntos rojos = presencias GBIF confirmadas en CR
+Generado cruzando el Manual de Plantas de Costa Rica con las Regiones Botánicas de
+Costa Rica (José Araya, 2026) y un modelo de elevación (DEM). Leyenda del mapa:
+- RELLENO CYAN = hábitat potencial: la intersección de las regiones citadas en el
+  Manual con el rango altitudinal de la especie. Es el ÚNICO relleno de color.
+- CYAN CON TRAMA DIAGONAL = banda altitudinal atípica (registros ocasionales).
+- CONTORNO BLANCO SIN RELLENO = región botánica citada en el texto del Manual.
+- CONTORNO ÁMBAR PUNTEADO = región NO citada en el Manual pero con >=5 registros
+  GBIF dentro del rango altitudinal (extensión inferida por evidencia de ocurrencia).
+- CONTORNO NARANJA = parque nacional citado en el Manual, filtrado por elevación.
+- CONTORNO ÁMBAR FINO = áreas silvestres protegidas dentro del rango altitudinal.
+- PUNTOS ROJOS = presencias GBIF en Costa Rica (coordenadas limpias).
+- GRIS OSCURO = fuera del rango geográfico indicado por el Manual.
+Nota: si la especie tiene una elevación de punto único en el Manual (p. ej. "ca. 2950 m"),
+la máscara de elevación queda vacía y NO habrá relleno cyan. En ese caso dilo.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FUENTE 3 — MAPA PREDICTIVO CLIMÁTICO RF (Imagen 2)
@@ -87,10 +96,10 @@ Distribución modelada a partir de variables bioclimáticas WorldClim y presenci
 FORMATO DE RESPUESTA OBLIGATORIO:
 
 ## Razonamiento
-Máximo 5 viñetas. Cruza las tres fuentes: ¿coinciden el mapa de hábitat predicho y el modelo climático? ¿Los puntos GBIF caen dentro del hábitat óptimo? ¿La variable limitante explica la distribución observada? Si hay discrepancias entre fuentes, señálalas. Si algo no está en los datos, no lo infiereas.
+Máximo 5 viñetas. Describe la POSICIÓN de lo que observas en las imágenes, no las etiquetas de la leyenda: ¿el relleno cyan está en la mitad norte o sur del país?, ¿en la vertiente Pacífica o Caribe?, ¿costa o interior?, ¿tierras bajas o altas?, ¿es una mancha continua o está fragmentado en bloques separados? ¿Los puntos rojos caen DENTRO o FUERA del cyan? ¿Coincide el mapa de hábitat (Imagen 1) con el mapa climático RF (Imagen 2)? Si hay discrepancias entre fuentes, señálalas. Si algo no está en los datos, no lo infieras.
 
 ## Respuesta
-3 a 4 oraciones. Responde la pregunta usando únicamente la evidencia cruzada de las tres fuentes. Menciona zonas geográficas concretas de Costa Rica. Si los datos no permiten responder algún aspecto, indícalo.
+3 a 4 oraciones. Responde la pregunta usando únicamente la evidencia cruzada de las tres fuentes. Describe la distribución en términos POSICIONALES (norte/sur, vertiente Pacífica/Caribe, costa/interior, tierras bajas/altas) antes de nombrar cualquier región. Si los datos no permiten responder algún aspecto, indícalo.
 """
 
 # Alias para compatibilidad con código existente (main.py usa BIMODAL_PROMPT para T3)

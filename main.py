@@ -89,86 +89,62 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
     presencias_cr = extraer_altitud(presencias_cr, ruta_altitud)
     cl.check("Altitud enriquecida", ok=True, detail="DEM EPSG:4326")
 
-    # --- Mapa de hábitat principal: Manual de Plantas CR + Unidades Fitogeográficas + GBIF ---
-    import pandas as pd
-    _catalog_path = os.path.join("outputs", "picked_species_enhanced_clean.csv")
+    # --- Mapa de hábitat principal: catálogo MPCR-RAG + GBIF + DEM ---
+    # Fuente: mpcr_rag/data/fichas.sqlite (5,791 especies, segmentador validado).
+    # Se renderiza por la MISMA ruta que usa el sistema MPCR-RAG (single_species_map),
+    # de modo que el mapa del pipeline completo sea idéntico al mapa validado por los
+    # expertos. Los puntos GBIF del mapa vienen de gbif_map.get_points (taxonKey
+    # aceptado, coordenadas limpias, altitud DEM); presencias_meso/presencias_cr se
+    # conservan aparte porque el RF necesita presencias de toda Mesoamérica.
     ruta_mapa_manual = None
-    texto_manual = ""
-    alt_manual = None   # (emin, emax) from Manual catalog, used in T3 prompt
+    alt_manual = None   # (emin, emax) del Manual, usado en el prompt T3
+    ficha_rag = None
     try:
-        _catalog = pd.read_csv(_catalog_path)
-        _row = _catalog[_catalog['species'] == especie_nombre]
-        if not _row.empty:
-            r = _row.iloc[0]
-            _out_min  = r.get('elev_outlier_min_m')
-            _out_max  = r.get('elev_outlier_max_m')
-            _geo      = str(r.get('geographic_notes') or '')
-            _raw      = str(r.get('habitat_raw') or '')
-            _ficha    = build_ficha(habitat_raw=_raw, geographic_notes=_geo, species=especie_nombre)
-            import math
-            _emin, _emax = r.get('elevation_min_m'), r.get('elevation_max_m')
-            if _emin and _emax:
-                try:
-                    if not (math.isnan(float(_emin)) or math.isnan(float(_emax))):
-                        from utils.distribution_map.ficha import ElevationRange
-                        from dataclasses import replace as _replace
-                        _ficha = _replace(_ficha, elevation=ElevationRange(
-                            min_m=float(_emin), max_m=float(_emax),
-                            outlier_min_m=None if (not _out_min or str(_out_min) == 'nan') else float(_out_min),
-                            outlier_max_m=None if (not _out_max or str(_out_max) == 'nan') else float(_out_max),
-                        ))
-                except Exception:
-                    pass
-            ruta_mapa_manual = generate_distribution_map(
-                ficha=_ficha,
-                output_path=os.path.join(out_dir, "mapa_habitat_manual.png"),
-                presencias_gdf=presencias_cr,
-            )
-            # Build summary text for the LLM prompt
-            parts = []
-            geo = str(r.get('geographic_notes', '') or '').strip()
-            if geo and geo.lower() != 'nan':
-                parts.append(f"Distribución geográfica (Manual): {geo}")
-            emin, emax = r.get('elevation_min_m'), r.get('elevation_max_m')
-            if emin and emax:
-                try:
-                    alt_manual = (int(float(emin)), int(float(emax)))
-                except Exception:
-                    pass
-                alt_txt = f"{int(float(emin))}–{int(float(emax))} m s.n.m."
-                if _out_min and str(_out_min) != 'nan':
-                    alt_txt += f" (mín. atípico: {int(float(_out_min))} m)"
-                if _out_max and str(_out_max) != 'nan':
-                    alt_txt += f" (máx. atípico: {int(float(_out_max))} m)"
-                parts.append(f"Rango altitudinal: {alt_txt}")
-            hab = str(r.get('habitat_type', '') or '').strip()
-            if hab and hab.lower() != 'nan':
-                parts.append(f"Tipo de hábitat: {hab}")
-            texto_manual = "── Manual de Plantas de Costa Rica ──\n" + "\n".join(parts) if parts else ""
+        from mpcr_rag import config as _rag_config
+        from mpcr_rag.store import local_store as _rag_store
+        from mpcr_rag.query.gbif_map import single_species_map as _rag_render
 
-            # Guardar ficha de referencia del Manual (para evaluación posterior)
+        _rag_conn = _rag_store.connect(_rag_config.SQLITE_PATH)
+        ficha_rag = _rag_store.get(_rag_conn, especie_nombre.replace(" ", "_"))
+
+        if ficha_rag is not None:
+            if ficha_rag.elev_min is not None and ficha_rag.elev_max is not None:
+                alt_manual = (int(ficha_rag.elev_min), int(ficha_rag.elev_max))
+
+            ruta_mapa_manual, _n_gbif = _rag_render(
+                ficha_rag,
+                out_path=os.path.join(out_dir, "mapa_habitat_manual.png"),
+            )
+
+            # Ficha de referencia del Manual (para evaluación posterior)
             nombre_limpio = especie_nombre.replace(" ", "_")
             ruta_ficha = os.path.join(out_dir, f"{nombre_limpio}_ficha_MdP.txt")
             with open(ruta_ficha, "w", encoding="utf-8") as f:
-                f.write(f"FICHA DE REFERENCIA — Manual de Plantas de Costa Rica\n")
-                f.write(f"{'='*60}\n")
-                f.write(f"Especie          : {especie_nombre}\n")
-                f.write(f"Familia          : {r.get('family', 'N/D')}\n")
-                f.write(f"Volumen          : {r.get('volume_title', 'N/D')}\n")
-                f.write(f"{'='*60}\n\n")
-                f.write(f"Distribución geográfica:\n  {r.get('geographic_notes', 'N/D')}\n\n")
-                f.write(f"Rango altitudinal:\n  {r.get('elevation_min_m', '?')}–{r.get('elevation_max_m', '?')} m s.n.m.\n\n")
-                f.write(f"Tipo de hábitat:\n  {r.get('habitat_type', 'N/D')}\n\n")
-                f.write(f"Descripción original (habitat_raw):\n  {r.get('habitat_raw', 'N/D')}\n\n")
-                f.write(f"Ocurrencias GBIF en catálogo:\n  {r.get('occurrences', 'N/D')}\n")
+                f.write("FICHA DE REFERENCIA — Manual de Plantas de Costa Rica\n")
+                f.write("=" * 60 + "\n")
+                f.write(f"Especie          : {ficha_rag.species}\n")
+                f.write(f"Familia          : {ficha_rag.family or 'N/D'}\n")
+                f.write(f"Tomo / página    : {ficha_rag.volume or '?'} / {ficha_rag.pages or '?'}\n")
+                f.write("=" * 60 + "\n\n")
+                f.write(f"Párrafo de distribución (Manual):\n  {ficha_rag.distribution_paragraph}\n\n")
+                f.write(f"Rango altitudinal:\n  {ficha_rag.elev_min}–{ficha_rag.elev_max} m s.n.m.\n\n")
+                f.write(f"Vertientes:\n  {', '.join(ficha_rag.vertientes) or 'N/D'}\n\n")
+                f.write(f"Regiones:\n  {', '.join(ficha_rag.regions) or 'N/D'}\n\n")
+                f.write(f"Tipos de bosque:\n  {', '.join(ficha_rag.forest_types) or 'N/D'}\n\n")
+                f.write(f"Presencias GBIF (limpias, CR):\n  {_n_gbif}\n")
+
             cl.check("Mapa de hábitat Manual generado", ok=True,
                      detail=str(ruta_mapa_manual))
-            print(f"[INFO] Ficha Manual guardada: {ruta_ficha}")
-            print(f"[INFO] Mapa hábitat Manual generado: {ruta_mapa_manual}")
+            print(f"[INFO] Ficha Manual (MPCR-RAG) guardada: {ruta_ficha}")
+            print(f"[INFO] Mapa hábitat Manual generado: {ruta_mapa_manual}  (GBIF n={_n_gbif})")
+            if alt_manual and alt_manual[0] == alt_manual[1]:
+                print(f"[WARN] Elevación de punto único ({alt_manual[0]} m): "
+                      f"la máscara DEM queda vacía y el mapa no llevará capa cyan.")
         else:
             cl.check("Mapa de hábitat Manual generado", ok=False,
-                     detail=f"'{especie_nombre}' no en catálogo")
-            print(f"[INFO] '{especie_nombre}' no encontrada en el catálogo del Manual — mapa de hábitat omitido.")
+                     detail=f"'{especie_nombre}' NO está en el catálogo MPCR-RAG")
+            print(f"[WARN] '{especie_nombre}' no está en el catálogo MPCR-RAG "
+                  f"(5,791 especies) — se usará el mapa Mesoamérica como respaldo.")
     except Exception as e:
         cl.check("Mapa de hábitat Manual generado", ok=False, detail=str(e))
         print(f"[WARN] No se pudo generar el mapa del Manual: {e}")
@@ -380,11 +356,9 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
 
     print(f"[INFO] Tier {tier}: imagen1={os.path.basename(str(imagen_1))} | imagen2={os.path.basename(str(imagen_2)) if imagen_2 else 'N/A'} | métricas={'sí' if rf_envio else 'no'}")
 
-    # Lista de los mejores modelos Multimodales (VLM) en OpenRouter
-    modelos_multimodales = [
-        "openai/gpt-4o",                  # Generador principal
-        "anthropic/claude-sonnet-4-5",    # Generador secundario (costo/rendimiento óptimo para evaluación)
-    ]
+    # Modelos multimodales (VLM) — specs "<proveedor>:<modelo>", definidos en config.py
+    # e incluyendo al menos un modelo LOCAL de pesos abiertos (ver llm/providers.py).
+    modelos_multimodales = config.MULTIMODAL_MODELS
 
     try:
         # Instanciamos el cliente una sola vez
