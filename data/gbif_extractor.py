@@ -1,3 +1,5 @@
+import time
+
 import pandas as pd
 import geopandas as gpd
 from pygbif import occurrences
@@ -47,6 +49,30 @@ class GBIFExtractor:
             print(f"Error al conectar con GBIF: {e}")
             return None
 
+    def _search_con_reintentos(self, intentos=4, espera_inicial=5, **kwargs):
+        """
+        occurrences.search con reintentos y espera exponencial.
+
+        La API de GBIF devuelve 503 ("Backend fetch failed") de forma intermitente.
+        Sin reintentos, un solo fallo transitorio aborta toda la corrida de una
+        especie — inaceptable en un barrido de cientos de especies, donde se
+        perderían corridas al azar y de forma irreproducible.
+        """
+        for intento in range(1, intentos + 1):
+            try:
+                return occurrences.search(**kwargs)
+            except Exception as e:
+                transitorio = any(s in str(e) for s in ("503", "502", "504", "timeout",
+                                                        "Timeout", "Connection"))
+                if intento == intentos or not transitorio:
+                    print(f"[ERROR] GBIF falló tras {intento} intento(s): {e}")
+                    return None
+                espera = espera_inicial * (2 ** (intento - 1))
+                print(f"[WARN] GBIF transitorio ({str(e)[:60]}). "
+                      f"Reintento {intento + 1}/{intentos} en {espera}s...")
+                time.sleep(espera)
+        return None
+
     def fetch_occurrences_mesoamerica(self, species_name, limit=3000):
         """
         Descarga registros de GBIF para toda Mesoamérica usando un polígono WKT.
@@ -56,12 +82,14 @@ class GBIFExtractor:
         print(f"[INFO] Consultando GBIF (Mesoamérica) para: {species_name} (límite: {limit} registros)...")
 
         try:
-            gbif_data = occurrences.search(
+            gbif_data = self._search_con_reintentos(
                 scientificName=species_name,
                 geometry=self.MESOAMERICA_WKT,
                 hasCoordinate=True,
                 limit=limit
             )
+            if gbif_data is None:
+                return None
             registros = gbif_data['results']
 
             presencias_coords = [
