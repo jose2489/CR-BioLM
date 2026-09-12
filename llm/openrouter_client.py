@@ -122,6 +122,11 @@ class OpenRouterClient:
             zona_humana=zona_humana,
             secundaria_1=secundaria_1,
             secundaria_2=secundaria_2,
+            # Valores climáticos medidos en los sitios de presencia. Sin esto el
+            # prompt solo lleva NOMBRES de variables y el modelo no puede describir
+            # un clima a partir de datos (ver models/features.climate_envelope).
+            envolvente_climatica=(rf_metrics or {}).get(
+                "climate_envelope", "Envolvente climática: no disponible"),
         )
         try:
             prompt_listo = template.format(**format_kwargs)
@@ -202,7 +207,11 @@ class OpenRouterClient:
                         "T3": "Mapa de hábitat predicho (Manual + Regiones Botánicas + DEM + GBIF)",
                     }.get(tier, "Imagen 1")
                     _img2_line = ""
-                    if tier == "T3" and manual_image_path:
+                    # Debe reflejar lo que REALMENTE se envió: antes bastaba con que la
+                    # ruta fuera no-vacía, así que el encabezado declaraba una Imagen 2
+                    # que nunca se adjuntó y toda lectura posterior de estos metadatos
+                    # registraba mal la condición del experimento.
+                    if tier == "T3" and _tiene_img2:
                         _img2_line = f"\n- Imagen 2       : {os.path.basename(str(manual_image_path))} — Modelo predictivo RF"
                     _rf_line = ""
                     if tier == "T3":

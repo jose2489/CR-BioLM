@@ -58,11 +58,15 @@ PROMPT_T3 = """Eres un evaluador ecológico imparcial. Tu tarea es responder una
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FUENTE 1 — MODELO CLIMÁTICO (datos cuantitativos)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Precisión del modelo (AUC): {rf_auc:.4f}
+- Precisión del modelo (AUC, validación por bloques espaciales): {rf_auc:.4f}
 - Rango altitudinal observado en CR: {info_altitud}
 - Variable climática más limitante: {var_humana} (impacto {direccion} sobre la idoneidad)
 - Ecosistema de mayor idoneidad: {zona_humana}
 - Variables secundarias: {secundaria_1}, {secundaria_2}
+- {envolvente_climatica}
+  IMPORTANTE: para describir el clima usa estos VALORES medidos (con sus unidades),
+  no el nombre de la variable. "Precipitación anual mediana de 3200 mm" es una
+  respuesta; "precipitación del trimestre frío" es solo una etiqueta.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 FUENTE 2 — MAPA DE HÁBITAT PREDICHO (Manual + Regiones Botánicas + DEM) (Imagen 1)

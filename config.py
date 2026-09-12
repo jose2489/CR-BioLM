@@ -54,6 +54,16 @@ def crear_directorio_ejecucion(especie_nombre):
 DEFAULT_LLM = "llama-3.3-70b-versatile"
 DEFAULT_COUNTRY = "Costa Rica"
 
+# --- SDM: resolucion climatica y muestreo de fondo -------------------------
+# Celdas de clima utilizables sobre Costa Rica por resolucion:
+#   10m -> 159   (insuficiente: el fondo produce filas duplicadas que se filtran
+#                 entre entrenamiento y prueba e inflan el AUC)
+#   5m  -> ~650
+#   2.5m-> ~2600
+#   30s -> ~50000  (coincide con la malla del DEM, 420x380)
+CLIMATE_RESOLUTION = os.getenv("CRBIOLM_CLIMATE_RESOLUTION", "30s")
+NUM_PSEUDOAUSENCIAS = int(os.getenv("CRBIOLM_PSEUDOAUSENCIAS", "1500"))
+
 # Modelos multimodales (VLM) usados en el experimento.
 # Formato de spec: "<proveedor>:<modelo>"  — ver llm/providers.py
 #   openrouter:<modelo>  API remota (requiere OPENROUTER_API_KEY)

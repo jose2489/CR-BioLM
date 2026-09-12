@@ -13,6 +13,11 @@ from data.climate_loader import ClimateLoader
 from data.geoprocessor import Geoprocessor
 from models.random_forest import RandomForestSDM
 from models.cnn_model import CNNSDM
+from models.features import (
+    select_decorrelated, spatial_block_split, climate_envelope, format_envelope,
+    DEFAULT_PRIORITY as CLIMATE_CANDIDATES,
+)
+from models import surface as rf_surface
 from xai.shap_explainer import SHAPExplainer
 from xai.grad_cam import MultimodalGradCAM
 from utils.geoprocesamiento import extraer_altitud, generar_contexto_conservacion
@@ -149,38 +154,61 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
         cl.check("Mapa de hábitat Manual generado", ok=False, detail=str(e))
         print(f"[WARN] No se pudo generar el mapa del Manual: {e}")
 
-    # 5. Rasters climáticos recortados a Mesoamérica (para entrenamiento del RF)
+    # 5. Rasters climáticos recortados a COSTA RICA (área accesible del modelo)
+    # Antes se recortaba y entrenaba sobre 'meso', cuyo límite incluye TODO México
+    # (hasta -117° y 32.8°N). Muestrear el fondo sobre desiertos y zonas templadas
+    # vuelve trivial la separación: el AUC salía ~1.0 para toda especie y SHAP no
+    # aportaba información específica. El área de estudio es Costa Rica, así que el
+    # fondo debe venir de Costa Rica.
+    # Solo se recortan las variables CANDIDATAS (no las 19): a 30 arc-seg cada
+    # raster global pesa ~1.9 GB al extraerlo, así que recortar de más cuesta
+    # minutos por variable en la primera ejecución.
     climate_loader = ClimateLoader()
-    raster_paths = climate_loader.get_climate_layers(meso_bounds, region_name='meso')
+    raster_paths = climate_loader.get_climate_layers(
+        cr_bounds, region_name='cr', resolution=config.CLIMATE_RESOLUTION,
+        variables=set(CLIMATE_CANDIDATES))
     if not raster_paths:
         print("[ERROR FATAL] Fallo la carga de matrices climaticas.")
         return False
 
-    # Ecoregiones CR (solo útil para puntos dentro de CR; no se pasa al entrenamiento Meso)
-    # Se omite para evitar sesgo geográfico: puntos no-CR quedarían todos como 'Zona_Desconocida'
+    # Ecoregiones: omitidas para no introducir una variable categórica dispersa.
     ecoregions_gdf = None
 
-    # 5.1 Filtro de variables expertas (precipitación, que es el factor limitante en Mesoamérica)
-    variables_expertas = ["bio_14", "bio_15", "bio_16", "bio_17", "bio_18", "bio_19"]
-    raster_paths = {k: v for k, v in raster_paths.items() if any(var in k or var in v for var in variables_expertas)}
+    # 5.1 Selección de variables por DESCORRELACIÓN (ver models/features.py).
+    # El filtro anterior fijaba seis variables de precipitación y excluía la
+    # temperatura por completo — en un país de 0 a 3820 m eso impedía descubrir
+    # cualquier límite térmico o altitudinal. Además bio_14~bio_17 (r=0.991) y
+    # bio_15~bio_17 (r=-0.956) eran casi duplicados, y con variables colineales
+    # SHAP reparte la importancia de forma arbitraria entre gemelas: de ahí que el
+    # "factor limitante" alternara entre bio_16 y bio_19 sin relación con la especie.
+    variables_sel = select_decorrelated(raster_paths)
+    if not variables_sel:
+        print("[ERROR FATAL] No se pudo seleccionar ninguna variable climática.")
+        return False
+    raster_paths = {v: raster_paths[v] for v in variables_sel}
 
-    print(f"[INFO] Filtro experto aplicado. Se entrenará el modelo con {len(raster_paths)} variables climáticas.")
-
-    # 6. Geoprocesamiento y Matriz Ambiental — usando presencias y límites Mesoamericanos
+    # 6. Geoprocesamiento y Matriz Ambiental — presencias y fondo de Costa Rica
     geo = Geoprocessor()
     matriz_final = geo.build_environmental_matrix(
-        presencias_meso, meso_bounds, raster_paths,
+        presencias_cr, cr_bounds, raster_paths,
         ecoregions_gdf=None,
-        use_extent_background=True,  # Pseudo-ausencias distribuidas en toda Mesoamérica
-        num_pseudoausencias=1500
+        use_extent_background=True,   # Pseudo-ausencias sobre el área accesible (CR)
+        num_pseudoausencias=config.NUM_PSEUDOAUSENCIAS
     )
 
-    # 7. Particion de datos para Machine Learning
+    # 7. Partición por BLOQUES ESPACIALES (no aleatoria).
+    # Una partición aleatoria deja celdas vecinas —casi idénticas en clima— a ambos
+    # lados del corte, así que el modelo se evalúa sobre filas equivalentes a las que
+    # ya vio. Retener bloques completos da una estimación honesta del desempeño.
     X = matriz_final.drop(columns=['clase', 'lon', 'lat'])
     y = matriz_final['clase']
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=config.SEED, stratify=y
-    )
+    idx_train, idx_test = spatial_block_split(
+        matriz_final, n_blocks=5, test_frac=0.25, seed=config.SEED)
+    X_train, X_test = X[idx_train], X[idx_test]
+    y_train, y_test = y[idx_train], y[idx_test]
+    print(f"[INFO] Partición espacial: {int(idx_train.sum())} entrenamiento / "
+          f"{int(idx_test.sum())} prueba "
+          f"(presencias: {int(y_train.sum())}/{int(y_test.sum())})")
 
 # ==========================================
     # 8. MODELADO PREDICTIVO ( RF vs CNN)
@@ -195,6 +223,26 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
     
     if 'confusion_matrix' in rf_metrics:
         vis.plot_confusion_matrix(rf_metrics['confusion_matrix'], out_dir) # Opcional: renombrar a conf_matrix_rf.png en visualizer
+
+    # --- 8.1.1 SUPERFICIE DE IDONEIDAD (la predicción espacial del RF) ---
+    # Esta era la pieza ausente: el modelo se entrenaba y se explicaba, pero su
+    # predicción espacial nunca se generaba. El prompt T3 describía una "Imagen 2 —
+    # mapa predictivo climático RF" que no existía, y el cliente, al no encontrar el
+    # archivo, la omitía en silencio: el tier T3 corría de facto con una sola imagen.
+    ruta_mapa_rf = os.path.join(out_dir, "mapa_solapamiento_espacial.png")
+    try:
+        rf_surface.build_and_plot(
+            rf_model, raster_paths, rf_model.feature_names, ruta_mapa_rf,
+            species_name=especie_nombre,
+            presencias_gdf=presencias_cr,
+            boundary_gdf=cr_bounds,
+            auc=rf_metrics.get("roc_auc"),
+        )
+        cl.check("Superficie de idoneidad RF generada", ok=True, detail=ruta_mapa_rf)
+    except Exception as e:
+        print(f"[WARN] No se pudo generar la superficie de idoneidad: {e}")
+        cl.check("Superficie de idoneidad RF generada", ok=False, detail=str(e))
+        ruta_mapa_rf = None
         
     # --- 8.2 CAMINO B: Red Neuronal Multimodal (Deep Learning) ---
     if EJECUTAR_CNN:
@@ -291,7 +339,9 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
     # Fallback: si no hay mapa Manual (geographic_notes ausentes), usar mapa GBIF Mesoamérica
     _mapa_meso = os.path.join(out_dir, "mapa_distribucion_mesoamerica.png")
     ruta_del_mapa = ruta_mapa_manual if ruta_mapa_manual and os.path.isfile(ruta_mapa_manual) else _mapa_meso
-    ruta_mapa_rf  = os.path.join(out_dir, "mapa_solapamiento_espacial.png")
+    # ruta_mapa_rf ya quedó definida en el paso 8.1.1 (None si la superficie falló).
+    # Antes se reasignaba aquí de forma incondicional, así que apuntaba a un archivo
+    # que podía no existir y el encabezado del perfil declaraba una Imagen 2 fantasma.
 
     # --- EXTRACCIÓN DE ALTITUD desde presencias CR (raster CR-only) ---
     info_altitud = "No disponible"
@@ -340,8 +390,19 @@ def procesar_especie(especie_nombre, user_question=None, tier="T3", output_dir_o
     else:  # T3 — sistema completo
         imagen_1   = ruta_del_mapa
         imagen_2   = ruta_mapa_rf
-        rf_envio   = rf_metrics
+        rf_envio   = dict(rf_metrics)
         shap_envio = shap_data
+        # Envolvente climática observada en los sitios de presencia. Sin esto la
+        # FUENTE 1 solo entrega el NOMBRE de la variable limitante, así que el
+        # modelo no puede describir un clima a partir de datos y termina recitando
+        # la etiqueta ("precipitación del trimestre frío") rellenando el resto con
+        # conocimiento previo. Con medianas y P10-P90 la respuesta es cuantitativa
+        # y verificable.
+        try:
+            rf_envio["climate_envelope"] = format_envelope(
+                climate_envelope(matriz_final, variables_sel))
+        except Exception as e:
+            print(f"[WARN] No se pudo calcular la envolvente climática: {e}")
         # Combine GBIF-detected altitude with Manual reference so the LLM
         # can reconcile noise instead of blindly reporting GBIF outliers.
         if alt_manual and info_altitud != "No disponible":
