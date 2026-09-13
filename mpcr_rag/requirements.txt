@@ -1,6 +1,17 @@
 # MPCR-RAG subproject deps (on top of CR-BioLM's map pipeline + geo stack).
-pymupdf>=1.24        # PDF text/layout-block extraction (import name: fitz)
-pinecone>=5.0        # serverless vector index + hosted e5 inference
-python-dotenv>=1.0   # load PINECONE_API_KEY / OpenRouter keys from .env
-mcp>=2.1             # MCP server (mpcr_rag/mcp/server.py)
+pymupdf>=1.24                 # PDF text/layout-block extraction (import name: fitz)
+python-dotenv>=1.0            # load OpenRouter / optional Pinecone keys from .env
+mcp>=2.1                      # MCP server (mpcr_rag/mcp/server.py)
+
+# Vector store (default backend: pgvector)
+psycopg2-binary>=2.9          # Postgres client
+pgserver>=0.1.4               # embedded PostgreSQL 16 + pgvector, no system install
+sentence-transformers>=5.0    # local multilingual-e5-large embeddings
+# torch: install the CUDA build for GPU embedding, e.g.
+#   pip install torch --index-url https://download.pytorch.org/whl/cu128
+# The CPU build works but embeds ~1 passage/s (hours for a full sync).
+
+# Optional: only to reproduce the BIP paper (MPCR_VECTOR_BACKEND=pinecone)
+pinecone>=5.0
+
 # LLM enrichment reuses CR-BioLM's existing OpenRouter client (see ../llm/).
