@@ -208,7 +208,11 @@ def extract(raw: RawFicha) -> Ficha:
         endemic_cr=bool(_ENDEMIC.search(par)),
         flowering_months=_months("Fl", par),
         fruiting_months=_months("Fr", par),
-        full_text=raw.header_block + "\n" + par,
+        morphology=raw.morphology or "",
+        discussion=raw.discussion or "",
+        genus_description=raw.genus_description or "",
+        full_text="\n".join(s for s in (raw.header_block, raw.morphology, par,
+                                        raw.discussion) if s),
     )
 
 

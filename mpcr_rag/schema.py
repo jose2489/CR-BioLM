@@ -61,6 +61,11 @@ class Ficha:
     fruiting_months: list[int] = field(default_factory=list)
     uses: str | None = None
 
+    # descriptive prose — verbatim Manual text (dehyphenated) -------------------
+    morphology: str = ""                  # species description: habit, size, leaves, flowers, fruit
+    discussion: str = ""                  # "se reconoce por…", look-alikes, notes
+    genus_description: str = ""           # genus preamble; fallback evidence, cite as genus-level
+
     full_text: str = ""                   # complete ficha prose, for hydration/citation
 
     # ---- serialization helpers -------------------------------------------------

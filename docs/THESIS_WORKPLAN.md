@@ -29,15 +29,16 @@ BIP paper = chapter 1 (grounding in the flora text). This plan = the rest.
 
 ## Track 0 — Housekeeping (today, ~45 min)
 
-- [ ] **0.1** Commit the uncommitted work in logical commits:
-      RF fixes (`models/features.py`, `models/surface.py`, `main.py`, `data/climate_loader.py`,
-      `config.py`), GBIF retries (`data/gbif_extractor.py`), prompt/client
-      (`llm/`), docs (`docs/SHIP_PLAN.md`, `docs/BACHELOR_QUICKSTART.md`, this file),
-      `utils/make_handoff_bundle.py`
-- [ ] **0.2** Tag the code state that matches the BIP submission (`bip-2026-submission`)
-      BEFORE touching storage or retrieval. Verify the eval scripts still run from the tag.
-- [ ] **0.3** Back up `Jose_regiones_botanicas_con_vertiente.shp` outside Drive + git
-      (irreplaceable, gitignored).
+- [x] **0.1** Commit the uncommitted work in logical commits (2026-09-12: 5adfa14,
+      4757226, 4edb1bb, 8782afb)
+- [x] **0.2** Tag `bip-2026-submission` → 4cff428 (last commit on submission day).
+      Verified: `make_report` from the tag regenerates `manual_vs_gbif_results.md`
+      identically except the date line
+- [x] **0.3** Backup `C:\Users\Jose\Documents\Tesis\backups\regiones_botanicas_20260912.zip`
+      + `.sha256`. Still TODO: an off-machine copy (Drive sync is not a backup)
+- [ ] **0.4** The Supabase project behind `DATABASE_URL` no longer resolves ("tenant/user
+      not found" on 2026-09-12). Check the dashboard: the expert-review tables
+      (`experiment/db.py`) lived there
 
 ---
 
@@ -73,14 +74,32 @@ Finding: `fichas.sqlite.full_text` is header + synonyms + distribution only (med
 chars). The segmenter already captures morphology (~72%), discussion (~97%) and genus
 description (~66%) in `RawFicha` — they are dropped at persistence.
 
-- [ ] **B1** Persist `morphology`, `discussion`, `genus_description` as raw text:
-      `mpcr_rag/schema.py` (Ficha) → `ingest/field_extractor.py` → `store/local_store.py`
-      (columns + JSON) → `ingest/build_catalog.py`
-- [ ] **B2** Clean text: join hyphenation (`den- samente`), strip control chars
-- [ ] **B3** Re-ingest (`python -m mpcr_rag.ingest.build_catalog`, ~5 min). Regression
-      check: still 5,791 fichas; elevation/region/vertiente coverage unchanged
-- [ ] **B4** QA 50 random entries by hand: discussion blocks attached to the wrong
-      species, figure captions, running footers (97% discussion rate is suspicious)
+Segmenter defects found while doing B (2026-09-12), all fixed in the same change:
+- Genus boundaries never detected (regex expected a newline `_clean` had removed) →
+  every species inherited the first genus's description, and wrong inherited habits
+- ~1,200 species headers missed: citations without "vol: page" (`L., Sp. pl. 342.
+  1753.`) failed the header test; their text leaked into the previous species and the
+  species never reached the catalog (5,791 → ~6,939)
+- 77 figure credits ("… Cortesía Flora of …") parsed as headers; dedupe preferred the
+  polluted duplicate, so some species carried another species' distribution
+- Morphology/discussion spanning several blocks (page breaks) kept only the first block
+- Remaining: 54 species with no detected distribution paragraph (mostly orchids)
+
+- [x] **B1** Persist `morphology`, `discussion`, `genus_description` (in `ficha_json`;
+      `full_text` now header + morphology + distribution + discussion)
+- [x] **B2** Dehyphenation in all sections incl. distribution (+79 regions / 64 spp, 0 lost)
+- [x] **B3** Re-ingest + `python -m mpcr_rag.eval.catalog_diff OLD NEW`. Result: 5,791 →
+      **6,946** species (+1,159; 4 removed: 1 junk, 3 had a neighbour's distribution).
+      22 distribution swaps, all verified corrections against the PDF blocks. Other geo
+      changes additive: +140 spp regions, +101 flowering, +33 vertientes; only loss =
+      a spurious region guessed from a truncated paragraph. Habits: coverage 91% → 95%,
+      species with ≥4 habits 6.9% → 2.1% (family-level garbage removed)
+- [x] **B4** 50-entry hand check (20 added, 20 kept, 10 longest discussions): all 50
+      correctly attributed. Found and fixed: distribution tails split at block breaks
+      (164 spp), glued figure credits/labels, genus species-count sentences. Not fixed:
+      rare appendix species / next-genus bibliography at the end of a discussion (2/50);
+      8 stray soft hyphens; 54 species with no detectable distribution (mostly orchids)
+- Pre-change backup: `mpcr_rag/data/fichas.pre_trackB_20260912.sqlite`
 - [ ] **B5** Expose new sections in MCP `get_species` and in the REST contract
       (do this BEFORE `SHIP_PLAN` step 2.6 freezes `openapi.json`)
 - [ ] **B6** Structured traits via LLM with a fixed schema: max height, flower color,
