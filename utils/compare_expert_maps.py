@@ -113,6 +113,13 @@ def make_comparison(species: str, our_map: Path, expert_map: Path, out_path: Pat
 
 
 def main() -> None:
+    import argparse
+    global OUT_DIR
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[1])
+    ap.add_argument("--out", type=Path, default=OUT_DIR,
+                    help="output folder; use a new one to keep earlier renders for comparison")
+    OUT_DIR = ap.parse_args().out
+
     conn = local_store.connect(rag_config.SQLITE_PATH)
 
     map_loader = ExpertMapLoader()
