@@ -18,7 +18,7 @@ import requests
 
 from .. import config
 from ..schema import Ficha
-from ..store import local_store, pinecone_client as pc
+from ..store import local_store
 from . import gbif_map
 from . import retriever as R
 from .intent import parse_intent
@@ -130,7 +130,7 @@ def answer(question: str, *, top_k: int = 12, conn=None, index=None) -> dict:
     only calls the existing deterministic/citable building blocks below.
     """
     conn = conn or local_store.connect(config.SQLITE_PATH)
-    index = index or pc.ensure_index()
+    index = index if index is not None else R.vector_index()
     selector = None
 
     sp = _detect_species(question, conn)

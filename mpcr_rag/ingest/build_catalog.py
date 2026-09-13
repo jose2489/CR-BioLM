@@ -1,19 +1,30 @@
-"""Full-catalog ingest: segment every CORPUS PDF → SQLite + Pinecone.
+"""Full-catalog ingest: segment every CORPUS PDF → SQLite (+ optional vector stores).
 
-Run:  python -m mpcr_rag.ingest.build_catalog
+SQLite is always rebuilt; it is the source of truth. Vector indexes are opt-in so a
+rebuild never silently overwrites the Pinecone index the BIP paper was evaluated on.
+
+Run:  python -m mpcr_rag.ingest.build_catalog                # SQLite only
+      python -m mpcr_rag.ingest.build_catalog --pgvector     # + sync pgvector
+      python -m mpcr_rag.ingest.build_catalog --pinecone     # + re-upsert Pinecone
 """
 from __future__ import annotations
 
+import argparse
 import os
 import time
 from collections import Counter
 
 from .. import config
 from ..ingest.field_extractor import extract_corpus_pdf
-from ..store import local_store, pinecone_client as pc
+from ..store import local_store
 
 
 def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--pinecone", action="store_true", help="re-upsert the Pinecone index")
+    ap.add_argument("--pgvector", action="store_true", help="sync the pgvector store")
+    args = ap.parse_args()
+
     t0 = time.time()
     fichas = []
     for e in config.CORPUS:
@@ -38,15 +49,23 @@ def main() -> None:
     n = local_store.upsert(conn, fichas)
     print(f"SQLite: {n} fichas → {config.SQLITE_PATH}", flush=True)
 
-    # Pinecone (clean stale namespaces, then upsert)
-    idx = pc.ensure_index()
-    for ns in ("lauraceae", "mpcr_v6"):
-        try:
-            idx.delete(delete_all=True, namespace=ns)
-        except Exception:
-            pass
-    m = pc.upsert_fichas(fichas, index=idx)
-    print(f"Pinecone: {m} vectors → namespace '{pc._NAMESPACE}'", flush=True)
+    if args.pinecone:
+        from ..store import pinecone_client as pc
+        # clean stale namespaces, then upsert
+        idx = pc.ensure_index()
+        for ns in ("lauraceae", "mpcr_v6"):
+            try:
+                idx.delete(delete_all=True, namespace=ns)
+            except Exception:
+                pass
+        m = pc.upsert_fichas(fichas, index=idx)
+        print(f"Pinecone: {m} vectors → namespace '{pc._NAMESPACE}'", flush=True)
+    conn.close()
+
+    if args.pgvector:
+        from ..store import pg_store
+        stats = pg_store.sync_from_sqlite()
+        print(f"pgvector: {stats}", flush=True)
 
     print(f"\nper-volume:", flush=True)
     for v, c in sorted(Counter(f.volume for f in fichas).items()):

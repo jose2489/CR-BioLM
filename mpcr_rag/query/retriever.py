@@ -1,10 +1,13 @@
 """Retrieval for the two query patterns.
 
 Pattern A — species → ficha: a keyed fetch by vector id (not semantic).
-Pattern B — geospatial question: a Pinecone *metadata filter* (the discriminating
-work) + semantic rank over distribution-paragraph vectors. Structured constraints
-(habit, elevation window, vertiente, region, flowering month, endemism) are turned
-into a Pinecone filter; elevation uses range *overlap*.
+Pattern B — geospatial question: a *metadata filter* (the discriminating work) +
+semantic rank over distribution-paragraph vectors. Structured constraints (habit,
+elevation window, vertiente, region, flowering month, endemism) become a filter;
+elevation uses range *overlap*.
+
+The vector backend is ``config.VECTOR_BACKEND``: "pinecone" (the BIP index) or
+"pgvector" (local, same model). Both apply identical filter semantics.
 
 Hits are hydrated into full Ficha records from the SQLite store for citable answers.
 """
@@ -12,7 +15,7 @@ from __future__ import annotations
 
 from .. import config
 from ..schema import Ficha
-from ..store import local_store, pinecone_client as pc
+from ..store import local_store
 
 
 def pattern_a(species: str, conn=None) -> Ficha | None:
@@ -58,6 +61,27 @@ def build_filter(
     if not clauses:
         return {}
     return clauses[0] if len(clauses) == 1 else {"$and": clauses}
+
+
+def vector_index():
+    """Backend handle to pass as ``index=``: the Pinecone index, or None for pgvector
+    (which connects on demand). Callers use this instead of pinecone_client directly
+    so that switching backends needs no Pinecone key."""
+    if config.VECTOR_BACKEND == "pinecone":
+        from ..store import pinecone_client as pc
+        return pc.ensure_index()
+    return None
+
+
+def vector_search(query_text: str, *, top_k: int, index=None, **constraints) -> list[dict]:
+    """Filtered semantic search on the configured backend → hit dicts (id, score, …)."""
+    if config.VECTOR_BACKEND == "pgvector":
+        from ..store import pg_store
+        return pg_store.search(query_text, top_k=top_k, **constraints)
+    if config.VECTOR_BACKEND != "pinecone":
+        raise ValueError(f"unknown MPCR_VECTOR_BACKEND={config.VECTOR_BACKEND!r}")
+    from ..store import pinecone_client as pc
+    return pc.search(query_text, top_k=top_k, flt=build_filter(**constraints), index=index)
 
 
 def _eff_bounds(f: Ficha) -> tuple[int | None, int | None]:
@@ -168,8 +192,7 @@ def pattern_b(
     near-flat semantic score) and boundary-only touches are dropped (strict_overlap).
     """
     conn = conn or local_store.connect(config.SQLITE_PATH)
-    flt = build_filter(**constraints)
-    hits = pc.search(query_text, top_k=top_k, flt=flt, index=index)
+    hits = vector_search(query_text, top_k=top_k, index=index, **constraints)
     lo, hi = constraints.get("elev_lo"), constraints.get("elev_hi")
     has_window = lo is not None or hi is not None
 
@@ -190,7 +213,7 @@ def pattern_b(
 
 
 if __name__ == "__main__":
-    idx = pc.ensure_index()
+    idx = vector_index()
     conn = local_store.connect(config.SQLITE_PATH)
 
     print("=== Pattern A: 'Ocotea gomezii' ===")

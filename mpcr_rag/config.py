@@ -71,10 +71,33 @@ def _discover_corpus() -> list[dict]:
 CORPUS: list[dict] = _discover_corpus()
 
 # --- embeddings / vector store ---------------------------------------------
+# "pgvector" = local Postgres synced from SQLite; same e5-large model, run locally.
+#              Default since 2026-09-13: passed eval/results/vector_parity.md
+#              (self-retrieval 100% on both; filtered-query overlap@10 0.92).
+# "pinecone" = hosted index the BIP paper was evaluated on (tag bip-2026-submission).
+#              Stale after the 6,946-species rebuild (holds 5,791, old habits), so it
+#              is only for reproducing the BIP numbers.
+VECTOR_BACKEND = os.environ.get("MPCR_VECTOR_BACKEND", "pgvector")
+
 PINECONE_API_KEY = os.environ.get("PINECONE_API_KEY", "")
 PINECONE_INDEX = "mpcr-fichas"
 EMBED_MODEL = "multilingual-e5-large"   # Pinecone hosted inference
 EMBED_DIM = 1024                        # e5-large; pin in methods section
+
+# Same weights as Pinecone's hosted multilingual-e5-large, so the two backends are
+# comparable (vector_parity.py measures how closely).
+LOCAL_EMBED_MODEL = os.environ.get("MPCR_LOCAL_EMBED_MODEL", "intfloat/multilingual-e5-large")
+
+# pgvector connection. With MPCR_PG_URL unset, an embedded Postgres (pgserver) is
+# started on MPCR_PGDATA. The data dir must NOT live under the Drive-synced repo:
+# sync + a live database = lock conflicts and corruption.
+PG_URL = os.environ.get("MPCR_PG_URL", "")
+PGDATA = Path(os.environ.get(
+    "MPCR_PGDATA", Path.home() / "Documents" / "Tesis" / "pgdata" / "mpcr"))
+# Fixed so GUI clients (VS Code, DBeaver, pgAdmin) keep a working saved connection;
+# pgserver alone picks a random port on every start on Windows. 5432 is left free for
+# a system-wide Postgres.
+PG_PORT = int(os.environ.get("MPCR_PG_PORT", "5433"))
 
 # --- LLM enrichment (reuses CR-BioLM OpenRouter setup) ----------------------
 ENRICH_MODEL = os.environ.get("MPCR_ENRICH_MODEL", "openai/gpt-4o-mini")

@@ -5,8 +5,9 @@ Exposes the Manual de Plantas de Costa Rica catalog as MCP tools callable by
 Claude Code or any MCP client.  Tools are grouped by cost:
 
   L0 — free, instant, SQLite only, no API keys required
-  L1 — seconds, I/O cached to disk, no LLM
-  L2 — requires PINECONE_API_KEY and OPENROUTER_API_KEY
+  L1 — seconds, I/O cached to disk, no LLM (description search: local embeddings)
+  L2 — requires OPENROUTER_API_KEY, plus PINECONE_API_KEY when
+       MPCR_VECTOR_BACKEND=pinecone (the pgvector backend needs no vector key)
 
 Every tool returns a provenance envelope:
   {value, source, citation, confidence, caveat}
@@ -52,9 +53,10 @@ def _get_conn():
 
 
 def _get_index():
+    """Pinecone index handle, or None (pgvector connects on demand)."""
     global _index
     if _index is None:
-        if not os.environ.get("PINECONE_API_KEY"):
+        if config.VECTOR_BACKEND != "pinecone" or not os.environ.get("PINECONE_API_KEY"):
             return None
         from mpcr_rag.store import pinecone_client as pc
         _index = pc.ensure_index()
@@ -115,10 +117,11 @@ def get_vocabulary() -> dict:
     habits, forest_types, regions, vertientes, families.
     """
     vocab = intent_mod.load_vocab(_get_conn())
+    n = _get_conn().execute("SELECT COUNT(*) FROM fichas").fetchone()[0]
     return _envelope(
         vocab,
         source="MPCR",
-        citation="Manual de Plantas de Costa Rica (Hammel et al.) — 5,791 species",
+        citation=f"Manual de Plantas de Costa Rica (Hammel et al.) — {n:,} species",
         confidence="exact",
     )
 
@@ -199,12 +202,20 @@ def get_species(name: str) -> dict:
             confidence="insufficient",
             caveat=f"Species '{name}' not found in catalog. Check spelling or use search_species().",
         )
-    value = {**_ficha_summary(f), "distribution_paragraph": f.distribution_paragraph}
+    value = {
+        **_ficha_summary(f),
+        "distribution_paragraph": f.distribution_paragraph,
+        "morphology": f.morphology,
+        "discussion": f.discussion,
+        "genus_description": f.genus_description,
+    }
     return _envelope(
         value,
         source="MPCR",
         citation=f"Manual de Plantas de Costa Rica, Tomo {f.volume}, p. {f.pages}",
         confidence="exact",
+        caveat=("genus_description is GENUS-level text: cite it as such, never as a "
+                "statement about this species." if f.genus_description else ""),
     )
 
 
@@ -377,9 +388,37 @@ def render_species_map(species: str) -> dict:
 # L2 — requires PINECONE_API_KEY and OPENROUTER_API_KEY
 # ---------------------------------------------------------------------------
 
+@server.tool()
+def search_by_description(query_text: str, family: Optional[str] = None,
+                          habit: Optional[str] = None, top_k: int = 10) -> dict:
+    """Find species whose Manual DESCRIPTION (morphology + discussion) matches a
+    plant description, e.g. "arbusto con flores moradas y hojas pubescentes".
+
+    Cost: L1 — local e5 embeddings over pgvector, no API key. Requires
+    MPCR_VECTOR_BACKEND=pgvector and a synced store (build_catalog --pgvector).
+
+    Returns candidates ranked by similarity. This is a shortlist for identification,
+    not an identification: confirm against the morphology text of each candidate.
+    """
+    if config.VECTOR_BACKEND != "pgvector":
+        return _envelope(None, source="MPCR", confidence="insufficient",
+                         caveat="search_by_description requires MPCR_VECTOR_BACKEND=pgvector.")
+    from mpcr_rag.store import pg_store
+    constraints = {k: v for k, v in dict(family=family, habit=habit).items() if v is not None}
+    hits = pg_store.search(query_text, top_k=top_k, section="description", **constraints)
+    value = [{"score": round(float(h["score"]), 4), "species": h["species"],
+              "family": h["family"], "habits": h["habits"],
+              "volume": h["volume"], "pages": h["pages"]} for h in hits]
+    return _envelope(
+        value, source="MPCR", confidence="estimated",
+        citation="Manual de Plantas de Costa Rica — morphology/discussion text, e5 embeddings",
+        caveat="" if hits else "No species matched. Loosen family/habit filters.",
+    )
+
+
 def _check_l2() -> str:
     missing = []
-    if not os.environ.get("PINECONE_API_KEY"):
+    if config.VECTOR_BACKEND == "pinecone" and not os.environ.get("PINECONE_API_KEY"):
         missing.append("PINECONE_API_KEY")
     if not os.environ.get("OPENROUTER_API_KEY"):
         missing.append("OPENROUTER_API_KEY")
@@ -398,10 +437,10 @@ def semantic_search(
     endemic: Optional[bool] = None,
     top_k: int = 12,
 ) -> dict:
-    """Semantic search over the Manual catalog using Pinecone vector index.
+    """Semantic search over the Manual catalog (distribution-paragraph vectors).
 
-    Cost: L2 — requires PINECONE_API_KEY.  Combines dense vector retrieval
-    (hosted e5 embeddings) with structured metadata filters.  Returns species
+    Cost: L2 — Pinecone backend needs PINECONE_API_KEY; pgvector backend runs
+    locally.  Combines dense e5 retrieval with structured metadata filters.  Returns species
     ranked by relevance to the query text.
 
     Args:
@@ -417,7 +456,7 @@ def semantic_search(
             None,
             source="MPCR",
             confidence="insufficient",
-            caveat=f"API key not configured: {missing}. semantic_search requires Pinecone.",
+            caveat=f"API key not configured: {missing}. semantic_search uses the Pinecone backend.",
         )
 
     from mpcr_rag.query.retriever import pattern_b
@@ -433,7 +472,7 @@ def semantic_search(
     return _envelope(
         value,
         source="MPCR",
-        citation="Manual de Plantas de Costa Rica — Pinecone e5 semantic index",
+        citation=f"Manual de Plantas de Costa Rica — e5 semantic index ({config.VECTOR_BACKEND})",
         confidence="estimated",
         caveat="" if results else "No results matched. Try broader filters or different query_text.",
     )
@@ -443,7 +482,8 @@ def semantic_search(
 def answer_question(question: str) -> dict:
     """Answer a natural-language question about Costa Rica flora.
 
-    Cost: L2 — requires PINECONE_API_KEY and OPENROUTER_API_KEY.  Routes to one
+    Cost: L2 — requires OPENROUTER_API_KEY (+ PINECONE_API_KEY on the Pinecone
+    backend).  Routes to one
     of three fixed, citable recipes:
       A  (lookup)     — named species → Manual-grounded map + grounded text
       B  (list)       — geospatial filter → GBIF evidence map + grounded text
@@ -463,7 +503,7 @@ def answer_question(question: str) -> dict:
             None,
             source="MPCR",
             confidence="insufficient",
-            caveat=f"API keys not configured: {missing}. answer_question requires Pinecone + OpenRouter.",
+            caveat=f"API keys not configured: {missing}.",
         )
 
     from mpcr_rag.query import answer as ans_mod

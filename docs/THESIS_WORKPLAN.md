@@ -121,24 +121,30 @@ Why now: Track B forces a re-embed anyway; removes a vendor key from the paper's
 reproducibility; filters + vectors in one SQL query; Supabase Postgres already hosts the
 experiment tables and ships pgvector.
 
-- [ ] **C1** Local embeddings: `intfloat/multilingual-e5-large` (same model as Pinecone's
-      hosted one, for BIP comparability), `passage:` / `query:` prefixes, on the 4070 Ti
-- [ ] **C2** Schema: `fichas` (filter columns: `elev_min_eff`, `elev_max_eff`, `family`,
-      `endemic`, arrays for `regions`/`vertientes`/`forest_types`/`habits`/months with GIN
-      indexes, full JSONB) + `ficha_chunks(vector_id, section, text, embedding vector(1024))`
-      with HNSW index. Sections: `distribution` (BIP-comparable) and `description`
-      (morphology + discussion)
-- [ ] **C3** `mpcr_rag/store/pg_client.py`: `sync_from_sqlite()`, `search(query, filters, k, section)`
-- [ ] **C4** Port `retriever.build_filter` → SQL `WHERE`; keep `pattern_b` signature so
-      `answer.py` and the MCP server do not change. Switch via
-      `MPCR_VECTOR_BACKEND=pinecone|pgvector` until parity is shown
-- [ ] **C5** Parity check: BIP eval queries on both backends, overlap@k + the
-      rag_vs_baseline numbers on a subsample
-- [ ] **C6** Hosting: Supabase for development (free tier: 500 MB, pauses when idle —
-      fine for research). `pgvector/pgvector` container in the mini-PC compose for the
-      public artifact; same code, different `DATABASE_URL`
+- [x] **C1** `store/embeddings.py`: `intfloat/multilingual-e5-large`, explicit
+      `passage:`/`query:` prefixes, CUDA (13,892 chunks in 3 min 14 s on the 4070 Ti)
+- [x] **C2** Schema `mpcr.fichas` (filter columns + arrays with GIN + JSONB) and
+      `mpcr.ficha_chunks` (sections `distribution`, `description`). Exact search, no
+      HNSW: pgvector 0.6 post-filters approximate indexes, so filtered queries could
+      return fewer than k
+- [x] **C3** `store/pg_store.py`: incremental `sync_from_sqlite()` (content hash, only
+      changed text re-embedded), `search(query, section=, **filters)`, CLI
+      `status|start|stop|sync|demo`
+- [x] **C4** `retriever.vector_search` / `vector_index` dispatch; `answer.py`,
+      `intent.py`, MCP server no longer import Pinecone. New MCP tool
+      `search_by_description`. **Default backend = pgvector** (2026-09-13)
+- [x] **C5** `eval/vector_parity.py` → `eval/results/vector_parity.md`: self-retrieval
+      100% on both; overlap@10 0.92 (self and filtered), top-1 agreement 100% / 93%,
+      restricted to 3,159 species unchanged between builds. Not done: rerunning
+      rag_vs_baseline on pgvector
+- [x] **C6** Hosting: Supabase project is gone. Local embedded Postgres via **pgserver**
+      (PostgreSQL 16 + pgvector 0.6.2), data in `Documents\Tesis\pgdata\mpcr`, pinned to
+      `127.0.0.1:5433`, user `postgres`, no password. Mini-PC: `pgvector/pgvector`
+      container, same code via `MPCR_PG_URL`
 - [ ] **C7** Keep a single access module rule (SHIP_PLAN 2.3): nothing outside `store/`
-      touches SQL
+      touches SQL (holds today)
+- [ ] **C8** `search_by_description` quality is mixed for identification queries; evaluate
+      before relying on it (candidate: hybrid with the structured traits from B6)
 
 ---
 

@@ -139,10 +139,9 @@ def _validate(d: dict, vocab: dict) -> dict:
 def ask(question: str, *, top_k: int = 15, conn=None, index=None):
     """End-to-end: NL question → parsed intent + ranked (Ficha, score) results."""
     from . import retriever as R
-    from ..store import pinecone_client as pc
 
     conn = conn or local_store.connect(config.SQLITE_PATH)
-    index = index or pc.ensure_index()
+    index = index if index is not None else R.vector_index()
     intent = parse_intent(question)
     # Drop the intent-routing fields (handled by answer.py); keep only metadata filters.
     _routing = {"intent_type", "selector_criterion", "selector_direction", "semantic_text"}

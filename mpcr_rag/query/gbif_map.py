@@ -283,10 +283,10 @@ def single_species_map(f: Ficha, *, out_path: Path | None = None) -> tuple[Path,
 
 
 if __name__ == "__main__":
-    from .retriever import pattern_b
-    from ..store import local_store, pinecone_client as pc
+    from .retriever import pattern_b, vector_index
+    from ..store import local_store
 
-    idx = pc.ensure_index()
+    idx = vector_index()
     conn = local_store.connect(config.SQLITE_PATH)
 
     q = "especies endémicas sobre 2000 m en la vertiente Pacífico"
