@@ -201,25 +201,31 @@ def resolve(name: str, *, conn=None, region: str | None = None,
     """
     own = conn is None
     conn = conn or pg_store.connect()
+    sql = """
+        SELECT v.species,
+               bool_or(v.is_preferred)            AS preferred,
+               array_agg(DISTINCT v.source)       AS sources,
+               max(v.vernacular)                  AS as_published,
+               f.ficha->>'family'                 AS family,
+               (f.ficha->>'elev_min')::int        AS elev_min,
+               (f.ficha->>'elev_max')::int        AS elev_max,
+               f.regions                          AS regions,
+               e.n_records                        AS n_records
+        FROM mpcr.vernacular v
+        JOIN mpcr.fichas f ON f.species = v.species
+        LEFT JOIN mpcr.species_evidence e ON e.species = v.species
+        WHERE {clause}
+        GROUP BY v.species, f.ficha, f.regions, e.n_records"""
     try:
         with conn.cursor() as cur:
-            cur.execute("""
-                SELECT v.species,
-                       bool_or(v.is_preferred)            AS preferred,
-                       array_agg(DISTINCT v.source)       AS sources,
-                       max(v.vernacular)                  AS as_published,
-                       f.ficha->>'family'                 AS family,
-                       (f.ficha->>'elev_min')::int        AS elev_min,
-                       (f.ficha->>'elev_max')::int        AS elev_max,
-                       f.regions                          AS regions,
-                       e.n_records                        AS n_records
-                FROM mpcr.vernacular v
-                JOIN mpcr.fichas f ON f.species = v.species
-                LEFT JOIN mpcr.species_evidence e ON e.species = v.species
-                WHERE v.name_norm = %s
-                GROUP BY v.species, f.ficha, f.regions, e.n_records""", (norm(name),))
+            # Accent-sensitive first: "poró" (Erythrina, Costa Rica) and "poro" (leek,
+            # Mexico) are different plants, so the unaccented match is only a fallback.
+            cur.execute(sql.format(clause="lower(v.vernacular) = lower(%s)"), (name.strip(),))
             cols = [c.name for c in cur.description]
-            cands = [dict(zip(cols, r)) for r in cur.fetchall()]
+            cands = [dict(zip(cols, r), match="exact") for r in cur.fetchall()]
+            if not cands:
+                cur.execute(sql.format(clause="v.name_norm = %s"), (norm(name),))
+                cands = [dict(zip(cols, r), match="unaccented") for r in cur.fetchall()]
     finally:
         if own:
             conn.close()
@@ -235,6 +241,40 @@ def resolve(name: str, *, conn=None, region: str | None = None,
         cands = kept or cands
     cands.sort(key=lambda c: (c["trust"], -(c["n_records"] or 0)))
     return cands[:limit]
+
+
+def resolve_decision(name: str, **kw) -> dict:
+    """resolve() plus an explicit decision the caller must act on.
+
+      none        the name is not in the store -> say so, do not guess
+      unique      one candidate -> proceed, but name the species in the answer
+      preferred   several candidates, but exactly one comes from a Costa Rica-specific
+                  authority (Manual, Tropicos CR, iNaturalist CR-preferred) AND is at
+                  least as well recorded here as the others -> proceed with it, saying
+                  which and why. Both conditions are needed: iNaturalist marks "Ceiba"
+                  as the Costa Rica name of Spirotheca rosea (76 records) because
+                  Ceiba pentandra (200 records) is filed under the indigenous "Shkuli",
+                  so trust alone would pick the less likely plant.
+      ambiguous   several equally plausible -> ask back or answer for the group; never
+                  pick silently
+
+    Candidates are always species of THIS catalog: a global name index answers a
+    different question (Tropicos returns Allium porrum, the leek, for "Poro").
+    """
+    cands = resolve(name, **kw)
+    if not cands:
+        return {"decision": "none", "name": name, "candidates": []}
+    if len(cands) == 1:
+        return {"decision": "unique", "name": name, "species": cands[0]["species"],
+                "candidates": cands}
+    best, rest = cands[0], cands[1:]
+    best_records = best["n_records"] or 0
+    if (best["trust"] <= TRUST["INAT_CR"]
+            and all(c["trust"] > best["trust"] for c in rest)
+            and best_records >= max((c["n_records"] or 0) for c in rest)):
+        return {"decision": "preferred", "name": name, "species": best["species"],
+                "candidates": cands}
+    return {"decision": "ambiguous", "name": name, "candidates": cands}
 
 
 def report(conn=None) -> None:

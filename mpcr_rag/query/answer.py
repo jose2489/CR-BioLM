@@ -20,6 +20,7 @@ from .. import config
 from ..schema import Ficha
 from ..store import local_store
 from . import gbif_map
+from ..evidence import vernacular
 from . import retriever as R
 from .intent import parse_intent
 
@@ -114,7 +115,10 @@ def _select_superlative(candidates: list[Ficha], criterion: str, direction: str
                      f"(entre {len(candidates)} especies candidatas que cumplen el filtro)")
 
 
-_INTENT_KEYS = ("intent_type", "selector_criterion", "selector_direction", "semantic_text")
+NOTE_FMT = chr(10) + chr(10) + "_{note}_"
+
+_INTENT_KEYS = ("intent_type", "selector_criterion", "selector_direction",
+                "semantic_text", "common_name")
 
 
 def answer(question: str, *, top_k: int = 12, conn=None, index=None) -> dict:
@@ -143,6 +147,43 @@ def answer(question: str, *, top_k: int = 12, conn=None, index=None) -> dict:
         constraints = {k: v for k, v in intent.items()
                        if k not in _INTENT_KEYS and v is not None}
 
+        # A question may name the plant by a common name ("¿dónde crece el poró?").
+        # The model only extracted the SPAN; the mapping to species is deterministic
+        # (evidence.vernacular) and may legitimately be ambiguous, in which case the
+        # answer asks back instead of picking one.
+        if intent.get("common_name"):
+            decision = vernacular.resolve_decision(
+                intent["common_name"], region=constraints.get("region"),
+                elev=constraints.get("elev_lo") or constraints.get("elev_hi"))
+            if decision["decision"] in ("unique", "preferred"):
+                f = local_store.get(conn, decision["species"].replace(" ", "_"))
+                why = ("único candidato en el catálogo" if decision["decision"] == "unique"
+                       else "nombre preferido en Costa Rica y el mejor documentado")
+                name_note = (f"«{intent['common_name']}» se interpretó como {f.species} "
+                             f"({why}).")
+                map_path, n_pts = gbif_map.single_species_map(f)
+                return _result(question, "A (nombre común)", constraints, None,
+                               [(f, 1.0)],
+                               _compose(question, [(f, 1.0)]) + NOTE_FMT.format(note=name_note),
+                               map_path, n_pts, name_resolution=decision)
+            if decision["decision"] == "ambiguous":
+                fichas = [(local_store.get(conn, c["species"].replace(" ", "_")), 1.0)
+                          for c in decision["candidates"]]
+                fichas = [(f, s_) for f, s_ in fichas if f]
+                map_path, n_pts = gbif_map.most_likely_map(fichas, query_text=question)
+                lines = [f"«{intent['common_name']}» puede referirse a varias especies del "
+                         f"catálogo. ¿Cuál de estas?", ""]
+                for c in decision["candidates"]:
+                    lines.append(f"- **{c['species']}** ({c['family']}), "
+                                 f"{c['elev_min']}–{c['elev_max']} m, "
+                                 f"{c['n_records'] or 0} registros en CR "
+                                 f"[{', '.join(sorted(c['sources']))}]")
+                return _result(question, "Desambiguación (nombre común)", constraints, None,
+                               fichas, chr(10).join(lines), map_path, n_pts,
+                               name_resolution=decision)
+            # decision == "none": fall through to the normal recipes, but say so
+            constraints.pop("common_name", None)
+
         if intent["intent_type"] == "superlative":
             candidates = R.filter_all(conn=conn, **constraints)
             winner, selector = _select_superlative(
@@ -162,8 +203,14 @@ def answer(question: str, *, top_k: int = 12, conn=None, index=None) -> dict:
 
     text = (_compose(question, results, selection_note=selector) if results
             else "No se encontraron especies que cumplan los criterios de la pregunta.")
-    return {"question": question, "mode": mode, "constraints": constraints, "selector": selector,
-            "results": results, "text": text, "map_path": map_path, "n_pts": n_pts}
+    return _result(question, mode, constraints, selector, results, text, map_path, n_pts)
+
+
+def _result(question, mode, constraints, selector, results, text, map_path, n_pts,
+            name_resolution=None) -> dict:
+    return {"question": question, "mode": mode, "constraints": constraints,
+            "selector": selector, "results": results, "text": text,
+            "map_path": map_path, "n_pts": n_pts, "name_resolution": name_resolution}
 
 
 def render_markdown(a: dict) -> str:

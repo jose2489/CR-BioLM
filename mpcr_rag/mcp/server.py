@@ -416,6 +416,52 @@ def search_by_description(query_text: str, family: Optional[str] = None,
     )
 
 
+@server.tool()
+def resolve_common_name(name: str, region: Optional[str] = None,
+                        elev: Optional[int] = None) -> dict:
+    """Map a common (vernacular) name to candidate species of the Manual catalog.
+
+    Cost: L0 - free, local table lookup.
+
+    Common names are ambiguous ("poro" is several Erythrina; "roble" is Quercus
+    oleoides and also Tabebuia rosea), so this NEVER returns a single species
+    silently. The envelope value is:
+      {decision: "unique"|"preferred"|"ambiguous"|"none", species: str|None,
+       candidates: [{species, family, elev_min, elev_max, n_records, sources}]}
+    On "ambiguous", ask the user which species is meant, or answer for the group and
+    say so; do not pick one. On "none", say the name is not in the catalog rather
+    than guessing: global name indexes answer a different question (Tropicos returns
+    the leek, Allium porrum, for "Poro").
+
+    Matching is accent-sensitive first ("poro" the leek vs "poro" with an accent, the
+    Erythrina), then accent-insensitive. Optional region and elevation from the
+    question narrow the candidates.
+    """
+    from mpcr_rag.evidence import vernacular
+    d = vernacular.resolve_decision(name, region=region, elev=elev)
+    cands = [{"species": c["species"], "family": c["family"],
+              "elev_min": c["elev_min"], "elev_max": c["elev_max"],
+              "n_records": c["n_records"] or 0, "sources": sorted(c["sources"]),
+              "cr_preferred": bool(c["preferred"]), "match": c["match"]}
+             for c in d["candidates"]]
+    value = {"decision": d["decision"], "species": d.get("species"), "candidates": cands}
+    caveats = {
+        "none": f"'{name}' is not in the vernacular table for this catalog "
+                f"(Tomos II-VI). It may be a real name for a species outside the catalog.",
+        "ambiguous": "Several species share this name. Ask which one, or answer for the "
+                     "group; do not choose silently.",
+        "preferred": "Chosen because it is the Costa Rica-preferred name AND the best "
+                     "recorded candidate; other species share the name.",
+        "unique": "",
+    }
+    return _envelope(
+        value, source="MPCR+GBIF+iNaturalist",
+        citation="mpcr.vernacular (Darwin Core VernacularName shape; source per row)",
+        confidence="exact" if d["decision"] == "unique" else "estimated",
+        caveat=caveats[d["decision"]],
+    )
+
+
 def _check_l2() -> str:
     missing = []
     if config.VECTOR_BACKEND == "pinecone" and not os.environ.get("PINECONE_API_KEY"):

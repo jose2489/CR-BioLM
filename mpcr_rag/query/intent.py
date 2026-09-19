@@ -71,7 +71,12 @@ amplia/restringida", "la única que..."). En ese caso fija:
 - selector_direction: "max" si pide el extremo alto ("mayor", "más amplia", "más común"),
   "min" si pide el extremo bajo ("menor", "más restringida").
 Si la pregunta pide una LISTA de especies (no una sola), intent_type="list" y
-selector_criterion=null. Responde SOLO el JSON."""
+selector_criterion=null.
+common_name: si la pregunta se refiere a la planta por un NOMBRE COMÚN o vernáculo
+("poró", "roble sabana", "cocobolo", "el árbol que llaman guarumo"), copia ESE nombre tal
+como aparece, con sus tildes. null si la pregunta usa el nombre científico o no nombra
+ninguna planta concreta. NO traduzcas ni adivines la especie: solo extrae el nombre.
+Responde SOLO el JSON."""
 
 
 def parse_intent(question: str, vocab: dict | None = None) -> dict:
@@ -89,6 +94,7 @@ def parse_intent(question: str, vocab: dict | None = None) -> dict:
         "intent_type": "'list' o 'superlative'",
         "selector_criterion": f"uno de {sorted(_SELECTOR_CRITERIA)} o null",
         "selector_direction": "'max' o 'min' o null",
+        "common_name": "nombre común citado en la pregunta, o null",
         "semantic_text": "string",
     }
     prompt = (f"Listas permitidas y formato:\n{json.dumps(schema, ensure_ascii=False)}\n\n"
@@ -127,6 +133,11 @@ def _validate(d: dict, vocab: dict) -> dict:
         "intent_type": "superlative" if d.get("intent_type") == "superlative" else "list",
         "selector_criterion": pick("selector_criterion", _SELECTOR_CRITERIA),
         "selector_direction": d.get("selector_direction") if d.get("selector_direction") in ("max", "min") else "max",
+        # Free text, NOT vocabulary-checked: the span is extracted here and mapped to
+        # species by evidence.vernacular (deterministic), never by the model.
+        "common_name": (d.get("common_name").strip()
+                        if isinstance(d.get("common_name"), str)
+                        and 2 <= len(d.get("common_name").strip()) <= 40 else None),
         "semantic_text": d.get("semantic_text") or "",
     }
     if out["intent_type"] != "superlative" or not out["selector_criterion"]:
