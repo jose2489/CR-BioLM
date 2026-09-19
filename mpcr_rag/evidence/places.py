@@ -147,5 +147,46 @@ def build(verbose: bool = True) -> dict:
     return out
 
 
+def where_to_see(species: str, *, conn=None, limit: int = 8) -> dict:
+    """Where a visitor could look for a species: protected areas with occurrence
+    records, and the regions the Manual states versus those the records show.
+
+    Two different kinds of evidence, never merged:
+      confirmed_places  parks with cleaned GBIF records inside them (observed)
+      manual_regions    regions the Manual text states (expert-stated range)
+      record_regions    regions where records fall (may extend the Manual's)
+    A park without records is not evidence of absence: collection effort is uneven.
+    """
+    own = conn is None
+    conn = conn or pg_store.connect()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""SELECT f.regions, (f.ficha->>'elev_min')::int,
+                                  (f.ficha->>'elev_max')::int, e.taxon_key, e.regions,
+                                  e.n_records, e.n_cells
+                           FROM mpcr.fichas f
+                           LEFT JOIN mpcr.species_evidence e ON e.species = f.species
+                           WHERE f.species = %s""", (species,))
+            row = cur.fetchone()
+            if not row:
+                return {"species": species, "found": False}
+            manual_regions, elev_min, elev_max, key, rec_regions, n_rec, n_cells = row
+            cur.execute("""SELECT p.label, p.category, s.n_records, s.n_since_1970,
+                                  round(p.elev_p05) , round(p.elev_p95), p.regions
+                           FROM mpcr.species_places s JOIN mpcr.places p ON p.code = s.place_code
+                           WHERE s.species_key = %s
+                           ORDER BY s.n_records DESC LIMIT %s""", (key, limit))
+            places = [{"place": r[0], "category": r[1], "n_records": r[2],
+                       "n_since_1970": r[3], "elev_p05": r[4], "elev_p95": r[5],
+                       "regions": r[6]} for r in cur.fetchall()]
+    finally:
+        if own:
+            conn.close()
+    return {"species": species, "found": True, "elev_min": elev_min, "elev_max": elev_max,
+            "n_records": n_rec or 0, "n_cells": n_cells or 0,
+            "manual_regions": manual_regions or [], "record_regions": sorted(rec_regions or []),
+            "confirmed_places": places}
+
+
 if __name__ == "__main__":
     build()

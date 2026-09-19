@@ -101,6 +101,56 @@ def from_inat(species: str, accepted: str | None = None) -> list[dict]:
     return []
 
 
+_YEAR_CITE = re.compile(r"(?:1[6789]\d\d|20\d\d)(?:\[[^\]]*\])?\s*\.\s*")
+_SYN_CUE = re.compile(r"[A-Z]\.\s|\bsensu\b|\bnon\b|\bvar\.|\bsubsp\.|\bnom\.|\bex\b|\d|&")
+_AUTHOR_TAIL = re.compile(
+    r"\b(Kunth|Lindl|Schltr|Pittier|Standl|Vahl|Jacq|Rudd|Urb|Mez|Donn|Sm|Griseb|DC|Benth|"
+    r"Hook|Willd|Poepp|Endl|Miq|Sw|Poir|Rchb|Cogn|Klotzsch|Planch|Baker|Presl|Steud|Nees|"
+    r"Aubl|Gaertn|Blume|Wedd|Seem|Oerst|Hemsl|Rose|Britton|Nash|Trel|Woodson|Croat|Grayum|"
+    r"Hammel|Burger|Werff|G[oó]mez|Grimes|Pollard|Fl)\b\.?$")
+_HYPHEN_SPLIT = re.compile(r"([a-záéíóúñ])-\s+([a-záéíóúñ])")
+_SMALL_CAPS = re.compile(r"\b([A-ZÁÉÍÓÚÑ])\s+([A-ZÁÉÍÓÚÑ]{2,})")
+
+
+def from_mpcr(ficha) -> list[dict]:
+    """PROTOTYPE extractor for the names printed in the Manual header.
+
+    The names sit after the last citation year, comma separated:
+    "... Standl. Cortez , Cortez amarillo , Guayacan ."
+
+    Measured on the full catalog: ~36% of species yield at least one name, and
+    author surnames, flora abbreviations and synonyms still leak through. This is a
+    placeholder so the MPCR layer exists end to end; the bachelor team's extractor,
+    validated on a gold set (target precision >= 0.95), replaces this function
+    without changing anything downstream.
+    """
+    head = (ficha.full_text or "").splitlines()[0] if ficha.full_text else ""
+    head = _HYPHEN_SPLIT.sub(lambda m: m.group(1) + m.group(2), head)
+    parts = _YEAR_CITE.split(head)
+    if len(parts) < 2:
+        return []
+    # "A NTORCHA DE B RASIL" -> "Antorcha de Brasil" (small caps lost by the OCR)
+    tail = _SMALL_CAPS.sub(lambda m: m.group(1) + m.group(2).lower(), parts[-1]).strip(" .")
+    out = []
+    for piece in re.split(r"\s*,\s*", tail):
+        p = piece.strip(" .")
+        if not p:
+            continue
+        if _SYN_CUE.search(p) or _AUTHOR_TAIL.search(p):
+            # a real name can trail a synonym: "... non Kunth. Poro"
+            p = re.split(r"(?<=[a-zA-Z])\.\s+", p)[-1].strip(" .")
+            if not p or _SYN_CUE.search(p) or _AUTHOR_TAIL.search(p):
+                continue
+        p = re.sub(r"\s*[\[\]]\s*", " ", p).strip()
+        if len(p) < 3 or len(p.split()) > 4 or not re.match(r"^[A-ZÁÉÍÓÚÑ]", p):
+            continue
+        out.append({"vernacular": p, "language": "spa", "country_code": "CR",
+                    "is_preferred": False, "source": "MPCR",
+                    "source_detail": f"Manual de Plantas de Costa Rica, "
+                                     f"Tomo {ficha.volume}, p. {ficha.pages}"})
+    return out
+
+
 def from_gbif(taxon_key: int | None) -> list[dict]:
     if not taxon_key:
         return []
@@ -156,7 +206,7 @@ def from_tropicos(species: str) -> list[dict]:
 
 # ----------------------------------------------------------------------- store
 
-def fetch(species_list: list[str], verbose: bool = True) -> dict:
+def fetch(species_list: list[str], verbose: bool = True, mpcr: bool = True) -> dict:
     tx = taxa.load()
     conn = pg_store.connect()
     cur = conn.cursor()
@@ -167,6 +217,12 @@ def fetch(species_list: list[str], verbose: bool = True) -> dict:
         t = tx.get(sp) or {}
         rows = (from_inat(sp, t.get("accepted_name")) + from_gbif(t.get("taxon_key"))
                 + from_tropicos(sp))
+        if mpcr:
+            from ..store import local_store
+            from .. import config as _cfg
+            f = local_store.get(local_store.connect(_cfg.SQLITE_PATH), sp.replace(" ", "_"))
+            if f:
+                rows = from_mpcr(f) + rows
         for r in rows:
             cur.execute("""INSERT INTO mpcr.vernacular
                 (name_norm, vernacular, species, language, country_code, is_preferred,
