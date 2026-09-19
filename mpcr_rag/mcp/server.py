@@ -417,6 +417,56 @@ def search_by_description(query_text: str, family: Optional[str] = None,
 
 
 @server.tool()
+def where_to_see(species: str, limit: int = 8) -> dict:
+    """Where a visitor could look for a species: protected areas holding occurrence
+    records, the regions the Manual states, the regions the records add, and the
+    flowering months.
+
+    Cost: L0 - free, local tables (GBIF snapshot DOI 10.15468/dl.8yhee8 inside SINAC
+    polygons, plus the Manual entry).
+
+    Args:
+        species: scientific name. For a common name, call resolve_common_name first:
+            it may legitimately return several species ("Cortez amarillo" is three
+            Handroanthus), and each has different places.
+
+    The value keeps the two kinds of evidence apart:
+      confirmed_places  parks with cleaned records of this species (observed)
+      manual_regions    regions the Manual states (expert-stated range)
+      record_regions    regions where records fall; those beyond manual_regions are
+                        an extension the Manual does not mention
+    A park with no records is NOT evidence of absence: collection effort is uneven,
+    so never phrase an empty result as "it does not occur there".
+    """
+    from mpcr_rag.evidence.places import where_to_see as _wts
+    f = local_store.get(_get_conn(), species.strip().replace(" ", "_"))
+    if f is None:
+        return _envelope(None, source="MPCR", confidence="insufficient",
+                         caveat=f"Species '{species}' not found in the catalog.")
+    w = _wts(f.species, limit=limit)
+    value = {
+        "species": f.species,
+        "elev_min": f.elev_min, "elev_max": f.elev_max,
+        "vertientes": f.vertientes,
+        "flowering_months": f.flowering_months,
+        "n_records": w["n_records"], "n_sites": w["n_cells"],
+        "manual_regions": w["manual_regions"],
+        "record_regions": w["record_regions"],
+        "regions_beyond_manual": [r for r in w["record_regions"]
+                                  if r not in set(w["manual_regions"])],
+        "confirmed_places": w["confirmed_places"],
+    }
+    return _envelope(
+        value, source="MPCR+GBIF+SINAC",
+        citation=(f"Manual de Plantas de Costa Rica, Tomo {f.volume}, p. {f.pages}; "
+                  f"GBIF snapshot 10.15468/dl.8yhee8; SINAC protected areas"),
+        confidence="exact" if w["confirmed_places"] else "insufficient",
+        caveat=("GBIF records reflect collection effort, not abundance; absence of "
+                "records in a park does not mean the species is absent there."),
+    )
+
+
+@server.tool()
 def resolve_common_name(name: str, region: Optional[str] = None,
                         elev: Optional[int] = None) -> dict:
     """Map a common (vernacular) name to candidate species of the Manual catalog.

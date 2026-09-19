@@ -21,6 +21,7 @@ from ..schema import Ficha
 from ..store import local_store
 from . import gbif_map
 from ..evidence import vernacular
+from ..evidence.places import where_to_see
 from . import retriever as R
 from .intent import parse_intent
 
@@ -117,6 +118,68 @@ def _select_superlative(candidates: list[Ficha], criterion: str, direction: str
 
 NOTE_FMT = chr(10) + chr(10) + "_{note}_"
 
+# --- "where can I see it" recipe ------------------------------------------------
+# Questions of the shape "¿en cuál cordillera / parque puedo observar X?" are answered
+# from evidence, not composed by a model: protected areas holding occurrence records,
+# the regions the Manual states, the regions the records add, and the flowering months.
+# Everything is deterministic and every claim carries its source.
+_WHERE_CUE = re.compile(
+    r"\b(d[oó]nde|cu[aá]l(?:es)?|qu[eé])\b[^?]{0,70}\b(cordillera|cordilleras|parque|parques|"
+    r"regi[oó]n|regiones|zona|zonas|lugar|lugares|sitio|sitios)\b"
+    r"|\b(d[oó]nde)\b[^?]{0,50}\b(ver|observar|encontrar|avistar|visitar|buscar)\b",
+    re.IGNORECASE)
+
+_MONTHS_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
+              "setiembre", "octubre", "noviembre", "diciembre"]
+
+
+def _month_phrase(months: list[int]) -> str:
+    if not months:
+        return ""
+    if len(months) >= 11:
+        return "prácticamente todo el año"
+    return ", ".join(_MONTHS_ES[m - 1] for m in sorted(months))
+
+
+def _where_text(f: Ficha, conn=None, top: int = 5) -> str:
+    """Deterministic, sourced answer to 'where can I see it'."""
+    w = where_to_see(f.species)
+    cite = f"Manual de Plantas de Costa Rica, Tomo {f.volume}, p. {f.pages}"
+    out = [f"**{f.species}** — {f.elev_min}–{f.elev_max} m ({cite})."]
+
+    places = w.get("confirmed_places", [])
+    if places:
+        out.append("")
+        out.append("**Áreas protegidas con registros de la especie** "
+                   "(GBIF, instantánea DOI 10.15468/dl.8yhee8):")
+        for p in places[:top]:
+            recent = f", {p['n_since_1970']} desde 1970" if p["n_since_1970"] else ""
+            out.append(f"- {p['place']} — {p['n_records']} registro(s){recent}; "
+                       f"el área abarca {p['elev_p05']:.0f}–{p['elev_p95']:.0f} m")
+    else:
+        out.append("")
+        out.append("No hay registros de esta especie dentro de áreas protegidas en la "
+                   "instantánea de GBIF; eso refleja esfuerzo de colecta, no ausencia.")
+
+    if w.get("manual_regions"):
+        out.append("")
+        out.append(f"**Regiones según el Manual:** {', '.join(w['manual_regions'])} ({cite}).")
+    extra = [r for r in w.get("record_regions", []) if r not in set(w.get("manual_regions") or [])]
+    if extra:
+        out.append(f"**Regiones adicionales donde hay registros:** {', '.join(extra)} "
+                   f"(GBIF; el Manual no las menciona).")
+    if f.vertientes:
+        out.append(f"**Vertiente(s):** {', '.join(f.vertientes)} ({cite}).")
+    if f.flowering_months:
+        out.append("")
+        out.append(f"**Floración:** {_month_phrase(f.flowering_months)} ({cite}) — "
+                   f"la mejor época para verlo en flor.")
+    out.append("")
+    out.append("*Los registros GBIF reflejan esfuerzo de colecta, no abundancia: la "
+               "ausencia de registros en un parque no significa que la especie no esté ahí.*")
+    return "\n".join(out)
+
+
 _INTENT_KEYS = ("intent_type", "selector_criterion", "selector_direction",
                 "semantic_text", "common_name")
 
@@ -137,11 +200,16 @@ def answer(question: str, *, top_k: int = 12, conn=None, index=None) -> dict:
     index = index if index is not None else R.vector_index()
     selector = None
 
+    where_q = bool(_WHERE_CUE.search(question))
+
     sp = _detect_species(question, conn)
     if sp:
         f = local_store.get(conn, sp.replace(" ", "_"))
-        results, constraints, mode = [(f, 1.0)], {}, "A (especie)"
         map_path, n_pts = gbif_map.single_species_map(f)
+        if where_q:
+            return _result(question, "A (dónde ver)", {}, None, [(f, 1.0)],
+                           _where_text(f, conn), map_path, n_pts)
+        results, constraints, mode = [(f, 1.0)], {}, "A (especie)"
     else:
         intent = parse_intent(question)
         constraints = {k: v for k, v in intent.items()
@@ -162,9 +230,12 @@ def answer(question: str, *, top_k: int = 12, conn=None, index=None) -> dict:
                 name_note = (f"«{intent['common_name']}» se interpretó como {f.species} "
                              f"({why}).")
                 map_path, n_pts = gbif_map.single_species_map(f)
-                return _result(question, "A (nombre común)", constraints, None,
-                               [(f, 1.0)],
-                               _compose(question, [(f, 1.0)]) + NOTE_FMT.format(note=name_note),
+                body = (_where_text(f, conn) if where_q
+                        else _compose(question, [(f, 1.0)]))
+                return _result(question,
+                               "A (dónde ver, nombre común)" if where_q else "A (nombre común)",
+                               constraints, None, [(f, 1.0)],
+                               body + NOTE_FMT.format(note=name_note),
                                map_path, n_pts, name_resolution=decision)
             if decision["decision"] == "ambiguous":
                 fichas = [(local_store.get(conn, c["species"].replace(" ", "_")), 1.0)
@@ -178,6 +249,12 @@ def answer(question: str, *, top_k: int = 12, conn=None, index=None) -> dict:
                                  f"{c['elev_min']}–{c['elev_max']} m, "
                                  f"{c['n_records'] or 0} registros en CR "
                                  f"[{', '.join(sorted(c['sources']))}]")
+                    if where_q:
+                        w = where_to_see(c["species"], limit=3)
+                        parks = ", ".join(f"{x['place']} ({x['n_records']})"
+                                          for x in w.get("confirmed_places", []))
+                        lines.append(f"    - áreas protegidas con registros: "
+                                     f"{parks or 'ninguna en la instantánea de GBIF'}")
                 return _result(question, "Desambiguación (nombre común)", constraints, None,
                                fichas, chr(10).join(lines), map_path, n_pts,
                                name_resolution=decision)
