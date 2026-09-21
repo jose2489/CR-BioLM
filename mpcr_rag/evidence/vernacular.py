@@ -5,13 +5,17 @@ shape of the Darwin Core VernacularName extension (vernacularName, language,
 countryCode, isPreferredName, source), so every candidate an answer rests on keeps its
 provenance and can be exported as a checklist later.
 
-Sources, in order of trust:
+Sources, in order of trust (country-specific first):
   MPCR       names printed in the Manual entry              -> cite Tomo and page
-  TROPICOS   Missouri Botanical Garden (needs TROPICOS_API_KEY; MOBOT publishes the
-             Manual, so its names are expected to mirror MPCR)
   INAT_CR    iNaturalist name preferred for Costa Rica      -> what people say today
   INAT_ES    other Spanish iNaturalist names                -> candidates
   GBIF       GBIF vernacular names (Spanish)                -> recall, no locality
+  TROPICOS   Missouri Botanical Garden, REVERSE index only: Tropicos has no
+             species -> names method, but /Name/Search accepts an undocumented
+             ``commonname`` parameter. Global and with no country field, so it buys
+             recall at the cost of locality ("nazareno" also returns Tibouchina
+             urvilleana, which in Costa Rica is Peltogyne purpurea). Needs
+             TROPICOS_API_KEY; a website account is not enough.
 
 A common name is ambiguous by nature ("poro" is several Erythrina; "roble" is Quercus
 and also Tabebuia rosea), so ``resolve`` returns RANKED CANDIDATES with provenance and
@@ -40,7 +44,13 @@ INAT_CR_PLACE = 6924                    # iNaturalist place id for Costa Rica
 UA = {"User-Agent": "CR-BioLM thesis research"}
 TROPICOS_KEY = os.environ.get("TROPICOS_API_KEY", "")
 
-TRUST = {"MPCR": 0, "TROPICOS": 1, "INAT_CR": 2, "INAT_ES": 3, "GBIF": 4}
+# Country-specific sources first. Tropicos sits with GBIF, not above: its common-name
+# index is global and carries no country field, so it lists names used anywhere in the
+# Americas ("nazareno" -> Tibouchina urvilleana, which in Costa Rica is Peltogyne
+# purpurea). It buys recall, not locality.
+TRUST = {"MPCR": 0, "INAT_CR": 1, "INAT_ES": 2, "GBIF": 3, "TROPICOS": 3}
+CR_SPECIFIC = TRUST["INAT_CR"]        # trust <= this means "a Costa Rican source said so"
+DOMINANCE_RATIO = 0.5                 # see resolve_decision
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS mpcr.vernacular (
@@ -173,35 +183,89 @@ def from_gbif(taxon_key: int | None) -> list[dict]:
     return out
 
 
-def from_tropicos(species: str) -> list[dict]:
-    """Missouri Botanical Garden. Needs TROPICOS_API_KEY: a website account is not
-    enough, unkeyed calls are rejected with "You are not allowed to make this request".
-    MOBOT publishes the Manual, so these names should mirror MPCR."""
-    if not TROPICOS_KEY:
+def tropicos_by_common_name(name: str) -> list[str]:
+    """Scientific names Tropicos lists under a common name (reverse lookup).
+
+    Tropicos has no species -> common names method: its documented API covers
+    Search, Summary, Synonyms, AcceptedNames, Distributions, References, Images,
+    ChromosomeCounts, HigherTaxa and Specimens. The web UI's common-name search is
+    reachable through an UNDOCUMENTED ``commonname`` parameter on /Name/Search, and
+    that is what this uses.
+
+    Results are GLOBAL and include genus-rank rows, so the caller must intersect them
+    with the catalog: "Poro" returns Allium porrum (the leek) among others, while
+    "Cortez amarillo" returns exactly the three Handroanthus the Manual names.
+    Needs TROPICOS_API_KEY (a website account is not enough).
+    """
+    if not TROPICOS_KEY or not name.strip():
         return []
     try:
-        s = requests.get("https://services.tropicos.org/Name/Search",
-                         params={"name": species, "type": "exact", "format": "json",
-                                 "apikey": TROPICOS_KEY}, headers=UA, timeout=30).json()
-        nid = s[0].get("NameId") if isinstance(s, list) and s else None
-        if not nid:
-            return []
-        rows = requests.get(f"https://services.tropicos.org/Name/{nid}/CommonNames",
-                            params={"format": "json", "apikey": TROPICOS_KEY},
-                            headers=UA, timeout=30).json()
+        r = requests.get("https://services.tropicos.org/Name/Search",
+                         params={"commonname": name.strip(), "apikey": TROPICOS_KEY,
+                                 "format": "json"}, headers=UA, timeout=40)
+        rows = r.json() if r.ok and r.text.strip().startswith("[") else []
     except Exception:
         return []
     out = []
-    for v in rows if isinstance(rows, list) else []:
-        n = v.get("CommonName")
-        if not n:
-            continue
-        country = (v.get("Country") or "")
-        out.append({"vernacular": n, "language": (v.get("Language") or "")[:3].lower() or None,
-                    "country_code": "CR" if country.lower().startswith("costa") else None,
-                    "is_preferred": False, "source": "TROPICOS",
-                    "source_detail": f"Tropicos name {nid}"})
+    for x in rows:
+        sci = (x.get("ScientificName") or "").strip()
+        # species rank only: genus-level rows ("Tabebuia", "Cecropia") are not answers
+        if sci and len(sci.split()) >= 2 and x.get("NameId"):
+            out.append(sci)
     return out
+
+
+def _catalog_index(conn) -> dict[str, str]:
+    """Scientific name -> catalog species, including the accepted names of synonyms,
+    so a Tropicos result under a current name still matches the Manual's name."""
+    with conn.cursor() as cur:
+        cur.execute("SELECT species FROM mpcr.fichas")
+        idx = {s: s for (s,) in cur.fetchall()}
+        cur.execute("SELECT species, accepted_name FROM mpcr.taxa WHERE accepted_name IS NOT NULL")
+        for species, accepted in cur.fetchall():
+            idx.setdefault(accepted, species)
+    return idx
+
+
+def expand_from_tropicos(names: list[str] | None = None, *, verbose: bool = True,
+                         pause: float = 0.5) -> dict:
+    """For every common name already in the store, ask Tropicos which other catalog
+    species carry it, and record those as source=TROPICOS.
+
+    This is how a name-keyed index becomes useful here: the Manual and iNaturalist
+    give names per species; Tropicos gives species per name, which finds catalog
+    species the other sources never associated with that name.
+    """
+    conn = pg_store.connect()
+    cur = conn.cursor()
+    cur.execute(_SCHEMA)
+    conn.commit()
+    if names is None:
+        cur.execute("SELECT DISTINCT vernacular FROM mpcr.vernacular ORDER BY 1")
+        names = [r[0] for r in cur.fetchall()]
+    idx = _catalog_index(conn)
+    stats = {"names": 0, "hits": 0, "new_rows": 0}
+    for i, name in enumerate(names, 1):
+        found = tropicos_by_common_name(name)
+        matched = {idx[s] for s in found if s in idx}
+        stats["names"] += 1
+        stats["hits"] += bool(matched)
+        for species in sorted(matched):
+            cur.execute("""INSERT INTO mpcr.vernacular
+                (name_norm, vernacular, species, language, country_code, is_preferred,
+                 source, source_detail)
+                VALUES (%s,%s,%s,'spa',NULL,false,'TROPICOS',%s)
+                ON CONFLICT DO NOTHING""",
+                        (norm(name), name, species,
+                         "Tropicos /Name/Search?commonname (global index)"))
+            stats["new_rows"] += cur.rowcount
+        conn.commit()
+        if verbose and (i % 25 == 0 or matched):
+            print(f"  [{i}/{len(names)}] {name:28} Tropicos={len(found):3} "
+                  f"in catalog={len(matched)}", flush=True)
+        time.sleep(pause)
+    conn.close()
+    return stats
 
 
 # ----------------------------------------------------------------------- store
@@ -215,8 +279,7 @@ def fetch(species_list: list[str], verbose: bool = True, mpcr: bool = True) -> d
     stats = {"species": 0, "rows": 0, "with_cr_preferred": 0, "no_names": 0}
     for i, sp in enumerate(species_list, 1):
         t = tx.get(sp) or {}
-        rows = (from_inat(sp, t.get("accepted_name")) + from_gbif(t.get("taxon_key"))
-                + from_tropicos(sp))
+        rows = from_inat(sp, t.get("accepted_name")) + from_gbif(t.get("taxon_key"))
         if mpcr:
             from ..store import local_store
             from .. import config as _cfg
@@ -325,9 +388,13 @@ def resolve_decision(name: str, **kw) -> dict:
                 "candidates": cands}
     best, rest = cands[0], cands[1:]
     best_records = best["n_records"] or 0
-    if (best["trust"] <= TRUST["INAT_CR"]
+    # A Costa Rica-specific name beats candidates that only a global index lists,
+    # unless such a rival is far better recorded here (twice as many records), which
+    # is the Ceiba case: iNaturalist calls Spirotheca rosea (76 records) "Ceiba"
+    # because Ceiba pentandra (200) sits under the indigenous "Shkuli".
+    if (best["trust"] <= CR_SPECIFIC
             and all(c["trust"] > best["trust"] for c in rest)
-            and best_records >= max((c["n_records"] or 0) for c in rest)):
+            and best_records >= DOMINANCE_RATIO * max((c["n_records"] or 0) for c in rest)):
         return {"decision": "preferred", "name": name, "species": best["species"],
                 "candidates": cands}
     return {"decision": "ambiguous", "name": name, "candidates": cands}
