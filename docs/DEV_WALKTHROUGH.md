@@ -81,7 +81,20 @@ Keys (`.env` at the repo root, never committed):
 
 ---
 
-## 4. Live demo — run these in order, it is the whole system in 8 commands
+## 4. Live demo
+
+Easiest for a session, prints each step with its cost level:
+
+```
+python -m mpcr_rag.scripts.demo_walkthrough              # steps 1-7, free
+python -m mpcr_rag.scripts.demo_walkthrough --with-llm   # adds the paid answer
+python -m mpcr_rag.scripts.demo_walkthrough --species "Dalbergia retusa"
+```
+
+Run it once before the meeting: step 7 takes ~18 s the first time while the embedding
+model loads, and a few seconds afterwards.
+
+The same thing typed by hand, if you prefer a REPL:
 
 ```python
 from mpcr_rag import config
