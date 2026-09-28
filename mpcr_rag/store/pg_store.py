@@ -4,14 +4,21 @@ SQLite stays the source of truth (ingest writes it; the handoff bundle ships it)
 This store is a derived query index, the role Pinecone had: rebuild it any time with
 ``sync_from_sqlite()``, which only re-embeds text whose content changed.
 
-Two vectors per species (``mpcr.ficha_chunks.section``):
-  distribution  the distribution paragraph — the text the BIP index embedded
-  description   morphology + discussion — "how do I recognize it" questions
+Chunks per species (``mpcr.ficha_chunks.section``, ``ordinal``):
+  distribution  the distribution paragraph, always ONE chunk — the text the BIP index
+                embedded, so the backends stay comparable (p95 = 193 tokens)
+  description   morphology + discussion, SPLIT into ~300-token windows. e5 truncates
+                at 512 tokens and 25% of descriptions exceeded it, so the fruits and
+                the diagnostic notes at the end of a long entry were not in the vector
+                at all. 6,946 species -> 13,641 description chunks, 0% truncated.
 
-Search is EXACT (sequential scan), deliberately: at ~14k vectors it takes
-milliseconds, and an approximate HNSW index post-filters in pgvector 0.6, so a
-restrictive metadata filter can return fewer than top_k hits. Add an index only if
-the catalog grows by an order of magnitude.
+A species is scored by its BEST matching chunk and returned once (the query fetches
+top_k * OVERFETCH chunks, then groups).
+
+Search is EXACT (sequential scan), deliberately: at ~20k vectors it takes
+milliseconds (63 ms distribution, 131 ms description), and an approximate HNSW index
+post-filters in pgvector 0.6, so a restrictive metadata filter can return fewer than
+top_k hits. Add an index only if the catalog grows by an order of magnitude.
 
 Run:  python -m mpcr_rag.store.pg_store [status|start|stop|sync|demo]
 """
@@ -19,6 +26,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sqlite3
 import time
 
@@ -60,10 +68,11 @@ CREATE INDEX IF NOT EXISTS fichas_regions ON mpcr.fichas USING gin (regions);
 CREATE TABLE IF NOT EXISTS mpcr.ficha_chunks (
     vector_id    text NOT NULL REFERENCES mpcr.fichas ON DELETE CASCADE,
     section      text NOT NULL,
+    ordinal      int  NOT NULL DEFAULT 0,   -- long sections are split; 0 = whole section
     text         text NOT NULL,
     content_hash text NOT NULL,    -- model + prefix + text; unchanged => not re-embedded
     embedding    vector({config.EMBED_DIM}) NOT NULL,
-    PRIMARY KEY (vector_id, section)
+    PRIMARY KEY (vector_id, section, ordinal)
 );
 
 CREATE TABLE IF NOT EXISTS mpcr.meta (key text PRIMARY KEY, value text);
@@ -122,6 +131,14 @@ def connect():
     conn = psycopg2.connect(_url())
     with conn, conn.cursor() as cur:
         cur.execute(_SCHEMA)
+        # Pre-ordinal stores hold one chunk per section, with long descriptions
+        # truncated by the model. Drop them; the next sync re-embeds.
+        cur.execute("""SELECT 1 FROM information_schema.columns
+                       WHERE table_schema='mpcr' AND table_name='ficha_chunks'
+                         AND column_name='ordinal'""")
+        if cur.fetchone() is None:
+            cur.execute("DROP TABLE mpcr.ficha_chunks")
+            cur.execute(_SCHEMA)
     return conn
 
 
@@ -129,13 +146,53 @@ def _vec(v) -> str:
     return "[" + ",".join(f"{float(x):.7f}" for x in v) + "]"
 
 
-def chunk_texts(f: Ficha) -> dict[str, str]:
-    """Text embedded per section. ``distribution`` mirrors the Pinecone record
-    (paragraph, or the species name when absent) so the backends stay comparable."""
-    out = {"distribution": f.distribution_paragraph or f.species}
+# e5 truncates at 512 tokens. Measured on this corpus, Spanish botanical prose runs
+# about 3.07 characters per token, and 25% of description sections exceeded the limit:
+# everything after the cut (often the fruits and the diagnostic notes) was invisible to
+# search. Descriptions are therefore split on sentence boundaries into windows of
+# ~300 tokens with one sentence of overlap, so a character group spanning a boundary is
+# still embedded intact somewhere.
+CHARS_PER_TOKEN = 3.07
+CHUNK_TOKENS = 300
+CHUNK_CHARS = int(CHUNK_TOKENS * CHARS_PER_TOKEN)      # ~920 characters
+# chunks fetched per requested hit before grouping to one row per species:
+# a species can occupy several of the nearest chunks.
+OVERFETCH = 10
+
+_SENTENCE = re.compile(r"(?<=[.;])\s+")
+
+
+def split_text(text: str, max_chars: int = CHUNK_CHARS) -> list[str]:
+    """Sentence-aware windows of at most ``max_chars``, overlapping by one sentence.
+    A single sentence longer than the window is cut on whitespace rather than dropped."""
+    if len(text) <= max_chars:
+        return [text]
+    pieces, out, cur = _SENTENCE.split(text), [], ""
+    for s in pieces:
+        while len(s) > max_chars:                       # pathological run-on sentence
+            cut = s.rfind(" ", 0, max_chars) or max_chars
+            out.append(s[:cut].strip())
+            s = s[cut:].lstrip()
+        if not cur:
+            cur = s
+        elif len(cur) + 1 + len(s) <= max_chars:
+            cur = f"{cur} {s}"
+        else:
+            out.append(cur)
+            cur = f"{out[-1].rsplit('. ', 1)[-1]} {s}".strip()[-max_chars:]   # 1-sentence overlap
+    if cur:
+        out.append(cur)
+    return [c for c in (x.strip() for x in out) if c]
+
+
+def chunk_texts(f: Ficha) -> list[tuple[str, int, str]]:
+    """(section, ordinal, text) to embed. ``distribution`` stays ONE chunk — it mirrors
+    the Pinecone record so the backends remain comparable, and it never exceeds the
+    token limit (p95 = 193 tokens). ``description`` is split when long."""
+    out = [("distribution", 0, f.distribution_paragraph or f.species)]
     desc = " ".join(s for s in (f.morphology, f.discussion) if s)
     if desc:
-        out["description"] = desc
+        out += [("description", i, part) for i, part in enumerate(split_text(desc))]
     return out
 
 
@@ -188,13 +245,14 @@ def sync_from_sqlite(sqlite_path=None, *, batch_size: int = 16, verbose: bool = 
     removed = cur.rowcount
     conn.commit()
 
-    cur.execute("SELECT vector_id, section, content_hash FROM mpcr.ficha_chunks")
-    have = {(v, s): h for v, s, h in cur.fetchall()}
-    wanted = {(f.vector_id, s): t for f in fichas for s, t in chunk_texts(f).items()}
+    cur.execute("SELECT vector_id, section, ordinal, content_hash FROM mpcr.ficha_chunks")
+    have = {(v, s, o): h for v, s, o, h in cur.fetchall()}
+    wanted = {(f.vector_id, s, o): t for f in fichas for s, o, t in chunk_texts(f)}
 
     stale = [k for k in have if k not in wanted]
-    for vid, sec in stale:
-        cur.execute("DELETE FROM mpcr.ficha_chunks WHERE vector_id=%s AND section=%s", (vid, sec))
+    for vid, sec, ordinal in stale:
+        cur.execute("DELETE FROM mpcr.ficha_chunks WHERE vector_id=%s AND section=%s "
+                    "AND ordinal=%s", (vid, sec, ordinal))
     todo = [(k, t) for k, t in wanted.items() if have.get(k) != _hash(t)]
     conn.commit()
 
@@ -208,13 +266,15 @@ def sync_from_sqlite(sqlite_path=None, *, batch_size: int = 16, verbose: bool = 
         part = todo[i:i + step]
         vecs = embeddings.embed_passages([t for _, t in part], batch_size=batch_size)
         psycopg2.extras.execute_values(cur, """
-            INSERT INTO mpcr.ficha_chunks (vector_id, section, text, content_hash, embedding)
+            INSERT INTO mpcr.ficha_chunks (vector_id, section, ordinal, text,
+                                           content_hash, embedding)
             VALUES %s
-            ON CONFLICT (vector_id, section) DO UPDATE SET
+            ON CONFLICT (vector_id, section, ordinal) DO UPDATE SET
                 text=EXCLUDED.text, content_hash=EXCLUDED.content_hash,
                 embedding=EXCLUDED.embedding
-            """, [(vid, sec, t, _hash(t), _vec(v)) for ((vid, sec), t), v in zip(part, vecs)],
-            template="(%s,%s,%s,%s,%s::vector)")
+            """, [(vid, sec, o, t, _hash(t), _vec(v))
+                  for ((vid, sec, o), t), v in zip(part, vecs)],
+            template="(%s,%s,%s,%s,%s,%s::vector)")
         conn.commit()
         if verbose:
             done = min(i + step, len(todo))
@@ -260,7 +320,10 @@ def _where(constraints: dict) -> tuple[str, list]:
 def search(query_text: str, *, top_k: int = 10, section: str = "distribution",
            conn=None, **constraints) -> list[dict]:
     """Semantic search with metadata filters. Hit dicts match pinecone_client.search:
-    ``id``, ``score`` (cosine similarity) plus the filterable fields."""
+    ``id``, ``score`` (cosine similarity) plus the filterable fields.
+
+    A species can hold several chunks of one section (long descriptions are split), so
+    it is scored by its BEST matching chunk and returned once."""
     from . import embeddings
     q = _vec(embeddings.embed_query(query_text))
     where, args = _where(constraints)
@@ -269,14 +332,23 @@ def search(query_text: str, *, top_k: int = 10, section: str = "distribution",
     try:
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(f"""
-                SELECT f.vector_id AS id, 1 - (c.embedding <=> %s::vector) AS score,
+                WITH hits AS (
+                    SELECT c.vector_id, 1 - (c.embedding <=> %s::vector) AS score
+                    FROM mpcr.ficha_chunks c JOIN mpcr.fichas f USING (vector_id)
+                    WHERE c.section = %s AND {where}
+                    ORDER BY c.embedding <=> %s::vector
+                    LIMIT %s
+                )
+                SELECT f.vector_id AS id, max(h.score) AS score,
                        f.species, f.genus, f.family, f.volume, f.pages,
                        f.elev_min, f.elev_max, f.habits, f.vertientes, f.regions,
                        f.forest_types, f.endemic, f.flowering_months
-                FROM mpcr.ficha_chunks c JOIN mpcr.fichas f USING (vector_id)
-                WHERE c.section = %s AND {where}
-                ORDER BY c.embedding <=> %s::vector
-                LIMIT %s""", [q, section, *args, q, top_k])
+                FROM hits h JOIN mpcr.fichas f USING (vector_id)
+                GROUP BY f.vector_id, f.species, f.genus, f.family, f.volume, f.pages,
+                         f.elev_min, f.elev_max, f.habits, f.vertientes, f.regions,
+                         f.forest_types, f.endemic, f.flowering_months
+                ORDER BY score DESC
+                LIMIT %s""", [q, section, *args, q, top_k * OVERFETCH, top_k])
             return [dict(r) for r in cur.fetchall()]
     finally:
         if own:
