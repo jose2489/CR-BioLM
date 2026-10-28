@@ -98,28 +98,93 @@ _GEO: dict = {}          # bounds and land mask of the terrain grid, filled by _
 
 def with_records(ing: dict, records: list[tuple]) -> dict:
     """The description widened the way the system widens the flora's: any region, and
-    any slope, holding at least five of the given records is added."""
+    any slope, holding at least five of the given records is added. Where the map is
+    drawn as region-slope pairs (the Manual's, see from_ficha), the unit is the pair,
+    as in the renderer: five records on one side of a cordillera add that side."""
     reg = collections.Counter(r for r, _s, _e in records if r)
     slo = collections.Counter(s for _r, s, _e in records if s)
-    return {"regions": sorted(set(ing["regions"]) | {r for r, n in reg.items() if n >= 5}),
-            "slopes": (sorted(set(ing["slopes"]) | {s for s, n in slo.items() if n >= 5})
-                       if ing["slopes"] else []),
-            "elev": ing["elev"]}
+    out = {"regions": sorted(set(ing["regions"]) | {r for r, n in reg.items() if n >= 5}),
+           "slopes": (sorted(set(ing["slopes"]) | {s for s, n in slo.items() if n >= 5})
+                      if ing["slopes"] else []),
+           "elev": ing["elev"]}
+    if ing.get("pairs") is not None:
+        pair = collections.Counter((r, s) for r, s, _e in records if r and s)
+        out["pairs"] = sorted({tuple(p) for p in ing["pairs"]}
+                              | {p for p, n in pair.items() if n >= 5})
+    return out
 
 
 def mask(ing: dict) -> np.ndarray | None:
     """The map of a description, as a boolean over the land pixels. None = no map."""
-    if not ing["regions"] and not ing["slopes"]:
+    if not ing["regions"] and not ing["slopes"] and not ing.get("pairs"):
         return None
     names, slopes, elev = _grid()
     m = np.ones(len(names), dtype=bool)
-    if ing["regions"]:
-        m &= np.isin(names, list(ing["regions"]))
-    if ing["slopes"]:
-        m &= np.isin(slopes, list(ing["slopes"]))
+    if ing.get("pairs") is not None:
+        keys = np.char.add(np.char.add(names.astype(str), "|"), slopes.astype(str))
+        m &= np.isin(keys, [f"{r}|{s}" for r, s in ing["pairs"]])
+    else:
+        if ing["regions"]:
+            m &= np.isin(names, list(ing["regions"]))
+        if ing["slopes"]:
+            m &= np.isin(slopes, list(ing["slopes"]))
     if ing["elev"]:
         m &= (elev >= ing["elev"][0]) & (elev <= ing["elev"][1])
     return m
+
+
+# ------------------------------------------------------ the Manual's regions, by side
+
+@lru_cache(maxsize=None)
+def _layer(canonical: str) -> tuple[str, ...]:
+    """Gazetteer canonical region name -> region layer name(s). Four catalogue names
+    are the gazetteer's and not the layer's ("Valle Central", "Valle Central
+    (Occidental)", "Fila Costeña (Norte)", "Fila Costeña (Sur)"); matched against the
+    layer directly they never drew."""
+    from utils.distribution_map.gazetteer import lookup
+    hits = [e for v in lookup(canonical).values() for e in v
+            if e.get("target_shapefile") == "regiones_botanicas"]
+    exact = [e["target_value"] for e in hits if e["canonical_name"] == canonical]
+    return tuple(exact or [e["target_value"] for e in hits] or [canonical])
+
+
+def layer_regions(names) -> set[str]:
+    return {x for n in names or [] for x in _layer(n)}
+
+
+_BOTH = ("Caribe", "Pacífico")
+
+
+def region_slope_pairs(paragraph: str, regions, slopes) -> set[tuple]:
+    """The (region, slope) pairs a Manual paragraph states, as the renderer draws them
+    (renderer._slopes_per_region): each region takes the slope marker it is named
+    under; a region named under none, or not reached by the parse, takes the species'
+    slopes."""
+    from utils.distribution_map.gazetteer import lookup
+    from utils.distribution_map.geo_parser import parse_distribution_block
+    default = list(slopes or []) or list(_BOTH)
+    pairs: set[tuple] = set()
+    for occ in parse_distribution_block(paragraph or ""):
+        v = occ.get("vertiente")
+        sides = list(_BOTH) if v == "ambas" else [v] if v in _BOTH else default
+        for lv in lookup(occ.get("feature_name") or "").values():
+            for e in lv:
+                if e.get("target_shapefile") == "regiones_botanicas":
+                    pairs.update((e["target_value"], s) for s in sides)
+    paired = {r for r, _ in pairs}
+    for r in layer_regions(regions) - paired:
+        pairs.update((r, s) for s in default)
+    # A region that has a polygon on one side only is drawn whatever side is stated:
+    # the layer is the coarser source there, not the Manual (as in the renderer).
+    names, sl, _e = _grid()
+    exists = set(zip(names.tolist(), sl.tolist()))
+    out = set()
+    for r, s in pairs:
+        if (r, s) in exists:
+            out.add((r, s))
+        else:
+            out.update(p for p in exists if p[0] == r)
+    return out
 
 
 # -------------------------------------------------------------------- the ingredients
@@ -181,18 +246,27 @@ def from_ficha(f) -> dict:
         # it touches 2 of the 300 sampled species and both figures are reported.
         from utils.distribution_map.ficha import SINGLE_VALUE_MARGIN_M
         lo, hi = max(0, lo - SINGLE_VALUE_MARGIN_M), hi + SINGLE_VALUE_MARGIN_M
-    return {"regions": sorted(f.regions or []), "slopes": sorted(f.vertientes or []),
+    # Drawn as region-slope pairs, the way the renderer draws the Manual's range since
+    # the expert map review: "vert. Pac. Cord. de Talamanca" is the Pacific side only.
+    return {"regions": sorted(layer_regions(f.regions)), "slopes": sorted(f.vertientes or []),
+            "pairs": sorted(region_slope_pairs(f.distribution_paragraph, f.regions,
+                                               f.vertientes)),
             "elev": [lo, hi] if lo is not None and hi is not None else None}
 
 
 def captured(ing: dict, records: list[tuple]) -> int:
     """How many records (region, slope, terrain elevation) fall inside the map."""
     n = 0
+    pairs = {tuple(p) for p in ing["pairs"]} if ing.get("pairs") is not None else None
     for region, slope, elev in records:
-        if ing["regions"] and region not in ing["regions"]:
-            continue
-        if ing["slopes"] and slope not in ing["slopes"]:
-            continue
+        if pairs is not None:
+            if (region, slope) not in pairs:
+                continue
+        else:
+            if ing["regions"] and region not in ing["regions"]:
+                continue
+            if ing["slopes"] and slope not in ing["slopes"]:
+                continue
         if ing["elev"] and (elev is None or not ing["elev"][0] <= elev <= ing["elev"][1]):
             continue
         if region is None:

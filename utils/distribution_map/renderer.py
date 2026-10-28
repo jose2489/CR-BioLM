@@ -513,6 +513,10 @@ def _gbif_inferred_regions(
     Find botanical regions that contain ≥ _GBIF_CLUSTER_MIN GBIF occurrence
     points but were NOT already matched by the Manual text.
 
+    Counted per region AND slope: the region layer splits most cordilleras into a
+    Caribbean and a Pacific polygon, and five records on one side say nothing about
+    the other. A side the Manual already covers is not added again.
+
     Returns a GeoDataFrame of those extra regions (same CRS as regiones),
     or None if none qualify.
     """
@@ -522,27 +526,75 @@ def _gbif_inferred_regions(
     # Reproject GBIF points to match regiones CRS
     pts = presencias_gdf.to_crs(regiones.crs) if presencias_gdf.crs != regiones.crs else presencias_gdf
 
-    # Spatial join: which botanical region does each point fall in?
-    joined = gpd.sjoin(pts[["geometry"]], regiones[["geometry", "Nombre"]], how="left", predicate="within")
+    # Spatial join: which botanical region (and side) does each point fall in?
+    joined = gpd.sjoin(pts[["geometry"]], regiones[["geometry", "Nombre", "vert_norm"]],
+                       how="left", predicate="within")
 
-    # Count points per region name
-    counts = joined.groupby("Nombre").size()
-    qualifying = counts[counts >= _GBIF_CLUSTER_MIN].index.tolist()
+    counts = joined.groupby(["Nombre", "vert_norm"]).size()
+    qualifying = set(counts[counts >= _GBIF_CLUSTER_MIN].index.tolist())
 
     if not qualifying:
         return None
 
-    # Remove any already matched by the Manual
-    already_matched: set[str] = set()
+    # Remove any side already matched by the Manual
+    already_matched: set[tuple] = set()
     if matched_regions_gdf is not None and not matched_regions_gdf.empty:
-        already_matched = set(matched_regions_gdf["Nombre"].dropna().tolist())
+        already_matched = set(zip(matched_regions_gdf["Nombre"], matched_regions_gdf["vert_norm"]))
 
-    new_names = [n for n in qualifying if n not in already_matched]
-    if not new_names:
+    new_pairs = qualifying - already_matched
+    if not new_pairs:
         return None
 
-    result = regiones[regiones["Nombre"].isin(new_names)].copy()
+    keys = list(zip(regiones["Nombre"], regiones["vert_norm"]))
+    result = regiones[[k in new_pairs for k in keys]].copy()
     return result if not result.empty else None
+
+
+_SLOPE_NORM = {"Caribe": {"carib"}, "Pacífico": {"pacifico"}, "ambas": {"carib", "pacifico"}}
+
+
+def _slopes_per_region(ficha: DistributionFicha) -> dict[str, set[str]]:
+    """Region layer name -> the slopes the Manual gives that region.
+
+    The paragraph states slope per region: "ambas verts. Cord. de Guanacaste, vert. Pac.
+    Cord. de Talamanca" puts the species on both sides of Guanacaste and on the Pacific
+    side only of Talamanca. geo_parser's slope state machine already carries that on
+    each occurrence; a region named under no slope marker takes the species' slopes.
+    Drawing every side of every region named, as the map did, painted the Caribbean
+    Talamanca for a species of the Pacific (found in the expert map review, Hyptis
+    brachiata).
+    """
+    default = set().union(*(_SLOPE_NORM.get(v, set()) for v in ficha.vertientes)) \
+        or {"carib", "pacifico"}
+    out: dict[str, set[str]] = {}
+    for occ in ficha.locality_occurrences:
+        if occ.get("feature_type", "") not in _REGION_SHAPEFILE_TYPES:
+            continue
+        sides = _SLOPE_NORM.get(occ.get("vertiente"), default)
+        for level_hits in lookup(occ.get("feature_name", "") or "").values():
+            for h in level_hits:
+                target = _entity_target(h["canonical_name"])
+                if target and target[0] == "regiones_botanicas":
+                    out.setdefault(target[2], set()).update(sides)
+    return out
+
+
+def _apply_slopes_per_region(matched: gpd.GeoDataFrame,
+                             ficha: DistributionFicha) -> gpd.GeoDataFrame:
+    """Keep, for each region the paragraph pairs with a slope, only that side's
+    polygon. A region whose only polygon is on the other side is kept as it is: the
+    layer is the coarser source there, not the Manual."""
+    if matched is None or matched.empty or "vert_norm" not in matched.columns:
+        return matched
+    sides = _slopes_per_region(ficha)
+    if not sides:
+        return matched
+    keep = []
+    for name, group in matched.groupby("Nombre", sort=False):
+        allowed = sides.get(name)
+        sub = group[group["vert_norm"].isin(allowed)] if allowed else group
+        keep.append(sub if not sub.empty else group)
+    return gpd.GeoDataFrame(pd.concat(keep), crs=matched.crs)
 
 
 # ---------------------------------------------------------------------------
@@ -568,6 +620,7 @@ def generate_distribution_map(
 
     # ── Resolve entity geometries ─────────────────────────────────────────
     matched_regions_gdf   = _resolve_regions_with_qualifiers(ficha) if ficha.regions else None
+    matched_regions_gdf   = _apply_slopes_per_region(matched_regions_gdf, ficha)
     matched_parks_gdf     = _resolve_to_gdf(ficha.parks)      if ficha.parks     else None
     matched_cantons_gdf   = _resolve_to_gdf(ficha.cantons)    if ficha.cantons   else None
     matched_districts_gdf = _resolve_to_gdf(ficha.districts)  if ficha.districts else None
