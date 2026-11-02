@@ -38,7 +38,7 @@ DATA = ROOT / "benchmark" / "data"
 OUT = Path(__file__).resolve().parent / "generated"
 FIGS = Path(__file__).resolve().parent / "figs"
 
-ORDER = ["G", "D", "F", "R", "E", "A1", "C", "A1F", "CF", "DM", "FM"]
+ORDER = ["G", "D", "F", "DP", "FP", "R", "E", "A1", "C", "A1F", "CF", "DM", "FM"]
 GENERATOR = {"openrouter:mistralai/mistral-large-4-0": "Mistral",
              "openrouter:google/gemma-4-31b-it": "Gemma", None: "template"}
 EVIDENCE = {None: "none", "flora": "flora only", "full": "full pack", "map": "map only"}
@@ -306,7 +306,8 @@ def fig_precision_coverage(summ: dict) -> None:
 CONF = DATA / "confirmatory" / "results.json"
 NAMES = {"D": "Mistral, full pack", "F": "Gemma, full pack", "A1F": "Mistral, free",
          "CF": "Gemma, free", "E": "Mistral, flora only", "DM": "Mistral, map only",
-         "FM": "Gemma, map only", "R": "Gemma, orchestrator", "G": "template"}
+         "FM": "Gemma, map only", "R": "Gemma, orchestrator", "G": "template",
+         "DP": "Mistral, full pack, free prompt", "FP": "Gemma, full pack, free prompt"}
 CONTRAST_EN = {("D", "A1F"): r"Grounded vs.\ free closed book, Mistral",
                ("F", "CF"): r"Grounded vs.\ free closed book, Gemma",
                ("D", "E", 0): r"Full pack vs.\ flora only, park questions",
@@ -314,7 +315,11 @@ CONTRAST_EN = {("D", "A1F"): r"Grounded vs.\ free closed book, Mistral",
                ("D", "DM"): r"Text pack vs.\ map, Mistral",
                ("F", "FM"): r"Text pack vs.\ map, Gemma",
                ("F", "D"): r"Gemma vs.\ Mistral, both grounded",
-               ("F", "R"): r"Given route vs.\ orchestrator, Gemma"}
+               ("F", "R"): r"Given route vs.\ orchestrator, Gemma",
+               ("DP", "A1F"): r"Evidence only, free prompt held, Mistral",
+               ("FP", "CF"): r"Evidence only, free prompt held, Gemma",
+               ("D", "DP"): r"Prompt only, evidence held, Mistral",
+               ("F", "FP"): r"Prompt only, evidence held, Gemma"}
 LONGTAIL_ARMS = ["A1F", "CF", "D", "F"]
 
 

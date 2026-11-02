@@ -73,6 +73,13 @@ ARMS = {a.name: a for a in [
     Arm("FM", OPEN, "map", prompt="map",
         note="grounded by MAP ONLY, open weights: same model as F"),
     Arm("G",  None, "full", note="template, no model: the floor"),
+    # D and F under the free prompt. The grounded and free closed-book arms differ in
+    # both evidence and prompt, so their gap could be partly the prompt; these two hold
+    # the prompt at the free one and change only the evidence, against A1F and CF.
+    Arm("DP", PAID, "full", prompt="minimal",
+        note="as D, FREE prompt: the evidence without the careful instructions"),
+    Arm("FP", OPEN, "full", prompt="minimal",
+        note="as F, FREE prompt: the evidence without the careful instructions"),
     # The same three grounded arms with the companion list filtered by growth form, the
     # condition an expert asked companions to meet. Only the co-occurrence evidence
     # differs, so these are run on that question type alone.
@@ -90,7 +97,7 @@ ARMS = {a.name: a for a in [
 
 # Arms runnable today. B waits on the search mechanism being confirmed.
 READY = [n for n in ("G", "A1", "A1F", "C", "CF", "D", "E", "F", "DM", "FM", "R",
-                      "DH", "FH", "RH")]
+                      "DH", "FH", "RH", "DP", "FP")]
 
 # What the routed arm says when the router cannot serve the question: no species
 # resolved, an exit route, or a park it could not identify. A deployed system that
