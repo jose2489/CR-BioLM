@@ -232,6 +232,19 @@ def template_answer(question: str, qtype: str, facts: dict) -> str:
         return (f"{_ABSTAIN} El registro describe su hábitat como: {hab}." if hab
                 else _ABSTAIN)
 
+    if qtype == "climate":
+        from .climate_profile import profile_text
+        hab = facts.get("habitat_sentence")
+        prof = facts.get("climate")
+        if not hab and not prof:
+            return _ABSTAIN
+        out = f"Según el Manual, {sp} crece en: {hab}{src}." if hab else ""
+        if prof:
+            out += (" " if out else "") + profile_text(prof) + (
+                " Estos valores resumen dónde se ha recolectado la especie; no son "
+                "tolerancias medidas." if prof["n"] >= 10 else "")
+        return out
+
     if qtype == "outside_record":
         cues = facts.get("use_cues")
         if cues:
