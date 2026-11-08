@@ -673,11 +673,12 @@ def main() -> None:
           f"{len(te['y']):,} pairs, base rate {te['y'].mean():.4f}", flush=True)
 
     # 1. the comparison, and what each kind of evidence adds
-    results, models, kept = {}, {}, {}
+    results, models, kept, lrs = {}, {}, {}, {}
     for name, groups in SUBSETS.items():
         cols = _cols(groups)
         gb, lr, imp = train(tr, cols, args.max_train)
         models[name] = (gb, cols)
+        lrs[name] = (lr, imp)
         for label, sc in ((f"gradient boosting, {name}", gb.predict_proba(te["X"][:, cols])[:, 1]),
                           (f"logistic regression, {name}", lr.predict_proba(imp(te["X"]))[:, 1])):
             results[label] = _metrics(te, sc)
@@ -688,10 +689,8 @@ def main() -> None:
         kept[name] = sc
 
     # per species, AUC and top-cell precision for the scores the paper compares
-    shown = ["gradient boosting, all evidence", "gradient boosting, without effort",
-             "logistic regression, all evidence", "gradient boosting, without the Manual",
-             "gradient boosting, without records", "system map (rule)", "nearest record",
-             "prevalence"]
+    shown = [f"{m}, {name}" for m in ("gradient boosting", "logistic regression")
+             for name in SUBSETS] + ["system map (rule)", "nearest record", "prevalence"]
     ps = per_species(te, {k: kept[k] for k in shown})
     with io.open(OUT / "per_species.jsonl", "w", encoding="utf-8") as fh:
         for r in ps:
@@ -714,7 +713,9 @@ def main() -> None:
     # the system's model leaves collecting effort out: it adds nothing measurable and its
     # reasons would describe where collectors work, not where the plant grows
     gb, cols = models["without effort"]
-    pscores = {"gradient boosting": gb.predict_proba(te["X"][:, cols])[:, 1], **_rules(te)}
+    lr, imp = lrs["without effort"]
+    pscores = {"gradient boosting": gb.predict_proba(te["X"][:, cols])[:, 1],
+               "logistic regression": lr.predict_proba(imp(te["X"]))[:, 1], **_rules(te)}
     parks = park_eval(te, pscores, rec)
     print("\nparks (median over parks with >= 5 new species since 2010)")
     for k, r in parks.items():
