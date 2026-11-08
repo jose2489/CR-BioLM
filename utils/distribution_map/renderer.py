@@ -605,9 +605,13 @@ def generate_distribution_map(
     ficha: DistributionFicha,
     output_path: Path | str,
     presencias_gdf=None,
+    overlay=None,
 ) -> Path:
     """
     Render a distribution map for the given Ficha and save as PNG.
+
+    overlay, if given, is called as overlay(ax, crs) after the presence points, to
+    draw on top of the map in its coordinate system.
 
     Returns the output Path.
     """
@@ -882,6 +886,10 @@ def generate_distribution_map(
             s=12, c="#ff4444", edgecolors="#ffaaaa",
             linewidths=0.4, alpha=0.85, zorder=10,
         )
+
+    # ── Caller's overlay (e.g. cells to check), in the map's CRS ──────────
+    if overlay is not None:
+        overlay(ax, regiones.crs)
 
     # ── Title + x-label ───────────────────────────────────────────────────
     sp_display = ficha.species.replace("_", " ")

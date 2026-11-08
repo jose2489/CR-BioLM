@@ -415,6 +415,83 @@ def _metrics(te: dict, sc: np.ndarray) -> dict:
             "cell_r100": float(np.mean(_recall_at(te["c"], sc, y, 100)))}
 
 
+TOP_K = 10
+
+
+def _hits_at(score: np.ndarray, y: np.ndarray, k: int) -> float:
+    """Expected new occurrences among the k best-scored cells, ties at the cut shared
+    evenly (a rule that scores many cells alike is not credited with a lucky order)."""
+    k = min(k, len(score))
+    t = np.sort(score)[::-1][k - 1]
+    above = score > t
+    tied = score == t
+    return float(y[above].sum() + (k - above.sum()) * y[tied].mean())
+
+
+def per_species(te: dict, scores: dict) -> list[dict]:
+    """Per species: AUC (does the score rank the cells where it turned up above the
+    others?) and the precision of its TOP_K best cells as a multiple of what TOP_K cells
+    drawn at random would give (prevalence differs between species, so raw precision
+    or PR-AUC would not compare). Species with at least TOP_K candidates, one new cell
+    and one cell without."""
+    from sklearn.metrics import roc_auc_score
+    order = np.argsort(te["s"], kind="stable")
+    g, y = te["s"][order], te["y"][order]
+    cuts = np.flatnonzero(np.diff(g)) + 1
+    spans = [(a, b) for a, b in zip(np.r_[0, cuts], np.r_[cuts, len(g)])
+             if 0 < y[a:b].sum() < b - a and b - a >= TOP_K]
+    rows = []
+    for name, sc in scores.items():
+        sc = np.nan_to_num(sc, nan=-1e9)[order]
+        for a, b in spans:
+            yy, ss = y[a:b], sc[a:b]
+            hits = _hits_at(ss, yy, TOP_K)
+            rows.append({"score": name, "species": int(g[a]), "n": int(b - a),
+                         "new": int(yy.sum()), "auc": float(roc_auc_score(yy, ss)),
+                         "hits": hits, "lift": hits / (TOP_K * yy.mean())})
+    return rows
+
+
+def summarize_species(rows: list[dict]) -> dict:
+    """Per score: median AUC; for the top cells, pooled lift (all hits over all hits
+    expected at random), the share of species with a hit, and the median lift."""
+    out = {}
+    for name in dict.fromkeys(r["score"] for r in rows):
+        sub = [r for r in rows if r["score"] == name]
+        exp = sum(TOP_K * r["new"] / r["n"] for r in sub)
+        out[name] = {"species": len(sub), "median_auc": float(np.median([r["auc"] for r in sub])),
+                     "pooled_lift": sum(r["hits"] for r in sub) / exp,
+                     "share_with_hit": float(np.mean([r["hits"] > 0 for r in sub])),
+                     "median_lift": float(np.median([r["lift"] for r in sub]))}
+    return out
+
+
+def plot_per_species(rows: list[dict], path: Path) -> None:
+    """AUC per species (boxes) and the pooled lift of the top cells (bars), one row
+    per score."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    names = list(dict.fromkeys(r["score"] for r in rows))
+    summ = summarize_species(rows)
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(10, 0.45 * len(names) + 1.5), sharey=True)
+    a1.boxplot([[r["auc"] for r in rows if r["score"] == n] for n in names], vert=False,
+               showfliers=False, widths=.6, medianprops={"color": "#1F4E46", "lw": 2})
+    a1.axvline(.5, color="grey", lw=.8, ls=":")
+    a1.set_title("AUC per species")
+    pos = list(range(1, len(names) + 1))
+    a2.barh(pos, [summ[n]["pooled_lift"] for n in names], color="#1F4E46", height=.6)
+    a2.axvline(1, color="grey", lw=.8, ls=":")
+    a2.set_title(f"Precision of the {TOP_K} best cells, × random")
+    for ax in (a1, a2):
+        ax.grid(axis="x", alpha=.3)
+    a1.set_yticks(pos, names)
+    a1.invert_yaxis()
+    fig.tight_layout()
+    fig.savefig(path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+
 def _rules(te: dict) -> dict:
     F = {k: te["X"][:, i] for i, k in enumerate(FEATURES)}
     return {"system map (rule)": F["system_map"] - 1e-3 * np.nan_to_num(F["clim_map_dist"], nan=10),
@@ -596,16 +673,37 @@ def main() -> None:
           f"{len(te['y']):,} pairs, base rate {te['y'].mean():.4f}", flush=True)
 
     # 1. the comparison, and what each kind of evidence adds
-    results, models = {}, {}
+    results, models, kept = {}, {}, {}
     for name, groups in SUBSETS.items():
         cols = _cols(groups)
         gb, lr, imp = train(tr, cols, args.max_train)
         models[name] = (gb, cols)
-        results[f"gradient boosting, {name}"] = _metrics(te, gb.predict_proba(te["X"][:, cols])[:, 1])
-        results[f"logistic regression, {name}"] = _metrics(te, lr.predict_proba(imp(te["X"]))[:, 1])
+        for label, sc in ((f"gradient boosting, {name}", gb.predict_proba(te["X"][:, cols])[:, 1]),
+                          (f"logistic regression, {name}", lr.predict_proba(imp(te["X"]))[:, 1])):
+            results[label] = _metrics(te, sc)
+            kept[label] = sc
         print(f"  {name} ({time.time()-t0:.0f}s)", flush=True)
     for name, sc in _rules(te).items():
         results[name] = _metrics(te, sc)
+        kept[name] = sc
+
+    # per species, AUC and top-cell precision for the scores the paper compares
+    shown = ["gradient boosting, all evidence", "gradient boosting, without effort",
+             "logistic regression, all evidence", "gradient boosting, without the Manual",
+             "gradient boosting, without records", "system map (rule)", "nearest record",
+             "prevalence"]
+    ps = per_species(te, {k: kept[k] for k in shown})
+    with io.open(OUT / "per_species.jsonl", "w", encoding="utf-8") as fh:
+        for r in ps:
+            fh.write(json.dumps({**r, "species": species[r["species"]]}, ensure_ascii=False) + "\n")
+    plot_per_species(ps, OUT / "per_species_metrics.png")
+    summ = summarize_species(ps)
+    print(f"\nper species: AUC, and the {TOP_K} best cells against {TOP_K} at random")
+    for k, v in summ.items():
+        print(f"  {k:40s} AUC {v['median_auc']:.3f}  pooled lift {v['pooled_lift']:5.1f}  "
+              f"species with a hit {v['share_with_hit']:.0%}  median lift {v['median_lift']:.1f}"
+              f"  ({v['species']} species)")
+    del kept
     print(f"\ntest: known to 2009, new occurrences 2010-2026")
     print(f"{'score':48s} {'AUC':>6s} {'AP':>6s} {'sp.AUC':>7s} {'R@20':>6s} {'R@100':>6s}")
     for k, r in results.items():
@@ -613,7 +711,9 @@ def main() -> None:
               f"{r['cell_r20']:6.3f} {r['cell_r100']:6.3f}")
 
     # 2. what may I find in this park?
-    gb, cols = models["all evidence"]
+    # the system's model leaves collecting effort out: it adds nothing measurable and its
+    # reasons would describe where collectors work, not where the plant grows
+    gb, cols = models["without effort"]
     pscores = {"gradient boosting": gb.predict_proba(te["X"][:, cols])[:, 1], **_rules(te)}
     parks = park_eval(te, pscores, rec)
     print("\nparks (median over parks with >= 5 new species since 2010)")
@@ -638,7 +738,7 @@ def main() -> None:
     sv = sv[1] if isinstance(sv, list) else sv
     imp_ = np.abs(sv).mean(0)
     (OUT / "results.json").write_text(json.dumps(
-        {"evaluation": results, "parks": parks, "examples": ex,
+        {"evaluation": results, "per_species": summ, "parks": parks, "examples": ex,
          "shap": {FEATURES[c]: float(v) for c, v in zip(cols, imp_)},
          "n_train": int(len(tr["y"])), "n_test": int(len(te["y"])),
          "base_rate_test": float(te["y"].mean())}, ensure_ascii=False, indent=1), encoding="utf-8")

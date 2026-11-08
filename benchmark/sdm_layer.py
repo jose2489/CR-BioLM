@@ -17,8 +17,9 @@ threshold that turns suitability into habitat is the 10th percentile of the
 out-of-bag suitability of the training presences, so it is not set on the records
 the map is scored on.
 
-Scoring is map_refine's and climate_profile's: the same random halves, the model and
-the map built from one half and capture counted on the other, both halves in turn.
+Scoring is rq3_split's: the map comparison's random halves or blocks of about 20 km,
+the model and the system's map (mapcompare's) built from one half and capture counted
+on the other, both halves in turn.
 
 Run:  python -m benchmark.sdm_layer --n 20 --split spatial   (stratified sample of the 300)
       python -m benchmark.sdm_layer --species "Hyptis brachiata"
@@ -47,7 +48,6 @@ N_BACKGROUND = 10_000
 N_TREES = 500
 THRESHOLD_Q = 0.10            # of the training presences' out-of-bag suitability
 MIN_TRAIN = 15                # presence pixels needed to fit a model on one half
-BLOCK = 20                    # pixels per side of a spatial block (about 20 km)
 
 
 @lru_cache(maxsize=None)
@@ -127,52 +127,37 @@ def _auc(suit: np.ndarray, test_pix: np.ndarray, seed: str) -> float:
     return float(roc_auc_score(y, np.r_[suit[pres], suit[bg]]))
 
 
-@lru_cache(maxsize=None)
-def _rowcol() -> tuple[np.ndarray, np.ndarray]:
-    """Grid row and column of each land pixel (the land index runs in row order)."""
-    return np.nonzero(R.grid()["index"] >= 0)
-
-
-def folds(pix: np.ndarray, species: str, split: str) -> list[tuple[list[int], list[int]]]:
-    """Two train/test halves of the records.
-
-    random:  map_refine's halves, so the system's numbers match the published ones.
-             Half the test records share a 1 km pixel with a training record, which
-             favours a model at that resolution over a map drawn by region.
-    spatial: blocks of BLOCK x BLOCK pixels (about 20 km) go to one half or the other
-             at random, so no test record has a training record in its block
-             (block cross-validation, Roberts et al. 2017)."""
-    if split == "random":
-        rng = random.Random(f"{R.SEED}-{species}")
-        order = list(range(len(pix)))
-        rng.shuffle(order)
-        half = len(order) // 2
-        return [(order[:half], order[half:]), (order[half:], order[:half])]
-    rows, cols = _rowcol()
-    block = (rows[pix] // BLOCK) * 10_000 + cols[pix] // BLOCK
-    rng = random.Random(f"{R.SEED}-{species}-blocks")
-    side = {b: rng.random() < 0.5 for b in sorted(set(block.tolist()))}
-    a = [i for i, b in enumerate(block) if side[b]]
-    b = [i for i, b in enumerate(block) if not side[b]]
-    return [(a, b), (b, a)]
-
-
 def score_species(cur, species: str, split: str = "random") -> dict:
+    """The system's map is the map comparison's (mapcompare.with_records on the Manual's
+    region-slope pairs), on rq3_split's halves, so its row matches the spatial table.
+    Capture is counted by pixel for all three maps, so the cut is compared like for like."""
     from mpcr_rag.schema import Ficha
+    from . import mapcompare as M
+    from .rq3_split import folds as split_folds
     cur.execute("SELECT ficha FROM mpcr.fichas WHERE species = %s", (species,))
-    f = Ficha(**cur.fetchone()[0])
-    lonlat, attrs = R._records(cur, species)
+    manual = M.from_ficha(Ficha(**cur.fetchone()[0]))
+    cur.execute("""SELECT o.lon, o.lat, o.region, o.vertiente, o.elev_dem
+                   FROM mpcr.occurrences o
+                   JOIN mpcr.species_evidence e ON e.taxon_key = o.species_key
+                   WHERE e.species = %s""", (species,))
+    got = cur.fetchall()
+    lonlat = [(r[0], r[1]) for r in got]
+    recs = [(r[2], None if r[3] is None else ("Caribe" if "arib" in r[3] else "Pacífico"), r[4])
+            for r in got]
     pix = R.record_pixels(lonlat)
     keep = pix >= 0
-    pix, attrs = pix[keep], [a for a, k in zip(attrs, keep) if k]
-    ing = R.ingredients(f)
-    folds_ = folds(pix, species, split)
+    pix, recs = pix[keep], [a for a, k in zip(recs, keep) if k]
+    lonlat = [p for p, k in zip(lonlat, keep) if k]
+    folds_ = split_folds(species, lonlat, split)
     names = ("system", "model", "system cut by model")
     acc = {k: {"cap": 0, "area": []} for k in names}
     aucs, fitted = [], 0
+    n_land = len(features())
     for k, (train, test) in enumerate(folds_):
-        base = R.mask(R.widen(ing, [attrs[i] for i in train]), True, False)
-        model = fit(pix[train], f"{species}-{k}") if test else None
+        base = M.mask(M.with_records(manual, [recs[i] for i in train]))
+        if base is None:
+            base = np.zeros(n_land, dtype=bool)
+        model = fit(pix[train], f"{species}-{k}") if test and train else None
         if model is None:
             hab = np.ones(len(base), dtype=bool)      # no model: nothing is cut
         else:
