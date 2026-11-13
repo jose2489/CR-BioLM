@@ -39,6 +39,7 @@ from .climate_compare import env_mask
 DATA = M.DATA
 OUT = DATA / "rq3_split_scores.jsonl"
 BLOCK = 0.18                    # degrees, about 20 km
+_block = BLOCK                  # set by --block, for the sensitivity of the spatial split
 
 
 def folds(sp: str, lonlat: list[tuple], split: str) -> list[tuple[list[int], list[int]]]:
@@ -49,7 +50,7 @@ def folds(sp: str, lonlat: list[tuple], split: str) -> list[tuple[list[int], lis
         rng.shuffle(order)
         half = n // 2
         return [(order[:half], order[half:]), (order[half:], order[:half])]
-    block = [(int(lo // BLOCK), int(la // BLOCK)) for lo, la in lonlat]
+    block = [(int(lo // _block), int(la // _block)) for lo, la in lonlat]
     rng = random.Random(f"{M.SEED}-{sp}-blocks")
     side = {b: rng.random() < .5 for b in sorted(set(block))}
     a = [i for i, b in enumerate(block) if side[b]]
@@ -123,7 +124,7 @@ def score() -> list[dict]:
             if k % 50 == 0:
                 print(f"  {k}/{len(species)}", flush=True)
     conn.close()
-    with io.open(OUT, "w", encoding="utf-8") as fh:
+    with io.open(_out(), "w", encoding="utf-8") as fh:
         for r in rows:
             fh.write(json.dumps(r, ensure_ascii=False) + "\n")
     return rows
@@ -206,10 +207,22 @@ def figure(rows: list[dict]) -> None:
     print(f"wrote {path}")
 
 
+def _out():
+    return OUT if _block == BLOCK else OUT.with_name(f"rq3_split_scores_block{_block}.jsonl")
+
+
 def main() -> None:
+    global _block
     ap = argparse.ArgumentParser()
     ap.add_argument("--figure", action="store_true", help="figure from the saved scores only")
+    ap.add_argument("--block", type=float, default=BLOCK,
+                    help="block side in degrees for the spatial split; any other value than "
+                         "the default writes its own scores file and no figure")
     args = ap.parse_args()
+    _block = args.block
+    if _block != BLOCK:
+        report(score())
+        return
     if args.figure:
         rows = [json.loads(l) for l in io.open(OUT, encoding="utf-8")]
     else:
