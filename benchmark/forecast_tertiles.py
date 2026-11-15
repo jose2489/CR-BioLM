@@ -38,7 +38,7 @@ def known_records() -> dict[str, int]:
 
 
 def main() -> None:
-    from scipy.stats import wilcoxon
+    from scipy.stats import mannwhitneyu, wilcoxon
     rows = [json.loads(l) for l in io.open(OUT / "per_species.jsonl", encoding="utf-8")]
     n_known = known_records()
     species = sorted({r["species"] for r in rows})
@@ -83,6 +83,23 @@ def main() -> None:
     result["few"] = {"max_records": FEW, "species": len(few), "median": float(np.median(d)),
                      "mean": float(d.mean()), "share_gain": float(np.mean(d > .05)),
                      "share_loss": float(np.mean(d < -.05)), "p": float(wilcoxon(d).pvalue)}
+    # A paired test within a group does not show a difference between groups: compare the
+    # Manual's gain for the few-record species with the best-collected tertile directly.
+    best = [s for s in species if tert[s] == 2]
+    db = np.array([by["gradient boosting, all evidence"][s]["auc"]
+                   - by["gradient boosting, without the Manual"][s]["auc"] for s in best])
+    mw = mannwhitneyu(d, db, alternative="two-sided")
+    rng = np.random.default_rng(0)
+    boot = [np.median(rng.choice(d, len(d))) - np.median(rng.choice(db, len(db)))
+            for _ in range(5000)]
+    lo, hi = np.quantile(boot, [.025, .975])
+    print(f"  at most {FEW} records ({len(d)}) vs best tertile ({len(db)}): median gain "
+          f"{np.median(d):+.3f} vs {np.median(db):+.3f}, difference {np.median(d) - np.median(db):+.3f} "
+          f"[{lo:+.3f}, {hi:+.3f}]; Mann-Whitney p = {mw.pvalue:.2g}")
+    result["few_vs_best"] = {"few": len(d), "best": len(db), "median_few": float(np.median(d)),
+                             "median_best": float(np.median(db)),
+                             "difference": float(np.median(d) - np.median(db)),
+                             "ci95": [float(lo), float(hi)], "mannwhitney_p": float(mw.pvalue)}
     (OUT / "tertiles.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
 
 
