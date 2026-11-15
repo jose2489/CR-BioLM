@@ -924,7 +924,7 @@ def generate_distribution_map(
     # ── Fuentes footer ────────────────────────────────────────────────────
     fig.text(
         0.5, 0.015,
-        "Fuentes: Regiones botánicas digitalizadas de M. V. Castro (Manual de Plantas de Costa Rica) · "
+        "Fuentes: Regiones botánicas trazadas por J. Araya sobre el mapa de M. V. Castro (Manual de Plantas de Costa Rica, Vol. II) · "
         "Áreas Silvestres Protegidas (SINAC) · "
         "Altitud (SRTM, INEC) · Presencias GBIF",
         ha="center", fontsize=5.8, color="#6b7280",
