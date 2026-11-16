@@ -58,7 +58,7 @@ def _points(cur, species: str):
             for lon, lat, reg, v, e in cur.fetchall()]
 
 
-def _panel(ax, title: str, ing: dict | None, pts: list) -> None:
+def _panel(ax, title: str, ing: dict | None, pts: list, fs: float = 9.5, dot: float = 13) -> None:
     M._grid()
     land, b = M._GEO["land"], M._GEO["bounds"]
     extent = (b.left, b.right, b.bottom, b.top)
@@ -77,10 +77,10 @@ def _panel(ax, title: str, ing: dict | None, pts: list) -> None:
     for lon, lat, rec in pts:
         inside = ing is not None and M.captured(ing, [rec]) == 1
         n_in += inside
-        ax.scatter([lon], [lat], s=13, color=DOT_IN if inside else DOT_OUT,
+        ax.scatter([lon], [lat], s=dot, color=DOT_IN if inside else DOT_OUT,
                    edgecolor="white", linewidth=0.4, zorder=3)
     cap = TEXT[LANG]["cap"].format(n=n_in, t=len(pts), a=100 * area)
-    ax.set_title(f"{title}\n{cap}", fontsize=9.5, color=INK)
+    ax.set_title(f"{title}\n{cap}", fontsize=fs, color=INK)
     ax.set_xticks([])
     ax.set_yticks([])
     for s in ax.spines.values():
@@ -108,6 +108,8 @@ def main() -> None:
     ap.add_argument("--out", default="", help="subfolder for the images")
     ap.add_argument("--part", default="main", help="which scored sample to draw from")
     ap.add_argument("--lang", default="es", choices=sorted(TEXT))
+    ap.add_argument("--print", dest="print_", action="store_true",
+                    help="2x2 grid at the journal's full width (180 mm), 8 pt text, PDF")
     args = ap.parse_args()
     global LANG
     LANG = args.lang
@@ -144,19 +146,30 @@ def main() -> None:
             panels = [(t["ours"], M.with_records(manual, recs)), (t["manual"], manual)]
             panels += [(t["model"].format(m=label.get(m, m)), by[(sp, m)]["ingredients"])
                        for m in models if (sp, m) in by]
-            fig, axes = plt.subplots(1, len(panels), figsize=(4.5 * len(panels), 5.4), dpi=120)
-            for ax, (title, ing) in zip(axes, panels):
-                _panel(ax, title, ing, pts)
-            fig.suptitle(sp, fontsize=13, style="italic", color=INK, y=0.99)
             lines = ["Manual: " + _describe(manual)] + [
                 t.split(":")[0] + ": " + _describe(ing) for t, ing in panels[2:]]
-            for k, line in enumerate(lines):
-                fig.text(0.5, 0.012 + 0.032 * (len(lines) - 1 - k), line, ha="center",
-                         fontsize=8, color=INK)
-            fig.subplots_adjust(left=0.01, right=0.99, top=0.86,
-                                bottom=0.04 + 0.032 * len(lines), wspace=0.03)
-            path = out_dir / (sp.replace(" ", "_") + ".png")
-            fig.savefig(path, facecolor="white")
+            if args.print_ and len(panels) == 4:
+                fig, axes = plt.subplots(2, 2, figsize=(180 / 25.4, 7.4))
+                for ax, (title, ing) in zip(axes.ravel(), panels):
+                    _panel(ax, title, ing, pts, fs=8, dot=6)
+                for k, line in enumerate(lines):
+                    fig.text(0.5, 0.008 + 0.026 * (len(lines) - 1 - k), line, ha="center",
+                             fontsize=7.5, color=INK)
+                fig.subplots_adjust(left=0.01, right=0.99, top=0.95,
+                                    bottom=0.02 + 0.026 * len(lines), wspace=0.04, hspace=0.18)
+                path = out_dir / (sp.replace(" ", "_") + ".pdf")
+            else:
+                fig, axes = plt.subplots(1, len(panels), figsize=(4.5 * len(panels), 5.4), dpi=120)
+                for ax, (title, ing) in zip(axes, panels):
+                    _panel(ax, title, ing, pts)
+                fig.suptitle(sp, fontsize=13, style="italic", color=INK, y=0.99)
+                for k, line in enumerate(lines):
+                    fig.text(0.5, 0.012 + 0.032 * (len(lines) - 1 - k), line, ha="center",
+                             fontsize=8, color=INK)
+                fig.subplots_adjust(left=0.01, right=0.99, top=0.86,
+                                    bottom=0.04 + 0.032 * len(lines), wspace=0.03)
+                path = out_dir / (sp.replace(" ", "_") + ".png")
+            fig.savefig(path, facecolor="white", dpi=300)
             plt.close(fig)
             why = "mejor caso del modelo" if sp == best else "al azar o solicitada"
             print(f"{sp}  ({why}) -> {path.name}")
