@@ -387,6 +387,9 @@ def build(cur, species: str, qtype: str, *, level: str = "full",
             from .cooccurrence import neighbours
             rows = neighbours(species, limit=12, same_habit=companions_same_habit)
             if rows:
+                # The template (arm G) prints this same list, so it answers the
+                # question from the pack exactly as the grounded models can.
+                pack.facts["companions"] = [r["species"] for r in rows]
                 pack.add(("especies que el Manual reporta en las mismas regiones, rango "
                           "altitudinal y forma de crecimiento") if companions_same_habit else
                          ("especies que el Manual reporta en las mismas regiones y rango "

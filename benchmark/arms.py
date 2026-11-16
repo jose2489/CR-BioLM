@@ -245,6 +245,13 @@ def template_answer(question: str, qtype: str, facts: dict) -> str:
                 "tolerancias medidas." if prof["n"] >= 10 else "")
         return out
 
+    if qtype == "co_occurrence":
+        comp = facts.get("companions") or []
+        if not comp:
+            return _ABSTAIN
+        return (f"Según el registro, estas especies comparten regiones botánicas y rango "
+                f"altitudinal con {sp}: {_es_list(comp)}{src}.")
+
     if qtype == "outside_record":
         cues = facts.get("use_cues")
         if cues:

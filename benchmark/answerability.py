@@ -192,6 +192,50 @@ def compute(verbose: bool = True) -> dict:
     return report
 
 
+def pair_level() -> dict:
+    """Every species-park pair in the occurrence frame, by what the record says of it.
+    The question keys use only the settled kinds; a pair where the regions overlap but
+    the elevation does not, or the reverse, is ambiguous and is not asked about."""
+    conn = pg_store.connect()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(_PARK_SQL)
+            parks = [dict(zip(["code", "lo", "hi", "regions"], r)) for r in cur.fetchall()]
+            cur.execute("""SELECT f.ficha, t.taxon_key FROM mpcr.fichas f
+                           JOIN mpcr.taxa t ON t.species = f.species
+                           WHERE t.taxon_key IS NOT NULL""")
+            rows = cur.fetchall()
+            cur.execute("SELECT species_key, place_code, n_since_1970, n_records "
+                        "FROM mpcr.species_places")
+            by_key: dict[int, dict] = {}
+            for key, code, n70, n_all in cur.fetchall():
+                by_key.setdefault(key, {})[code] = (n70, n_all)
+    finally:
+        conn.close()
+    kinds: Counter = Counter()
+    for ficha_json, taxon_key in rows:
+        f = Ficha(**ficha_json)
+        regions, eff = set(f.regions), _eff(f)
+        rec = by_key.get(taxon_key, {})
+        for p in parks:
+            n70, n_all = rec.get(p["code"], (0, 0))
+            if n70 >= 1:
+                kinds["recorded since 1970"] += 1
+            elif n_all > 0:
+                kinds["recorded only before 1970"] += 1
+            elif not regions or eff is None:
+                kinds["no regions or elevation"] += 1
+            else:
+                ro = bool(regions & set(p["regions"] or []))
+                eo = p["lo"] <= eff[1] and p["hi"] >= eff[0]
+                kinds["possible (both overlap)" if ro and eo else
+                      "unlikely (neither overlaps)" if not ro and not eo else
+                      "ambiguous (one overlaps)"] += 1
+    total = sum(kinds.values())
+    return {"pairs": total, "species": len(rows), "parks": len(parks),
+            "kinds": {k: [v, round(100 * v / total, 1)] for k, v in kinds.most_common()}}
+
+
 def _print(r: dict) -> None:
     print(f"catalogue {r['n_catalogue']} species; occurrence frame {r['n_frame']} "
           f"({100 * r['n_frame'] / r['n_catalogue']:.1f}% resolve to a GBIF accepted key)\n")

@@ -89,9 +89,9 @@ def _mcnemar_exact(b: int, c: int) -> float:
 
 
 def table_arms(summ: dict) -> str:
-    lines = [r"\begin{tabular}{llllrrrrrr}", r"\toprule",
+    lines = [r"\begin{tabular}{llllrrrrrrr}", r"\toprule",
              r"Arm & Generator & Evidence & Prompt & $n$ & Answered & Precision & 95\% CI "
-             r"& Coverage & Contrad. \\", r"\midrule"]
+             r"& Lenient & Coverage & Contrad. \\", r"\midrule"]
     for a in [x for x in ORDER if x in summ]:
         s, arm = summ[a], ARMS[a]
         lo, hi = s["precision_ci"]
@@ -99,7 +99,8 @@ def table_arms(summ: dict) -> str:
         lines.append(
             f"{a} & {GENERATOR[arm.model]} & {EVIDENCE[arm.evidence]} & "
             f"{PROMPT[arm.prompt] if arm.is_llm else '--'} & {s['scoreable']} & "
-            f"{s['answered']} & {_pct(s['precision'])} & {ci} & {_pct(s['coverage'])} & "
+            f"{s['answered']} & {_pct(s['precision'])} & {ci} & "
+            f"{_pct(s.get('lenient_precision'))} & {_pct(s['coverage'])} & "
             f"{_pct(s['contradiction_rate'])} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(lines)
