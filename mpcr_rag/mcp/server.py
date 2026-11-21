@@ -26,6 +26,7 @@ import json
 import os
 import base64
 import dataclasses
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -43,7 +44,7 @@ server = MCPServer("mpcr-rag", version="0.1.0")
 # Shared lazy state — connections opened once per process lifetime
 # ---------------------------------------------------------------------------
 
-_conn = None
+"""_conn = None
 _index = None
 
 
@@ -51,8 +52,22 @@ def _get_conn():
     global _conn
     if _conn is None:
         _conn = local_store.connect(config.SQLITE_PATH)
-    return _conn
+    return _conn"""
 
+_local = threading.local()   # one SQLite connection per worker thread
+_index = None
+
+
+def _get_conn():
+    """SQLite connection for the current thread.
+
+    The MCP SDK runs sync tools in a worker-thread pool, and a sqlite3 connection
+    can only be used by the thread that opened it, so each thread opens its own.
+    """
+    conn = getattr(_local, "conn", None)
+    if conn is None:
+        conn = _local.conn = local_store.connect(config.SQLITE_PATH)
+    return conn
 
 def _get_index():
     """Pinecone index handle, or None (pgvector connects on demand)."""
@@ -85,6 +100,19 @@ def _envelope(
         "caveat": caveat,
     }
 
+def _freshness(info) -> tuple[dict, str]:
+    """RR_56: when a species' GBIF points were fetched, for the envelope value, and
+    the caveat to add when a due refresh failed and the previous points are served."""
+    fields = {"updated_at": info.updated_at, "stale": info.stale}
+    caveat = ""
+    if info.stale:
+        caveat = (f"Could not refresh the GBIF points; these are the ones fetched on "
+                  f"{info.updated_at}.")
+    return fields, caveat
+
+
+def _join(*caveats: str) -> str:
+    return " ".join(c for c in caveats if c)
 
 def _ficha_summary(f) -> dict:
     return {
@@ -182,6 +210,11 @@ def search_species(
     )
 
 
+def _common_names(species: str) -> list[str]:
+    from mpcr_rag.evidence import vernacular
+    return vernacular.names_for(species)
+
+
 @server.tool()
 def get_species(name: str) -> dict:
     """Fetch the full ficha for a single species by scientific name.
@@ -210,7 +243,9 @@ def get_species(name: str) -> dict:
         "morphology": f.morphology,
         "discussion": f.discussion,
         "genus_description": f.genus_description,
-        "common_names": f.common_names,
+        # The parsed Manual headers leave common_names empty; fall back to the
+        # vernacular table (Costa Rica-preferred name first).
+        "common_names": f.common_names or _common_names(f.species),
     }
     return _envelope(
         value,
@@ -331,28 +366,33 @@ def get_occurrence_points(species: str, limit: int = 500) -> dict:
     """Cleaned Costa Rica GBIF presence points for a species, one entry per record.
 
     Cost: L1 — same disk cache as get_occurrences (the first call fetches from
-    GBIF, later calls are instant). No LLM.
+    GBIF, later calls are instant until the cache expires). No LLM.
 
-    The points are already cleaned by gbif_map: hasCoordinate=true,
-    hasGeospatialIssue=false, no (0,0), swapped lat/lon fixed, uncertainty
-    <= ~10 km. elev_m comes from the DEM at the point, not from the GBIF record.
+    The points are already cleaned by gbif_map: occurrenceStatus=PRESENT,
+    hasCoordinate=true, hasGeospatialIssue=false, no (0,0), swapped lat/lon fixed,
+    uncertainty <= ~10 km. elev_m comes from the DEM at the point, not from the GBIF record.
 
     Args:
         species: scientific name e.g. "Quercus costaricensis"
         limit: maximum number of points returned (the count n is always total)
 
     Returns a provenance envelope whose value is:
-      {n, truncated, points: [{lat, lon, elev_m, region, vertiente}]}
+         {n, truncated, points: [{lat, lon, elev_m, region, vertiente, date}],
+          updated_at, stale}
+    date is the GBIF eventDate ('YYYY-MM-DD', 'YYYY-MM' or 'YYYY'), or None.
+    updated_at: when the points were fetched from GBIF (UTC ISO-8601).
+    stale: true when a refresh failed and the previous points are returned.
     """
-    citation = "GBIF occurrence API — Costa Rica (hasCoordinate=true, hasGeospatialIssue=false)"
-    pts = gbif_map.get_points(species)
+    citation = "GBIF occurrence API — Costa Rica (occurrenceStatus=PRESENT, hasCoordinate=true, hasGeospatialIssue=false)"
+    pts, info = gbif_map.get_points_info(species)
+    fresh, fresh_caveat = _freshness(info)
     if pts.empty:
         return _envelope(
-            {"n": 0, "truncated": False, "points": []},
+            {"n": 0, "truncated": False, "points": [], **fresh},
             source="GBIF",
             citation=citation,
             confidence="insufficient",
-            caveat=f"No GBIF occurrences found for '{species}' in Costa Rica.",
+            caveat=_join(f"No GBIF occurrences found for '{species}' in Costa Rica.", fresh_caveat),
         )
 
     def _num(v):
@@ -374,12 +414,14 @@ def get_occurrence_points(species: str, limit: int = 500) -> dict:
             "elev_m": None if elev is None else int(round(elev)),
             "region": _text(p.get("Nombre")),
             "vertiente": _text(p.get("Vertiente")),
+            "date": _text(p.get("date")),
         })
     return _envelope(
-        {"n": len(pts), "truncated": len(pts) > limit, "points": points},
+        {"n": len(pts), "truncated": len(pts) > limit, "points": points, **fresh},
         source="GBIF",
         citation=citation,
         confidence="exact",
+        caveat=fresh_caveat,
     )
 
 @server.tool()
@@ -505,6 +547,50 @@ def search_by_description(query_text: str, family: Optional[str] = None,
         caveat="" if hits else "No species matched. Loosen family/habit filters.",
     )
 
+@server.tool()
+def get_relevant_passage(species: str, question: str, top_k: int = 1) -> dict:
+    """The Manual passage of ONE species that best answers a question.
+
+    Cost: L1 — local e5 embeddings over pgvector, no API key. Requires
+    MPCR_VECTOR_BACKEND=pgvector and a synced store (build_catalog --pgvector).
+
+    Unlike semantic_search and search_by_description, which rank SPECIES, this ranks
+    the text of a species already identified: its distribution paragraph and its
+    description windows (morphology + discussion). Use it to quote the passage that
+    answers e.g. "¿de qué color son las flores?" instead of the distribution text.
+
+    Args:
+        species: scientific name e.g. "Quercus costaricensis"
+        question: the user's question, in Spanish or English
+        top_k: number of passages returned, best first (default 1)
+
+    Returns a provenance envelope whose value is:
+      {species, passages: [{section, ordinal, text, score}]}
+    or value None (confidence "insufficient") when the species has no indexed text.
+    """
+    if config.VECTOR_BACKEND != "pgvector":
+        return _envelope(None, source="MPCR", confidence="insufficient",
+                         caveat="get_relevant_passage requires MPCR_VECTOR_BACKEND=pgvector.")
+    from mpcr_rag.store import pg_store
+    hits = pg_store.passages(species, question, top_k=top_k)
+    if not hits:
+        return _envelope(
+            None, source="MPCR", confidence="insufficient",
+            caveat=f"No indexed text for '{species}'. Check spelling or sync the store "
+                   "(build_catalog --pgvector).",
+        )
+    best = hits[0]
+    value = {
+        "species": best["species"],
+        "passages": [{"section": h["section"], "ordinal": h["ordinal"], "text": h["text"],
+                      "score": round(float(h["score"]), 4)} for h in hits],
+    }
+    return _envelope(
+        value, source="MPCR", confidence="estimated",
+        citation=f"Manual de Plantas de Costa Rica, Tomo {best['volume']}, p. {best['pages']} "
+                 "— e5 embeddings",
+    )
+
 
 @server.tool()
 def where_to_see(species: str, limit: int = 8) -> dict:
@@ -573,9 +659,10 @@ def resolve_common_name(name: str, region: Optional[str] = None,
     than guessing: global name indexes answer a different question (Tropicos returns
     the leek, Allium porrum, for "Poro").
 
-    Matching is accent-sensitive first ("poro" the leek vs "poro" with an accent, the
-    Erythrina), then accent-insensitive. Optional region and elevation from the
-    question narrow the candidates.
+    Matching ignores accents and case ("jicaro" and "Jícaro" give the same
+    candidates); only catalog species are returned, so names used for plants
+    outside Costa Rica (the leek for "poro") never appear. Optional region and
+    elevation from the question narrow the candidates.
     """
     from mpcr_rag.evidence import vernacular
     d = vernacular.resolve_decision(name, region=region, elev=elev)
@@ -599,6 +686,30 @@ def resolve_common_name(name: str, region: Optional[str] = None,
         citation="mpcr.vernacular (Darwin Core VernacularName shape; source per row)",
         confidence="exact" if d["decision"] == "unique" else "estimated",
         caveat=caveats[d["decision"]],
+    )
+
+
+@server.tool()
+def list_synonyms() -> dict:
+    """Every scientific synonym of the catalog, with the Manual species it maps to.
+
+    Cost: L0 - free, local table lookup.
+
+    The envelope value is a list of {synonym, species, family, source}. A synonym
+    that maps to several species appears once per species. The synonyms come from the
+    GBIF backbone and may disagree with the Manual.
+    """
+    from mpcr_rag.evidence import synonyms
+    try:
+        rows = synonyms.all_synonyms()
+    except Exception:
+        rows = []
+    return _envelope(
+        rows, source="GBIF",
+        citation="mpcr.synonym (GBIF backbone synonyms of each catalog species)",
+        confidence="estimated",
+        caveat="" if rows else "The synonym table is empty or missing; run "
+                               "python -m mpcr_rag.evidence.synonyms fetch.",
     )
 
 

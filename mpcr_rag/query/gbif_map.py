@@ -13,13 +13,18 @@ region/vertiente spatial join. GBIF points are cached per species on disk
 from __future__ import annotations
 
 import json
+import os
+import sys
+import threading
 import unicodedata
 import zipfile
+from datetime import timedelta 
 from pathlib import Path
 
 import geopandas as gpd
 import matplotlib.pyplot as plt
 import pandas as pd
+import requests
 from pygbif import occurrences, species as gbif_species
 
 import config as cr_config                       # repo-root config (DEM, shapefiles)
@@ -33,9 +38,16 @@ _MAX_UNCERTAINTY_M = 10_000           # drop records less precise than ~10 km
 
 from .. import config
 from ..schema import Ficha
+from .gbif_cache import CacheInfo, PointsCache  
 
 _CACHE = config.DATA_DIR / "gbif_cache"
 _CACHE.mkdir(exist_ok=True)
+# Per-species GBIF points, with the date they were fetched and an expiry.
+_POINTS = PointsCache(
+    _CACHE,
+    max_days=config.GBIF_CACHE_MAX_DAYS,
+    retry_failed_after=timedelta(hours=config.GBIF_RETRY_FAILED_HOURS),
+)
 _MAPS = config.DATA_DIR / "maps"
 _MAPS.mkdir(exist_ok=True)
 
@@ -72,7 +84,9 @@ def resolve_taxon(species: str) -> tuple[int | None, str | None, bool]:
     is unreliable (fuzzy, lumps synonyms) — we key on the accepted backbone taxon.
     """
     try:
-        nb = gbif_species.name_backbone(scientificName=species)
+        nb = gbif_species.name_backbone(scientificName=species, checklistKey="d7dddbf4-2cf0-4f39-9b2a-bb099caae36c")
+    except requests.RequestException:
+        raise  # GBIF caído o sin red: que falle la herramienta y no se cachee "0 puntos"
     except Exception:
         return None, None, False
     if "usage" not in nb:
@@ -86,12 +100,26 @@ def resolve_taxon(species: str) -> tuple[int | None, str | None, bool]:
         return int(acc["key"]), acc.get("canonicalName"), True
     return int(nb["usage"]["key"]), nb["usage"].get("canonicalName"), False
 
+def _record_date(rec: dict) -> str | None:
+    """GBIF collection date: eventDate as given, else year[-month[-day]]; None if absent."""
+    event = rec.get("eventDate")
+    if isinstance(event, str) and event.strip():
+        return event.strip()
+    year, month, day = rec.get("year"), rec.get("month"), rec.get("day")
+    if not year:
+        return None
+    if month and day:
+        return f"{int(year):04d}-{int(month):02d}-{int(day):02d}"
+    if month:
+        return f"{int(year):04d}-{int(month):02d}"
+    return f"{int(year):04d}"
 
 def _fetch_clean(species: str) -> gpd.GeoDataFrame:
     """CR occurrences for a species via accepted taxonKey, coordinate-cleaned.
 
-    Filters: GBIF hasGeospatialIssue=False; drops zero/near-zero coords, lat/lon
-    swaps (point outside CR but swap inside), and records coarser than ~10 km.
+    Filters: GBIF occurrenceStatus=PRESENT and hasGeospatialIssue=False; drops
+    zero/near-zero coords, lat/lon swaps (point outside CR but swap inside), and
+    records coarser than ~10 km. Keeps one point per location (its latest date).
     """
     key, _accepted, _syn = resolve_taxon(species)
     cols = ["lon", "lat", "geometry"]
@@ -101,7 +129,8 @@ def _fetch_clean(species: str) -> gpd.GeoDataFrame:
     recs: list[dict] = []
     for offset in range(0, 900, 300):                       # cap ~900 records
         r = occurrences.search(taxonKey=key, country="CR", hasCoordinate=True,
-                               hasGeospatialIssue=False, limit=300, offset=offset)
+                               hasGeospatialIssue=False, occurrenceStatus="PRESENT", 
+                               limit=300, offset=offset)
         recs.extend(r.get("results", []))
         if offset + 300 >= r.get("count", 0):
             break
@@ -123,11 +152,15 @@ def _fetch_clean(species: str) -> gpd.GeoDataFrame:
                 lon, lat = lat, lon
             else:
                 continue                                     # gross out-of-CR error
-        rows.append({"lon": lon, "lat": lat})
+        rows.append({"lon": lon, "lat": lat, "date": _record_date(rec)})
 
     df = pd.DataFrame(rows).drop_duplicates()
     if df.empty:
         return gpd.GeoDataFrame(columns=cols, geometry=[], crs="EPSG:4326")
+    # One point per location, as before; when a location repeats, keep its most
+    # recent record so the date shown is the latest observation there.
+    df = (df.sort_values("date", ascending=False, na_position="last")
+            .drop_duplicates(subset=["lon", "lat"]))
     return gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.lon, df.lat),
                             crs="EPSG:4326")
 
@@ -171,15 +204,15 @@ def count_only(species: str) -> int:
     return int(_load_snapshot_counts().get(name, 0))
 
 
-def get_points(species: str) -> gpd.GeoDataFrame:
-    """Cached CR GBIF points for a species, tagged with Altitud + Nombre + Vertiente."""
+"""def get_points(species: str) -> gpd.GeoDataFrame:
+    #Cached CR GBIF points for a species, tagged with Altitud + Nombre + Vertiente.
     cache_file = _CACHE / f"{species.replace(' ', '_')}.geojson"
     if cache_file.exists():
         return gpd.read_file(cache_file)
 
     pts = _fetch_clean(species)
     if pts.empty:
-        pts = gpd.GeoDataFrame({"lon": [], "lat": [], "Altitud": [], "Nombre": [],
+        pts = gpd.GeoDataFrame({"lon": [], "lat": [], "date": [], "Altitud": [], "Nombre": [],
                                 "Vertiente": [], "species": []},
                                geometry=[], crs="EPSG:4326")
     else:
@@ -188,6 +221,41 @@ def get_points(species: str) -> gpd.GeoDataFrame:
         pts = pts.drop(columns=[c for c in ("index_right",) if c in pts.columns])
         pts["species"] = species
     pts.to_file(cache_file, driver="GeoJSON")
+    return pts"""
+
+def get_points(species: str) -> gpd.GeoDataFrame:
+    """Cached CR GBIF points for a species, tagged with Altitud + Nombre + Vertiente."""
+    return get_points_info(species)[0]
+
+
+def get_points_info(species: str, *, max_days: float | None = None,
+                    force: bool = False) -> tuple[gpd.GeoDataFrame, CacheInfo]:
+    """get_points plus when those points were fetched from GBIF (RR_56).
+
+    The cache is fetched again when it is older than MPCR_GBIF_CACHE_MAX_DAYS
+    (never, with the default 0) or with ``force``. If that fetch fails, the previous
+    points come back with ``info.stale`` set. See query/gbif_cache.py.
+    """
+    return _POINTS.get(species, _fetch_enriched, max_days=max_days, force=force)
+
+
+def points_cache() -> PointsCache:
+    """The GBIF points cache, for scripts/refresh_gbif.py."""
+    return _POINTS
+
+
+def _fetch_enriched(species: str) -> gpd.GeoDataFrame:
+    """CR GBIF points fetched now, tagged with Altitud + Nombre + Vertiente."""
+    pts = _fetch_clean(species)
+    if pts.empty:
+        pts = gpd.GeoDataFrame({"lon": [], "lat": [], "date": [], "Altitud": [], "Nombre": [],
+                                "Vertiente": [], "species": []},
+                               geometry=[], crs="EPSG:4326")
+    else:
+        pts = extraer_altitud(pts, cr_config.DEM_PATH)        # adds 'Altitud'
+        pts = gpd.sjoin(pts, _regions(), how="left", predicate="within")
+        pts = pts.drop(columns=[c for c in ("index_right",) if c in pts.columns])
+        pts["species"] = species
     return pts
 
 
@@ -281,13 +349,39 @@ def single_species_map(f: Ficha, *, out_path: Path | None = None) -> tuple[Path,
     """
     from ..ingest.field_extractor import split_distribution
 
+    pts = get_points(f.species)   # first: applies the GBIF refresh rules (RR_56)
+    out_path = out_path or (_MAPS / f"manual_{f.vector_id}.png")
+
+    # Reuse the PNG while it is newer than the species' cached GBIF points and than
+    # the renderer itself: redrawing on every call is what made 10 simultaneous
+    # queries time out (DEF-13). The map is deterministic for those two inputs.
+    if _map_is_current(out_path, f.species):
+        return out_path, len(pts)
+
     habitat_raw, geo_notes = split_distribution(f.distribution_paragraph)
     df = build_ficha(habitat_raw=habitat_raw, geographic_notes=geo_notes, species=f.species)
-    pts = get_points(f.species)
 
-    out_path = out_path or (_MAPS / f"manual_{f.vector_id}.png")
-    generate_distribution_map(df, out_path, presencias_gdf=pts if not pts.empty else None)
+    # Draw into a temporary file and rename it at the end, so two simultaneous
+    # drawings of the same species never leave a half-written PNG behind.
+    tmp = out_path.with_name(f"{out_path.stem}.{os.getpid()}-{threading.get_ident()}.tmp.png")
+    try:
+        generate_distribution_map(df, tmp, presencias_gdf=pts if not pts.empty else None)
+        os.replace(tmp, out_path)
+    finally:
+        if tmp.exists():
+            tmp.unlink()
     return out_path, len(pts)
+
+
+def _map_is_current(png: Path, species: str) -> bool:
+    """True when `png` exists and is newer than the species' GBIF points and the renderer."""
+    if not png.exists():
+        return False
+    drawn = png.stat().st_mtime
+    points = _CACHE / f"{species.replace(' ', '_')}.geojson"
+    renderer = Path(sys.modules[generate_distribution_map.__module__].__file__)
+    return (not points.exists() or drawn >= points.stat().st_mtime) \
+        and drawn >= renderer.stat().st_mtime
 
 
 if __name__ == "__main__":
