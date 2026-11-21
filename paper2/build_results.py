@@ -38,7 +38,7 @@ DATA = ROOT / "benchmark" / "data"
 OUT = Path(__file__).resolve().parent / "generated"
 FIGS = Path(__file__).resolve().parent / "figs"
 
-ORDER = ["G", "D", "F", "R", "E", "A1", "C", "A1F", "CF", "DM", "FM"]
+ORDER = ["G", "D", "F", "DP", "FP", "R", "E", "A1", "C", "A1F", "CF", "DM", "FM"]
 GENERATOR = {"openrouter:mistralai/mistral-large-4-0": "Mistral",
              "openrouter:google/gemma-4-31b-it": "Gemma", None: "template"}
 EVIDENCE = {None: "none", "flora": "flora only", "full": "full pack", "map": "map only"}
@@ -89,9 +89,9 @@ def _mcnemar_exact(b: int, c: int) -> float:
 
 
 def table_arms(summ: dict) -> str:
-    lines = [r"\begin{tabular}{llllrrrrrr}", r"\toprule",
+    lines = [r"\begin{tabular}{llllrrrrrrr}", r"\toprule",
              r"Arm & Generator & Evidence & Prompt & $n$ & Answered & Precision & 95\% CI "
-             r"& Coverage & Contrad. \\", r"\midrule"]
+             r"& Lenient & Coverage & Contrad. \\", r"\midrule"]
     for a in [x for x in ORDER if x in summ]:
         s, arm = summ[a], ARMS[a]
         lo, hi = s["precision_ci"]
@@ -99,7 +99,8 @@ def table_arms(summ: dict) -> str:
         lines.append(
             f"{a} & {GENERATOR[arm.model]} & {EVIDENCE[arm.evidence]} & "
             f"{PROMPT[arm.prompt] if arm.is_llm else '--'} & {s['scoreable']} & "
-            f"{s['answered']} & {_pct(s['precision'])} & {ci} & {_pct(s['coverage'])} & "
+            f"{s['answered']} & {_pct(s['precision'])} & {ci} & "
+            f"{_pct(s.get('lenient_precision'))} & {_pct(s['coverage'])} & "
             f"{_pct(s['contradiction_rate'])} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(lines)
@@ -306,7 +307,8 @@ def fig_precision_coverage(summ: dict) -> None:
 CONF = DATA / "confirmatory" / "results.json"
 NAMES = {"D": "Mistral, full pack", "F": "Gemma, full pack", "A1F": "Mistral, free",
          "CF": "Gemma, free", "E": "Mistral, flora only", "DM": "Mistral, map only",
-         "FM": "Gemma, map only", "R": "Gemma, orchestrator", "G": "template"}
+         "FM": "Gemma, map only", "R": "Gemma, orchestrator", "G": "template",
+         "DP": "Mistral, full pack, free prompt", "FP": "Gemma, full pack, free prompt"}
 CONTRAST_EN = {("D", "A1F"): r"Grounded vs.\ free closed book, Mistral",
                ("F", "CF"): r"Grounded vs.\ free closed book, Gemma",
                ("D", "E", 0): r"Full pack vs.\ flora only, park questions",
@@ -314,7 +316,11 @@ CONTRAST_EN = {("D", "A1F"): r"Grounded vs.\ free closed book, Mistral",
                ("D", "DM"): r"Text pack vs.\ map, Mistral",
                ("F", "FM"): r"Text pack vs.\ map, Gemma",
                ("F", "D"): r"Gemma vs.\ Mistral, both grounded",
-               ("F", "R"): r"Given route vs.\ orchestrator, Gemma"}
+               ("F", "R"): r"Given route vs.\ orchestrator, Gemma",
+               ("DP", "A1F"): r"Evidence only, free prompt held, Mistral",
+               ("FP", "CF"): r"Evidence only, free prompt held, Gemma",
+               ("D", "DP"): r"Prompt only, evidence held, Mistral",
+               ("F", "FP"): r"Prompt only, evidence held, Gemma"}
 LONGTAIL_ARMS = ["A1F", "CF", "D", "F"]
 
 
@@ -461,9 +467,20 @@ def table_mapcompare() -> str:
     import statistics
     from scipy.stats import binomtest
     rows = _mapcompare_rows()
-    lines = [r"\begin{tabular}{p{5.4cm}rrrrrr}", r"\toprule",
-             r"Map & Maps & Records captured & Median capture & Median area & Lift & "
-             r"Beats chance \\", r"\midrule"]
+    # The collection-site null and the 20 km block bootstrap (benchmark/null_models.py),
+    # matched to each source by species.
+    null_of = {"full_heldout": ("heldout_random", "map"), "full": ("map_all", "full"),
+               "manual": ("map_all", "manual"), "paid": ("map_all", "paid"),
+               "open": ("map_all", "open")}
+    nulls = {}
+    for line in io.open(ROOT / "benchmark" / "data" / "null_models_scores.jsonl", encoding="utf-8"):
+        n = json.loads(line)
+        nulls[(n["analysis"], n["source"], n["species"])] = n
+    lines = [r"\begin{tabular}{p{5.4cm}rrrrrrrrr}", r"\toprule",
+             r" & & & & & \multicolumn{2}{c}{Lift} & \multicolumn{2}{c}{Beats chance} & \\",
+             r"\cmidrule(lr){6-7}\cmidrule(lr){8-9}",
+             r"Map & Maps & Records captured & Median capture & Median area & Area & Sites & "
+             r"Records & Blocks & Lift $<1.5$ \\", r"\midrule"]
     for src, label in MAP_SOURCES:
         sub = [r for r in rows if r["source"] == src and r["has_map"] and r.get("area", 0) > 0]
         cap, tot = sum(r["captured"] for r in sub), sum(r["n_records"] for r in sub)
@@ -471,10 +488,14 @@ def table_mapcompare() -> str:
         lift = statistics.median(c / r["area"] for c, r in zip(rate, sub))
         beat = sum(binomtest(r["captured"], r["n_records"], min(r["area"], 1.0),
                              alternative="greater").pvalue < 0.05 for r in sub)
+        nn = [nulls[(*null_of[src], r["species"])] for r in sub]
+        ls = [n["capture"] / n["p_sites"] for n in nn if n["p_sites"] > 0]
+        blocks = sum(n["boot_q05"] > n["p_sites"] for n in nn)
+        low = sum(n["p_sites"] > 0 and n["capture"] / n["p_sites"] < 1.5 for n in nn)
         lines.append(f"{label} & {len(sub)} & {100 * cap / tot:.0f} & "
                      f"{100 * statistics.median(rate):.0f} & "
                      f"{100 * statistics.median(r['area'] for r in sub):.1f} & "
-                     f"{lift:.1f} & {beat} \\\\")
+                     f"{lift:.1f} & {statistics.median(ls):.1f} & {beat} & {blocks} & {low} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(lines)
 

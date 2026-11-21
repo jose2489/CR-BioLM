@@ -100,6 +100,11 @@ def summarize(rows: list[dict]) -> dict:
             "correct": len(correct),
             "precision": len(correct) / len(answered) if answered else None,
             "precision_ci": _wilson(len(correct), len(answered)),
+            # A range that overlaps the key's but is too wide or too narrow is
+            # partially_correct, which strict precision counts as not correct. The lenient
+            # figure counts it as correct, to show how much of a gap is near-misses.
+            "lenient_precision": (sum(r["direct"] in ("correct", "partially_correct")
+                                      for r in answered) / len(answered)) if answered else None,
             "coverage": len(answered) / len(scoreable) if scoreable else None,
             "silence_n": len(silent_qs),
             "silence_correct": len(silent_ok) / len(silent_qs) if silent_qs else None,

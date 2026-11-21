@@ -74,3 +74,11 @@ paper2/*
 mpcr_rag/paper/
 benchmark/data/
 *.xlsx
+
+# Thesis document (compendium of articles) -- a paper, not code.
+thesis/
+
+# Test fixtures built from the Manual (they hold its text) and evaluation results:
+# data, not code. The Paper 2 data are on Zenodo (10.5281/zenodo.24047603).
+tests/snapshots/
+mpcr_rag/eval/results/

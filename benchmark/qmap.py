@@ -340,7 +340,7 @@ def render(species: str, place_code: str | list[str] | None = None, *,
     for s in ax.spines.values():
         s.set_color("#39404d")
     fig.text(0.5, -0.02,
-             "Fuentes: Regiones botánicas digitalizadas de M. V. Castro · "
+             "Fuentes: Regiones botánicas trazadas por J. Araya sobre el mapa de M. V. Castro · "
              "Áreas Silvestres Protegidas (SINAC) · Altitud (SRTM, INEC) · "
              "Presencias GBIF 10.15468/dl.8yhee8",
              ha="center", color="#6f7782", fontsize=7.5)

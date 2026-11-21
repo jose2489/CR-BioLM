@@ -73,6 +73,13 @@ ARMS = {a.name: a for a in [
     Arm("FM", OPEN, "map", prompt="map",
         note="grounded by MAP ONLY, open weights: same model as F"),
     Arm("G",  None, "full", note="template, no model: the floor"),
+    # D and F under the free prompt. The grounded and free closed-book arms differ in
+    # both evidence and prompt, so their gap could be partly the prompt; these two hold
+    # the prompt at the free one and change only the evidence, against A1F and CF.
+    Arm("DP", PAID, "full", prompt="minimal",
+        note="as D, FREE prompt: the evidence without the careful instructions"),
+    Arm("FP", OPEN, "full", prompt="minimal",
+        note="as F, FREE prompt: the evidence without the careful instructions"),
     # The same three grounded arms with the companion list filtered by growth form, the
     # condition an expert asked companions to meet. Only the co-occurrence evidence
     # differs, so these are run on that question type alone.
@@ -90,7 +97,7 @@ ARMS = {a.name: a for a in [
 
 # Arms runnable today. B waits on the search mechanism being confirmed.
 READY = [n for n in ("G", "A1", "A1F", "C", "CF", "D", "E", "F", "DM", "FM", "R",
-                      "DH", "FH", "RH")]
+                      "DH", "FH", "RH", "DP", "FP")]
 
 # What the routed arm says when the router cannot serve the question: no species
 # resolved, an exit route, or a park it could not identify. A deployed system that
@@ -224,6 +231,26 @@ def template_answer(question: str, qtype: str, facts: dict) -> str:
         hab = facts.get("habitat_sentence")
         return (f"{_ABSTAIN} El registro describe su hábitat como: {hab}." if hab
                 else _ABSTAIN)
+
+    if qtype == "climate":
+        from .climate_profile import profile_text
+        hab = facts.get("habitat_sentence")
+        prof = facts.get("climate")
+        if not hab and not prof:
+            return _ABSTAIN
+        out = f"Según el Manual, {sp} crece en: {hab}{src}." if hab else ""
+        if prof:
+            out += (" " if out else "") + profile_text(prof) + (
+                " Estos valores resumen dónde se ha recolectado la especie; no son "
+                "tolerancias medidas." if prof["n"] >= 10 else "")
+        return out
+
+    if qtype == "co_occurrence":
+        comp = facts.get("companions") or []
+        if not comp:
+            return _ABSTAIN
+        return (f"Según el registro, estas especies comparten regiones botánicas y rango "
+                f"altitudinal con {sp}: {_es_list(comp)}{src}.")
 
     if qtype == "outside_record":
         cues = facts.get("use_cues")

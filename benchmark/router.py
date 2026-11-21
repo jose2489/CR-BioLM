@@ -57,6 +57,8 @@ ROUTES = {
     "co_occurrence":  "qué otras plantas crecen junto a una especie",
     "uses":           "si una especie es comestible, medicinal o tiene algún uso",
     "light":          "si una especie prefiere sol o sombra",
+    "climate":        "qué clima prefiere una especie: temperatura, lluvia, estación seca "
+                      "o zona de vida",
     "catalog_search": "preguntas que piden una LISTA de especies según condiciones "
                       "(hábito, región, altitud, bosque), o la especie que más o menos "
                       "cumple algo",
@@ -143,7 +145,7 @@ def resolve(cur, proposal: dict) -> dict:
 ROUTE_QTYPE = {"elevation": "elevation", "vertiente": "vertiente", "flowering": "flowering",
                "growth_form": "growth_form", "endemism": "endemism",
                "cultivation": "cultivation", "co_occurrence": "co_occurrence",
-               "uses": "outside_record", "light": "light",
+               "uses": "outside_record", "light": "light", "climate": "climate",
                # The three park types share one recipe; which verdict follows is for the
                # evidence to decide, so any of the three names the same blocks.
                "park": "park_possible"}

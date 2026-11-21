@@ -82,6 +82,12 @@ SHAP summary, LIME local explanation, confusion matrix, LLM profile.
 Geospatial assets are gitignored (`data_raw/`) due to size and licensing.
 Contact jose2489@gmail.com to obtain the bundle.
 
+The data behind Paper 2 (questions with reference answers, answers and verdicts of
+every condition, per-species scores, aggregate expert counts and the botanical-region
+layer) are archived on Zenodo under CC BY 4.0: https://doi.org/10.5281/zenodo.24047603.
+The GBIF occurrence download is cited as https://doi.org/10.15468/dl.8yhee8 and is not
+redistributed.
+
 | Asset | Size | Notes |
 |---|---|---|
 | `data_raw/topography/altitud_cr.tif` | 313 KB | DEM, EPSG:4326, Int16 |

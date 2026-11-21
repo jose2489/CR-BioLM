@@ -63,6 +63,12 @@ CONTRASTS = [
     ("Texto contra mapa (Gemma)", "F", "FM", lambda t: t in MAP_TYPES),
     ("Modelo abierto contra frontera, con evidencia", "F", "D", None),
     ("Ruta dada contra orquestador (Gemma)", "F", "R", None),
+    # Added after the run, at review: D and F against A1F and CF change both evidence
+    # and prompt. These split the two. Not pre-registered, and reported as such.
+    ("Solo la evidencia, prompt libre fijo (Mistral)", "DP", "A1F", None),
+    ("Solo la evidencia, prompt libre fijo (Gemma)", "FP", "CF", None),
+    ("Solo el prompt, evidencia fija (Mistral)", "D", "DP", None),
+    ("Solo el prompt, evidencia fija (Gemma)", "F", "FP", None),
 ]
 
 
@@ -163,7 +169,7 @@ def flora_weighted(rows: list[dict]) -> dict:
     cell_of = {i["species"]: i["stratum"] for i in sample["main"]}
     w_sp = {s: frame[cell_of[s]] / n_cell[cell_of[s]] for s in conf}
     out = {}
-    for arm in ("G", "D", "F", "R", "E", "A1F", "CF", "DM", "FM"):
+    for arm in ("G", "D", "F", "DP", "FP", "R", "E", "A1F", "CF", "DM", "FM"):
         ans = [r for r in rows if r["arm"] == arm and r["direct"] in B.ANSWERED]
         if not ans:
             continue

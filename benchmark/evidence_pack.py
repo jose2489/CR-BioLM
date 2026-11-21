@@ -249,6 +249,7 @@ _FLORA_BLOCKS = {
     "growth_form":    ("cita", "forma de crecimiento", "morfología"),
     "endemism":       ("cita", "distribución y hábitat", "endemismo"),
     "light":          ("cita", "distribución y hábitat", "morfología"),
+    "climate":        ("cita", "distribución y hábitat", "altitud"),
     "outside_record": ("cita", "distribución y hábitat", "notas"),
     "co_occurrence":  ("cita", "distribución y hábitat", "altitud", "regiones"),
     "park_confirmed": ("cita", "distribución y hábitat", "altitud", "regiones"),
@@ -265,6 +266,9 @@ _FULL_EXTRA = {
     "growth_form":    (),
     "endemism":       (),
     "light":          (),
+    # The Manual describes a species' climate only through its forest types and
+    # elevation; the profile from the records is what puts numbers on it.
+    "climate":        ("perfil climático",),
     "outside_record": (),
     "co_occurrence":  ("especies compatibles",),
     "park_confirmed": ("área protegida", "registros de ocurrencia"),
@@ -383,6 +387,9 @@ def build(cur, species: str, qtype: str, *, level: str = "full",
             from .cooccurrence import neighbours
             rows = neighbours(species, limit=12, same_habit=companions_same_habit)
             if rows:
+                # The template (arm G) prints this same list, so it answers the
+                # question from the pack exactly as the grounded models can.
+                pack.facts["companions"] = [r["species"] for r in rows]
                 pack.add(("especies que el Manual reporta en las mismas regiones, rango "
                           "altitudinal y forma de crecimiento") if companions_same_habit else
                          ("especies que el Manual reporta en las mismas regiones y rango "
@@ -399,6 +406,15 @@ def build(cur, species: str, qtype: str, *, level: str = "full",
                 pack.add("registros de ocurrencia (GBIF, instantánea 10.15468/dl.8yhee8)",
                          _occurrence_block(occ))
                 pack.providers += ["GBIF snapshot 10.15468/dl.8yhee8", "DEM"]
+        elif name == "perfil climático":
+            from .climate_profile import profile, profile_text
+            prof = profile(cur, species)
+            pack.facts["climate"] = prof
+            pack.add("perfil climático (registros GBIF sobre WorldClim 2.1 y zonas de vida "
+                     "de Holdridge; resume dónde se ha recolectado, no tolerancias medidas)",
+                     profile_text(prof))
+            pack.providers += ["GBIF snapshot 10.15468/dl.8yhee8", "WorldClim 2.1",
+                               "Holdridge life zones"]
         elif name == "área protegida":
             if not place_code:
                 raise ValueError(f"{qtype} needs place_code")
